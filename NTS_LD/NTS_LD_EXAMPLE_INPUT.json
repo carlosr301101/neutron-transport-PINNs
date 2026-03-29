@@ -1,0 +1,299 @@
+{
+  "description": "NTS_LD Algorithm Input Example - Line Diffusion Method for 2D Neutron Transport",
+  "metadata": {
+    "algorithm": "Line Diffusion (LD) + Discrete Ordinates (SN)",
+    "dimensions": "2D (X, Y)",
+    "method_type": "Iterative Line Diffusion",
+    "output_format": "JSON",
+    "file_type": "Plain text input (converted to JSON for reference)"
+  },
+
+  "program_overview": {
+    "name": "NTS_LD.c",
+    "purpose": "Solves 2D neutron transport equation using Line Diffusion (LD) iterative method",
+    "key_difference_from_DD": "Line Diffusion converges row-by-row (or column-by-column) instead of domain decomposition by blocks",
+    "advantages": "Better convergence for some problems, especially with strong anisotropy",
+    "input_parameters": "Identical to NTS_DD (11 parameters)",
+    "output_format": "JSON with STATUS, ITER, CPU, MFLUX, MFLOW, XFLOW, YFLOW"
+  },
+
+  "example_1_simple_uniform_problem": {
+    "name": "Simple 2×2 Domain with Uniform Material",
+    "description": "Simple domain 20×20 cm, one material zone, uniform sources, vacuum boundaries",
+    "physics": "Tests basic convergence of LD method with simple geometry",
+    
+    "text_input": [
+      "4",
+      "1",
+      "0.5 0.3",
+      "2",
+      "10.0 5",
+      "10.0 5",
+      "2",
+      "10.0 5",
+      "10.0 5",
+      "1 1",
+      "1 1",
+      "1.0 1.0",
+      "1.0 1.0",
+      "0.0 0.0 0.0 0.0",
+      "1e-5"
+    ],
+
+    "json_format": {
+      "quadrature_order": 4,
+      "quadrature_directions": 12,
+      "num_zones": 1,
+      "zones": [
+        {
+          "zone_id": 1,
+          "sigma_t": 0.5,
+          "sigma_s": 0.3,
+          "sigma_a": 0.2,
+          "description": "Pure scattering material (40% absorption)"
+        }
+      ],
+      "spatial_x": {
+        "num_regions": 2,
+        "regions": [
+          {"length_cm": 10.0, "num_nodes": 5},
+          {"length_cm": 10.0, "num_nodes": 5}
+        ],
+        "total_length_cm": 20.0
+      },
+      "spatial_y": {
+        "num_regions": 2,
+        "regions": [
+          {"length_cm": 10.0, "num_nodes": 5},
+          {"length_cm": 10.0, "num_nodes": 5}
+        ],
+        "total_length_cm": 20.0
+      },
+      "zone_map": [[1, 1], [1, 1]],
+      "source_map": [[1.0, 1.0], [1.0, 1.0]],
+      "boundary_conditions": [0.0, 0.0, 0.0, 0.0],
+      "tolerance": 1e-5,
+      "mesh_total_points": 100
+    },
+
+    "expected_output": {
+      "STATUS": 0,
+      "typical_iterations": "15-50",
+      "expected_pattern": "Symmetric flux due to uniform problem",
+      "convergence_speed": "Faster than DD for this simple case"
+    }
+  },
+
+  "example_2_heterogeneous_two_materials": {
+    "name": "Heterogeneous with Two Materials",
+    "description": "Checkerboard pattern with Material 1 (low absorption) and Material 2 (high absorption)",
+    "physics": "Tests LD behavior with material discontinuities",
+    
+    "text_input": [
+      "4",
+      "2",
+      "0.5 0.3",
+      "1.2 0.6",
+      "2",
+      "10.0 5",
+      "10.0 5",
+      "2",
+      "10.0 5",
+      "10.0 5",
+      "1 2",
+      "2 1",
+      "1.0 0.8",
+      "0.8 1.0",
+      "0.0 0.0 0.0 0.0",
+      "1e-5"
+    ],
+
+    "json_format": {
+      "quadrature_order": 4,
+      "num_zones": 2,
+      "zones": [
+        {
+          "zone_id": 1,
+          "sigma_t": 0.5,
+          "sigma_s": 0.3,
+          "absorption_ratio": 0.4
+        },
+        {
+          "zone_id": 2,
+          "sigma_t": 1.2,
+          "sigma_s": 0.6,
+          "absorption_ratio": 0.5,
+          "note": "Higher absorption material"
+        }
+      ],
+      "geometry": "Checkerboard pattern creates strong material interfaces",
+      "sources": "Slightly higher in Zone 1",
+      "note": "LD method may show different convergence behavior than DD due to material heterogeneity"
+    }
+  },
+
+  "example_3_anisotropic_sources": {
+    "name": "Problem with Anisotropic External Sources",
+    "description": "Variable sources with directional bias to test LD anisotropy handling",
+    "physics": "LD excels when sources have strong directional preferences",
+    
+    "text_input": [
+      "6",
+      "1",
+      "0.4 0.2",
+      "3",
+      "6.0 4",
+      "7.0 4",
+      "7.0 4",
+      "3",
+      "7.0 4",
+      "6.5 4",
+      "6.5 4",
+      "1 1 1",
+      "1 1 1",
+      "1 1 1",
+      "2.0 0.5 0.5 0.5",
+      "0.0 0.0 0.0 0.0",
+      "1e-5"
+    ],
+
+    "json_format": {
+      "quadrature_order": 6,
+      "quadrature_directions": 24,
+      "num_zones": 1,
+      "zones": [
+        {"sigma_t": 0.4, "sigma_s": 0.2}
+      ],
+      "spatial": "3 regions in X and Y (non-uniform spacing)",
+      "sources": "Non-uniform: higher source at (0,0)",
+      "boundary_conditions": {
+        "bottom": 2.0,
+        "top": 0.5,
+        "left": 0.5,
+        "right": 0.5
+      },
+      "note": "LD method handles asymmetric problems efficiently"
+    }
+  },
+
+  "example_4_fine_mesh": {
+    "name": "Fine Mesh Problem",
+    "description": "Finer spatial discretization for higher accuracy",
+    "physics": "Tests LD with refined mesh",
+    
+    "text_input": [
+      "4",
+      "1",
+      "0.6 0.35",
+      "2",
+      "10.0 8",
+      "10.0 8",
+      "2",
+      "10.0 8",
+      "10.0 8",
+      "1 1",
+      "1 1",
+      "1.5 1.5",
+      "1.5 1.5",
+      "0.0 0.0 0.0 0.0",
+      "1e-6"
+    ],
+
+    "json_format": {
+      "quadrature_order": 4,
+      "num_zones": 1,
+      "mesh": "8 nodes per region (finer than typical)",
+      "total_nodes": 256,
+      "tolerance": 1e-6,
+      "note": "Stricter tolerance and finer mesh increase computation time"
+    }
+  },
+
+  "parameter_comparison_ld_vs_dd": {
+    "convergence": {
+      "LD": "Typically faster for problems with weak anisotropy",
+      "DD": "More stable for strongly anisotropic problems"
+    },
+    "memory": {
+      "LD": "Slightly lower memory requirements (row-based iteration)",
+      "DD": "Higher memory due to block decomposition"
+    },
+    "applicability": {
+      "LD": "Better for 1D/2D geometries with line-like structures",
+      "DD": "Better for 2D problems with 2D decomposition benefits"
+    },
+    "input_parameters": {
+      "identical": true,
+      "note": "Both use same input format (11 parameters)"
+    }
+  },
+
+  "parameter_definitions": {
+    "N": {
+      "name": "Quadrature Order",
+      "valid_values": [2, 4, 6, 8, 10, 12, 14, 16, 18],
+      "formula": "M = N*(N+2)/2 (number of discrete directions)"
+    },
+    "NZ": {
+      "name": "Number of Material Zones",
+      "constraint": "≥ 1"
+    },
+    "ZONES": {
+      "name": "Zone Properties",
+      "format": "NZ lines: sigma_t sigma_s",
+      "units": "cm^-1",
+      "constraint": "sigma_s < sigma_t"
+    },
+    "NR_X": {
+      "name": "Number of Regions in X",
+      "constraint": "≥ 1"
+    },
+    "XDOM": {
+      "name": "X Domain Discretization",
+      "format": "NR_X lines: length_cm num_nodes"
+    },
+    "NR_Y": {
+      "name": "Number of Regions in Y",
+      "constraint": "≥ 1"
+    },
+    "YDOM": {
+      "name": "Y Domain Discretization",
+      "format": "NR_Y lines: length_cm num_nodes"
+    },
+    "ZMAP": {
+      "name": "Zone Map",
+      "format": "NR_Y × NR_X matrix with zone indices (1 to NZ)"
+    },
+    "QMAP": {
+      "name": "Source Map",
+      "format": "NR_Y × NR_X matrix with source values (≥ 0)"
+    },
+    "BC": {
+      "name": "Boundary Conditions",
+      "format": "4 values: BOTTOM TOP LEFT RIGHT",
+      "valid": [-1.0 (symmetry), 0.0 (vacuum), >0 (specified flux)]
+    },
+    "TOL": {
+      "name": "Convergence Tolerance",
+      "range": "0 < tol < 1",
+      "recommended": "1e-5"
+    }
+  },
+
+  "execution_steps": {
+    "step_1": "gcc -O2 -o NTS_LD programs/NTS_LD.c -lm",
+    "step_2": "Create input file with 11 parameters",
+    "step_3": "./NTS_LD input.txt > output.json",
+    "step_4": "Analyze JSON output"
+  },
+
+  "output_fields": {
+    "STATUS": "0=success, 1=args, 2=read error, 3=memory",
+    "ITER": "Number of iterations for convergence",
+    "CPU": "Execution time in seconds",
+    "MFLUX": "Scalar flux matrix",
+    "MFLOW": "Angular flux tensor (3D)",
+    "XFLOW": "Angular flux at Y boundaries",
+    "YFLOW": "Angular flux at X boundaries"
+  }
+}

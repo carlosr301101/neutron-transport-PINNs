@@ -1,0 +1,422 @@
+{
+  "description": "NTS_RM_LLN Algorithm Input Example - Response Matrix with Linear Lattice Nodalization for 2D Neutron Transport",
+  "metadata": {
+    "algorithm": "Response Matrix (RM) + Linear Lattice Nodalization (LLN) + Discrete Ordinates (SN)",
+    "dimensions": "2D (X, Y)",
+    "method_type": "Response Matrix Method with Linear Lattice Nodalization",
+    "output_format": "JSON",
+    "file_type": "Plain text input (converted to JSON for reference)",
+    "variant": "Alternative RM implementation focusing on lattice discretization"
+  },
+
+  "program_overview": {
+    "name": "NTS_RM_LLN.c",
+    "purpose": "Solves 2D neutron transport equation using Response Matrix method with Linear Lattice Nodalization",
+    "method_description": "Combines Response Matrix formulation with linear lattice nodalization for accurate spatial discretization",
+    "advantages": "Fast convergence, excellent accuracy, stable with complex geometries",
+    "computational_cost": "Similar to RM_CN but with different nodalization strategy",
+    "input_parameters": "Identical to NTS_DD, NTS_LD, NTS_RM_CN (11 parameters)",
+    "output_format": "JSON with STATUS, ITER, CPU, MFLUX, MFLOW, XFLOW, YFLOW"
+  },
+
+  "key_differences_rm_lln_vs_rm_cn": {
+    "nodalization_approach": {
+      "RM_CN": "Crank-Nicolson implicit time stepping",
+      "RM_LLN": "Linear Lattice Nodalization - refined spatial grid at nodes"
+    },
+    "spatial_accuracy": {
+      "RM_CN": "O(Δt²) temporal accuracy",
+      "RM_LLN": "O(h²) spatial accuracy with refined lattice"
+    },
+    "convergence_pattern": {
+      "RM_CN": "Very fast (often 4-8 iterations)",
+      "RM_LLN": "Fast (5-15 iterations, slightly more iterations but different physics)"
+    },
+    "applicability": {
+      "RM_CN": "General purpose, excellent for steady-state",
+      "RM_LLN": "Better for lattice-based reactor cores, heterogeneous assemblies"
+    },
+    "computational_cost": {
+      "RM_CN": "High matrix operations per iteration",
+      "RM_LLN": "Similar complexity with focus on nodal refinement"
+    }
+  },
+
+  "example_1_simple_lattice": {
+    "name": "Simple 2×2 Lattice - RM_LLN Method",
+    "description": "Simple domain 20×20 cm discretized as 2×2 lattice, one material, uniform sources",
+    "physics": "Tests RM_LLN with simple lattice geometry - optimal for LLN method",
+    
+    "text_input": [
+      "4",
+      "1",
+      "0.5 0.3",
+      "2",
+      "10.0 5",
+      "10.0 5",
+      "2",
+      "10.0 5",
+      "10.0 5",
+      "1 1",
+      "1 1",
+      "1.0 1.0",
+      "1.0 1.0",
+      "0.0 0.0 0.0 0.0",
+      "1e-5"
+    ],
+
+    "json_format": {
+      "quadrature_order": 4,
+      "quadrature_directions": 12,
+      "num_zones": 1,
+      "lattice_discretization": "2×2 (typical assembly lattice)",
+      "zones": [
+        {
+          "zone_id": 1,
+          "sigma_t": 0.5,
+          "sigma_s": 0.3,
+          "sigma_a": 0.2,
+          "material_type": "fuel"
+        }
+      ],
+      "spatial_x": {
+        "num_regions": 2,
+        "regions": [
+          {"length_cm": 10.0, "num_nodes": 5},
+          {"length_cm": 10.0, "num_nodes": 5}
+        ]
+      },
+      "spatial_y": {
+        "num_regions": 2,
+        "regions": [
+          {"length_cm": 10.0, "num_nodes": 5},
+          {"length_cm": 10.0, "num_nodes": 5}
+        ]
+      },
+      "zone_map": [[1, 1], [1, 1]],
+      "source_map": [[1.0, 1.0], [1.0, 1.0]],
+      "boundary_conditions": [0.0, 0.0, 0.0, 0.0],
+      "tolerance": 1e-5,
+      "expected_iterations": "5-10 (fast with lattice structure)",
+      "accuracy_level": "High - RM_LLN excels with lattice problems"
+    },
+
+    "expected_output": {
+      "STATUS": 0,
+      "typical_iterations": "5-10",
+      "convergence_pattern": "Fast - RM_LLN converges quickly with lattice-based input",
+      "accuracy": "High, particularly suited to assembly lattices"
+    }
+  },
+
+  "example_2_reactor_assembly": {
+    "name": "Fuel Assembly with Control Rod Channels",
+    "description": "3×3 assembly lattice with central control rod region - typical BWR/PWR assembly",
+    "physics": "RM_LLN designed for this: multiple material zones in assembly geometry",
+    
+    "text_input": [
+      "4",
+      "3",
+      "0.5 0.30",
+      "1.0 0.50",
+      "0.3 0.15",
+      "3",
+      "5.5 6",
+      "5.5 6",
+      "5.5 6",
+      "3",
+      "5.5 6",
+      "5.5 6",
+      "5.5 6",
+      "1 1 3",
+      "1 2 3",
+      "3 3 3",
+      "2.0 2.0 0.5",
+      "2.0 2.0 0.5",
+      "0.5 0.5 0.5",
+      "0.0 0.0 0.0 0.0",
+      "1e-5"
+    ],
+
+    "json_format": {
+      "quadrature_order": 4,
+      "num_zones": 3,
+      "zones": [
+        {"zone_id": 1, "name": "Fuel", "sigma_t": 0.5, "sigma_s": 0.30},
+        {"zone_id": 2, "name": "Control Rod", "sigma_t": 1.0, "sigma_s": 0.50},
+        {"zone_id": 3, "name": "Reflector", "sigma_t": 0.3, "sigma_s": 0.15}
+      ],
+      "geometry": "3×3 assembly with control rod in center",
+      "lattice_pitch_cm": 5.5,
+      "note": "RM_LLN handles assembly heterogeneity naturally"
+    },
+
+    "expected_output": {
+      "STATUS": 0,
+      "typical_iterations": "8-15",
+      "convergence": "Stable convergence with material heterogeneity"
+    }
+  },
+
+  "example_3_core_fragment": {
+    "name": "Small Core Fragment (2×2 Assemblies)",
+    "description": "4×4 lattice representing core quadrant with multiple assembly types",
+    "physics": "RM_LLN optimal: lattice structure with realistic heterogeneity",
+    
+    "text_input": [
+      "4",
+      "2",
+      "0.55 0.32",
+      "0.45 0.25",
+      "4",
+      "5.6 6",
+      "5.6 6",
+      "5.6 6",
+      "5.6 6",
+      "4",
+      "5.6 6",
+      "5.6 6",
+      "5.6 6",
+      "5.6 6",
+      "1 1 2 2",
+      "1 1 2 2",
+      "2 2 1 1",
+      "2 2 1 1",
+      "1.8 1.8 1.5 1.5",
+      "1.8 1.8 1.5 1.5",
+      "1.5 1.5 1.8 1.8",
+      "1.5 1.5 1.8 1.8",
+      "0.0 0.0 0.0 0.0",
+      "1e-5"
+    ],
+
+    "json_format": {
+      "quadrature_order": 4,
+      "lattice_size": "4×4 (16 pins/channels)",
+      "num_zones": 2,
+      "zones": [
+        {"zone_id": 1, "type": "Fuel A", "sigma_t": 0.55},
+        {"zone_id": 2, "type": "Fuel B", "sigma_t": 0.45}
+      ],
+      "assembly_pattern": "Checkerboard (FuelA - FuelB)",
+      "note": "LLN approach naturally handles lattice patterns"
+    }
+  },
+
+  "example_4_fine_lattice_study": {
+    "name": "Fine Lattice (5×5) - Detailed Analysis",
+    "description": "5×5 lattice with varying cross-sections for detailed physics studies",
+    "physics": "LLN excellent for detailed nodal problems",
+    
+    "text_input": [
+      "6",
+      "1",
+      "0.48 0.28",
+      "5",
+      "4.5 6",
+      "4.5 6",
+      "4.5 6",
+      "4.5 6",
+      "4.5 6",
+      "5",
+      "4.5 6",
+      "4.5 6",
+      "4.5 6",
+      "4.5 6",
+      "4.5 6",
+      "1 1 1 1 1",
+      "1 1 1 1 1",
+      "1 1 1 1 1",
+      "1 1 1 1 1",
+      "1 1 1 1 1",
+      "1.5 1.5 1.5 1.5 1.5",
+      "1.5 1.5 1.5 1.5 1.5",
+      "1.5 1.5 1.5 1.5 1.5",
+      "1.5 1.5 1.5 1.5 1.5",
+      "1.5 1.5 1.5 1.5 1.5",
+      "0.0 0.0 0.0 0.0",
+      "1e-6"
+    ],
+
+    "json_format": {
+      "quadrature_order": 6,
+      "quadrature_directions": 24,
+      "lattice": "5×5 (25 nodes)",
+      "lattice_pitch": 4.5,
+      "uniform_material": true,
+      "node_count": 150,
+      "tolerance": 1e-6,
+      "expected_iterations": "10-20"
+    }
+  },
+
+  "parameter_comparison_all_methods": {
+    "method_comparison": {
+      "LD": {
+        "convergence_speed": "20-40 iterations",
+        "accuracy": "Good",
+        "lattice_applicability": "Limited",
+        "best_use": "Continuous media"
+      },
+      "DD": {
+        "convergence_speed": "30-100 iterations",
+        "accuracy": "Very Good",
+        "lattice_applicability": "Good",
+        "best_use": "General 2D problems"
+      },
+      "RM_CN": {
+        "convergence_speed": "5-20 iterations",
+        "accuracy": "Excellent",
+        "lattice_applicability": "Very Good",
+        "best_use": "High-precision steady-state"
+      },
+      "RM_LLN": {
+        "convergence_speed": "5-15 iterations",
+        "accuracy": "Excellent",
+        "lattice_applicability": "Excellent - OPTIMAL",
+        "best_use": "Lattice-based cores, assemblies"
+      }
+    }
+  },
+
+  "parameter_definitions": {
+    "note": "Input parameters identical to all three previous methods (11 parameters total)",
+    "N": {
+      "name": "Quadrature Order",
+      "valid_values": [2, 4, 6, 8, 10, 12, 14, 16, 18],
+      "formula": "M = N*(N+2)/2",
+      "recommendation": "4-6 for RM_LLN (4 typical for assembly problems)"
+    },
+    "NZ": {
+      "name": "Number of Material Zones",
+      "constraint": "≥ 1",
+      "recommendation": "1-3 for typical assembly, up to 10 for core fragments"
+    },
+    "ZONES": {
+      "name": "Zone Properties",
+      "format": "sigma_t sigma_s [cm^-1]",
+      "constraint": "sigma_s < sigma_t"
+    },
+    "NR_X, XDOM": {
+      "name": "X Domain Discretization",
+      "recommendation": "Match lattice pitch (typically 4-6 nodes per region)"
+    },
+    "NR_Y, YDOM": {
+      "name": "Y Domain Discretization",
+      "recommendation": "Match lattice pitch (typically 4-6 nodes per region)"
+    },
+    "ZMAP": {
+      "name": "Zone Map",
+      "format": "NR_Y × NR_X matrix (1-based indexing)",
+      "use_case": "Define assembly pattern (checkerboard, stripes, etc.)"
+    },
+    "QMAP": {
+      "name": "Source Map",
+      "format": "NR_Y × NR_X matrix",
+      "note": "Can model distributed neutron sources in assembly"
+    },
+    "BC": {
+      "name": "Boundary Conditions",
+      "format": "BOTTOM TOP LEFT RIGHT",
+      "typical_values": [0.0, 0.0, 0.0, 0.0],
+      "note": "Usually vacuum for assembly-level problems"
+    },
+    "TOL": {
+      "name": "Convergence Tolerance",
+      "range": "0 < tol < 1",
+      "recommended": "1e-5 (RM_LLN converges quickly)"
+    }
+  },
+
+  "method_explanation": {
+    "linear_lattice_nodalization": "Discretizes domain into uniform lattice with refined nodal grid at intersections",
+    "lattice_structure": "Natural representation of reactor assemblies (typical 5.5 cm pitch)",
+    "nodal_coupling": "Couples angular fluxes at lattice boundaries for conservation",
+    "response_matrix": "Precomputed transfer operators for inter-lattice communication",
+    "advantages": "Perfect match for assembly-based problems, lattice calculations"
+  },
+
+  "execution_example": {
+    "compile": "gcc -O2 -o NTS_RM_LLN programs/NTS_RM_LLN.c -lm",
+    "create_input": "cat > assembly_input.txt << 'EOF'\n4\n1\n0.5 0.3\n...",
+    "run": "./NTS_RM_LLN assembly_input.txt > assembly_output.json",
+    "analyze": "cat assembly_output.json | python3 -m json.tool | head -50"
+  },
+
+  "output_fields": {
+    "STATUS": "0=success, 1=args, 2=read error, 3=memory",
+    "ITER": "Iterations for convergence (typically 5-15)",
+    "CPU": "Execution time in seconds",
+    "MFLUX": "Scalar flux matrix at lattice nodes",
+    "MFLOW": "Angular flux tensor (3D)",
+    "XFLOW": "Angular flux at Y boundaries",
+    "YFLOW": "Angular flux at X boundaries"
+  },
+
+  "recommended_use_cases": {
+    "assembly_analysis": {
+      "description": "Single fuel assembly with control rods",
+      "recommended": true,
+      "example": "3×3 or 4×4 assembly with mixed materials"
+    },
+    "core_fragment": {
+      "description": "Small core (2×2 to 4×4 assemblies)",
+      "recommended": true,
+      "example": "PWR/BWR core quadrant"
+    },
+    "lattice_physics": {
+      "description": "Detailed lattice calculations",
+      "recommended": true,
+      "example": "Infinite lattice unit cell with boundary conditions"
+    },
+    "heterogeneous_medium": {
+      "description": "Problems with clear lattice structure",
+      "recommended": true,
+      "example": "Pebble-bed reactor cross-section"
+    },
+    "arbitrary_2d_problems": {
+      "description": "Non-lattice 2D problems",
+      "recommended": false,
+      "note": "Use DD or LD instead - RM_LLN optimized for lattices"
+    }
+  },
+
+  "performance_characteristics": {
+    "convergence_speed": "Fast (5-15 iterations typical)",
+    "memory_usage": "Medium (response matrix storage)",
+    "cpu_time": "Low to Medium (few iterations × matrix ops)",
+    "accuracy_achievable": "Excellent (O(h²) in space)",
+    "stability": "Unconditional (like RM_CN but different approach)",
+    "scalability": "Good up to 10×10 lattices on standard hardware"
+  },
+
+  "comparison_table_rm_methods": {
+    "table": [
+      {
+        "aspect": "Convergence",
+        "RM_CN": "5-20 iter",
+        "RM_LLN": "5-15 iter"
+      },
+      {
+        "aspect": "Cost/iteration",
+        "RM_CN": "High (CN matrix)",
+        "RM_LLN": "High (LLN matrix)"
+      },
+      {
+        "aspect": "Best for assemblies",
+        "RM_CN": "Good",
+        "RM_LLN": "Excellent ✓"
+      },
+      {
+        "aspect": "Best for continuum",
+        "RM_CN": "Excellent ✓",
+        "RM_LLN": "Good"
+      },
+      {
+        "aspect": "Physical relevance",
+        "RM_CN": "Mathematical (temporal)",
+        "RM_LLN": "Physical (lattice)"
+      }
+    ]
+  }
+}
