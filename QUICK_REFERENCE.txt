@@ -1,0 +1,213 @@
+╔════════════════════════════════════════════════════════════════════════╗
+║                    NTS PROGRAMS - QUICK REFERENCE                     ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+PROGRAM OVERVIEW
+═══════════════════════════════════════════════════════════════════════════
+
+Program      | Method                    | Iterations | CPU (ms) | Priority
+─────────────────────────────────────────────────────────────────────────
+NTS_DD       | Domain Decomposition      | 30-100     | 5-20     | Balanced
+NTS_LD       | Line Diffusion            | 20-40      | 2-10     | FASTEST ⚡
+NTS_RM_CN    | RM + Crank-Nicolson      | 5-20       | 2-10     | Precise
+NTS_RM_LLN   | RM + Linear Lattice      | 5-15       | 2-10     | Lattice ★
+
+
+COMPILATION (All Programs)
+═══════════════════════════════════════════════════════════════════════════
+
+Basic:   gcc -O2 -o NTS_DD programs/NTS_DD.c -lm
+
+Fast:    gcc -O3 -march=native -o NTS_DD programs/NTS_DD.c -lm
+
+
+INPUT FILE FORMAT (11 lines)
+═══════════════════════════════════════════════════════════════════════════
+
+Line 1:   N (quadrature order: 2,4,6,8,10,12,14,16,18)
+Line 2:   NZ (number of zones)
+Lines 3-2+NZ:   σ_t σ_s for each zone [cm⁻¹]
+Line 3+NZ:      NR_X (number of X regions)
+Next NR_X lines: XDOM (length[cm] nodes) for each X region
+Next line:      NR_Y (number of Y regions)
+Next NR_Y lines: YDOM (length[cm] nodes) for each Y region
+Next NR_Y lines: ZMAP (zone indices, 1-based)
+Next NR_Y lines: QMAP (source values)
+Next line:      BC (BOTTOM TOP LEFT RIGHT)
+Last line:      TOL (tolerance, e.g., 1e-5)
+
+
+EXAMPLE INPUT (Simple 2×2 Domain)
+═══════════════════════════════════════════════════════════════════════════
+
+4           # N=4 (12 directions)
+1           # 1 zone
+0.5 0.3     # σ_t=0.5, σ_s=0.3
+2           # 2 X regions
+10.0 5      # Region 1: 10cm, 5 nodes
+10.0 5      # Region 2: 10cm, 5 nodes
+2           # 2 Y regions
+10.0 5      # Region 1: 10cm, 5 nodes
+10.0 5      # Region 2: 10cm, 5 nodes
+1 1         # Zone map row 1
+1 1         # Zone map row 2
+1.0 1.0     # Source row 1
+1.0 1.0     # Source row 2
+0.0 0.0 0.0 0.0  # BC: vacuum all sides
+1e-5        # Tolerance
+
+
+EXECUTION
+═══════════════════════════════════════════════════════════════════════════
+
+./NTS_DD input.txt > output.json
+
+
+OUTPUT FORMAT (JSON)
+═══════════════════════════════════════════════════════════════════════════
+
+{
+  "STATUS": 0,        # 0=success, 1=args, 2=read error, 3=memory
+  "ITER": 20,         # Convergence iterations
+  "CPU": 0.002,       # Execution time [seconds]
+  "MFLUX": [...],     # Scalar flux matrix [NR_Y][NR_X]
+  "MFLOW": [...],     # Angular flux [NR_Y][NR_X][M]
+  "XFLOW": [...],     # X boundary fluxes
+  "YFLOW": [...]      # Y boundary fluxes
+}
+
+
+CRITICAL CONSTRAINTS
+═══════════════════════════════════════════════════════════════════════════
+
+1. N MUST BE EVEN: {2, 4, 6, 8, 10, 12, 14, 16, 18}
+   ✗ N=3 → ERROR in quadrature
+   ✓ N=4 → M=12 directions OK
+
+2. σ_s < σ_t ALWAYS:
+   ✗ σ_s ≥ σ_t → DIVERGENCE
+   ✓ σ_s < σ_t → Physical solution
+
+3. ZMAP 1-based indexing:
+   ✗ ZMAP=0 → Segmentation fault
+   ✓ ZMAP ∈ [1, NZ] → Correct
+
+4. Tolerance reasonable:
+   ✗ TOL=0 or TOL≥1 → Convergence problems
+   ✓ TOL ∈ [1e-7, 1e-2] → Safe range
+
+
+METHOD SELECTION FLOWCHART
+═══════════════════════════════════════════════════════════════════════════
+
+                         START
+                          |
+               Is speed critical?
+                    /          \
+                  YES            NO
+                   |              |
+              Use LD          Has lattice?
+                               /      \
+                             YES       NO
+                              |         |
+                         Use RM_LLN   Need precision?
+                                       /        \
+                                     YES         NO
+                                      |           |
+                                  Use RM_CN   Use DD
+
+
+TYPICAL PERFORMANCE (2×2 simple)
+═══════════════════════════════════════════════════════════════════════════
+
+Program    | Iterations | CPU (ms) | Total Time
+─────────────────────────────────────────────
+LD         | 20         | 0.05/it  | ~1 ms
+DD         | 20         | 0.10/it  | ~2 ms
+RM_CN      | 4          | 0.25/it  | ~1 ms
+RM_LLN     | 4          | 0.25/it  | ~1 ms
+
+
+VALIDATION CHECKLIST
+═══════════════════════════════════════════════════════════════════════════
+
+Before execution:
+  ☐ N is even and ∈ [2,18]
+  ☐ σ_s < σ_t for all zones
+  ☐ ZMAP indices ∈ [1, NZ]
+  ☐ QMAP values ≥ 0
+  ☐ File has exactly 11 lines of input
+
+After execution:
+  ☐ STATUS = 0 (convergence)
+  ☐ ITER > 0 (some iterations)
+  ☐ ITER < 1000 (reasonable count)
+  ☐ CPU > 0 (measurable time)
+  ☐ MFLUX > 0 (positive fluxes)
+
+
+TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════════
+
+SYMPTOM: STATUS ≠ 0
+  ✓ Check input file format (11 lines)
+  ✓ Verify N is even
+  ✓ Confirm file not truncated
+
+SYMPTOM: ITER > 100
+  ✓ Increase tolerance (1e-5 instead of 1e-6)
+  ✓ Verify σ_s < σ_t
+  ✓ Reduce nodes per region
+
+SYMPTOM: MFLUX contains NaN
+  ✓ Check σ_s < σ_t for ALL zones
+  ✓ Reduce σ_s or increase σ_t
+  ✓ Try lower quadrature (N=4 vs N=6)
+
+SYMPTOM: CPU >> 1 second
+  ✓ Check mesh not too fine
+  ✓ Use N=4 instead of N=6+
+  ✓ Increase tolerance to 1e-4
+
+
+DOCUMENTATION FILES
+═══════════════════════════════════════════════════════════════════════════
+
+Master Guide:
+  NTS_DOCUMENTATION.md - Overview, examples, comparison
+
+Method Guides (each method):
+  NTS_DD_EXPLICACION.md
+  NTS_LD_EXPLICACION.md
+  NTS_RM_CN_EXPLICACION.md
+  NTS_RM_LLN_EXPLICACION.md
+
+Example Inputs (each method):
+  NTS_DD_EXAMPLE_INPUT.json - 4 examples
+  NTS_LD_EXAMPLE_INPUT.json - 4 examples
+  NTS_RM_CN_EXAMPLE_INPUT.json - 4 examples
+  NTS_RM_LLN_EXAMPLE_INPUT.json - 4 examples
+
+
+COMMON PARAMETER VALUES
+═══════════════════════════════════════════════════════════════════════════
+
+Quadrature (N):
+  N=4  → 12 directions (standard)
+  N=6  → 24 directions (higher precision)
+  N=8  → 40 directions (very high precision)
+
+Cross-sections (example):
+  Fuel:     σ_t=0.5,  σ_s=0.3
+  Control:  σ_t=1.0,  σ_s=0.6
+  Moderator:σ_t=0.3,  σ_s=0.2
+
+Tolerance:
+  1e-4 → Fast (~20 iter for DD)
+  1e-5 → Standard (~30 iter for DD)
+  1e-6 → Strict (~50 iter for DD)
+
+
+═══════════════════════════════════════════════════════════════════════════
+For full details, see NTS_DOCUMENTATION.md and method-specific guides.
+═══════════════════════════════════════════════════════════════════════════
