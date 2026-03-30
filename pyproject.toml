@@ -1,7 +1,14 @@
 [project]
 name = "neutron-transport-pinns"
 version = "0.1.0"
-description = "Add your description here"
+description = "Automated system for neutron transport simulations with parallel execution and TUI/CLI interfaces"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "textual>=0.50.0",
+    "pydantic>=2.6.0",
+    "rich>=13.7.0",
+]
+
+[project.scripts]
+nts = "main:main"

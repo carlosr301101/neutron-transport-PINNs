@@ -1,0 +1,152 @@
+# ============================================================
+# NTS Automation - Archivos Generados (No necesarios en repo)
+# ============================================================
+
+# Outputs generados por el sistema
+outputs/inputs/*.txt
+outputs/results/*.txt
+outputs/results/*.json
+outputs/logs/*.log
+
+# Mantener estructura de directorios
+!outputs/inputs/.gitkeep
+!outputs/results/.gitkeep
+!outputs/logs/.gitkeep
+
+# ============================================================
+# Python
+# ============================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+.env
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ============================================================
+# IDEs y Editores
+# ============================================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================================
+# Sistema Operativo
+# ============================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+
+# ============================================================
+# Temporales y Backups
+# ============================================================
+
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+.~*
+
+# ============================================================
+# Documentación Temporal (solo para sesiones)
+# ============================================================
+
+# Notas de desarrollo (mantener AGENTS.md, README.md, etc.)
+Notas.md
+TODO.md
+SCRATCHPAD.md
+
+# ============================================================
+# uv (package manager)
+# ============================================================
+
+# Lock file puede incluirse o no según preferencia del equipo
+# Descomenta la siguiente línea si NO quieres commitear uv.lock
+# uv.lock

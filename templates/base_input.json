@@ -1,0 +1,55 @@
+{
+  "_comment": "Base configuration template for NTS simulations",
+  "_description": "This is a template for generating input.txt files for NTS solvers",
+  
+  "N": 4,
+  "_N_comment": "Number of discrete ordinates (must be even). Common values: 2, 4, 8, 16, 32",
+  
+  "NZ": 1,
+  "_NZ_comment": "Number of material zones in the problem",
+  
+  "zones": [
+    {
+      "sigma_t": 0.5,
+      "sigma_s": 0.3,
+      "_comment": "Zone 1: Total cross-section (sigma_t) and scattering cross-section (sigma_s). Must satisfy sigma_s < sigma_t"
+    }
+  ],
+  "_zones_comment": "Array of material zones. Length must equal NZ. Each zone has sigma_t and sigma_s",
+  
+  "NR_X": 2,
+  "_NR_X_comment": "Number of regions in X direction",
+  
+  "XDOM": [
+    {"length": 10.0, "nodes": 5},
+    {"length": 10.0, "nodes": 5}
+  ],
+  "_XDOM_comment": "X domain definition. Each region has length (cm) and number of nodes. Array length must equal NR_X",
+  
+  "NR_Y": 2,
+  "_NR_Y_comment": "Number of regions in Y direction",
+  
+  "YDOM": [
+    {"length": 10.0, "nodes": 5},
+    {"length": 10.0, "nodes": 5}
+  ],
+  "_YDOM_comment": "Y domain definition. Each region has length (cm) and number of nodes. Array length must equal NR_Y",
+  
+  "ZMAP": [
+    [1, 1],
+    [1, 1]
+  ],
+  "_ZMAP_comment": "Zone map: 2D array (NR_Y x NR_X) mapping regions to material zones. Values must be between 1 and NZ",
+  
+  "QMAP": [
+    [1.0, 1.0],
+    [1.0, 1.0]
+  ],
+  "_QMAP_comment": "Source map: 2D array (NR_Y x NR_X) defining neutron source strength in each region. Non-negative values",
+  
+  "BC": [0.0, 0.0, 0.0, 0.0],
+  "_BC_comment": "Boundary conditions: [left, right, bottom, top]. 0.0 = vacuum, 1.0 = reflective",
+  
+  "TOL": 1e-5,
+  "_TOL_comment": "Convergence tolerance for solver. Typical range: 1e-7 to 1e-2. Smaller = more accurate but slower"
+}

@@ -1,0 +1,22 @@
+{
+  "N": 8,
+  "NZ": 2,
+  "zones": [
+    {"sigma_t": 1.0, "sigma_s": 0.8},
+    {"sigma_t": 0.5, "sigma_s": 0.3}
+  ],
+  "NR_X": 2,
+  "XDOM": [
+    {"length": 5.0, "nodes": 10},
+    {"length": 5.0, "nodes": 10}
+  ],
+  "NR_Y": 2,
+  "YDOM": [
+    {"length": 5.0, "nodes": 10},
+    {"length": 5.0, "nodes": 10}
+  ],
+  "ZMAP": [[1, 2], [2, 1]],
+  "QMAP": [[2.0, 1.0], [1.0, 2.0]],
+  "BC": [0.0, 0.0, 0.0, 0.0],
+  "TOL": 1e-6
+}
