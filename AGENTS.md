@@ -16,6 +16,12 @@ Construir un sistema en Python que permita:
 
 ---
 
+## 1.1 Preparando el proyecto de python
+
+1. Deberas usar uv como principal gestor de paquetes.
+2. todo los modulos necesarios para el proyecto deberan ser instalados usando uv, como por ejemplo textual para la parte de TUI.
+3. Para ejecutar cualquier script tiene que ser ejecutado usando uv, por ejemplo: `uv run main.py`.
+
 ## 2. Arquitectura del sistema
 
 ```
