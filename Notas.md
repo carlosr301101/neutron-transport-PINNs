@@ -62,6 +62,8 @@ Donde
   "TOL": 1e-5                          // Convergence tolerance
 }
 ```
+### Validacion de datos
+Hasta estos momentos solo he podido validar los modelos de DD y STEP, los demas modelos no han podido ser validados por problemas con la convergencia, o por problemas con la implementacion de los algoritmos. Directamente los dejo calculando y se demoran mucho y no hay impllementado un logger en los modulos de C.
 
 ### Salida de los modelos
 
