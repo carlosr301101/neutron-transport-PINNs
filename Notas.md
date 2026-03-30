@@ -15,6 +15,8 @@
 2. Definir una estrategia para escoger que tipo de solver se va a usar. Pudiera ser escogido aleatorio, o enfocarnos en alguno solo.
   Los solvers que tienen disponibles son (NTS_DD,NTS_LD, NTS_RM_CN, NTS_RM_LLN, NTS_STEP)
 3. Los algoritmos estan fixados a un tipo de entrada en especifica, por ejemplo:
+4. Hay que definir una estrategia para ver como creamos los datos sinteticos para el entrenamiento del modelo.
+5. Estuve teniendo ahi una conversacion con ChatGPT y me gustaria saber su opinion sobre el tema [link_d_chat](https://chatgpt.com/share/69cacaac-51bc-83e9-9f7e-4f38e39aea58). En este chat hizo  unos comentarios bien interesantes sobre el abordaje del uso de una PINN para la resolucion del problema inicial. Entonces no se si modificar un poco ese primer enfoque que tuvo Ricardo y que fue lo que habiamos analizado en Cuba.
 
 ```
 4
@@ -62,12 +64,14 @@ Donde
   "TOL": 1e-5                          // Convergence tolerance
 }
 ```
+
 ### Validacion de datos
+
 Hasta estos momentos solo he podido validar los modelos de DD y STEP, los demas modelos no han podido ser validados por problemas con la convergencia, o por problemas con la implementacion de los algoritmos. Directamente los dejo calculando y se demoran mucho y no hay impllementado un logger en los modulos de C.
 
 ### Salida de los modelos
 
-Todoso los modelos dan estee tipo de salida.
+Todos los modelos dan este tipo de salida.
 
 ```json
 {
