@@ -1,6 +1,6 @@
 # NTS Automation System
 
-Sistema de automatización CLI para simulaciones de transporte de neutrones (NTS) con ejecución paralela y gestión robusta de configuraciones.
+Sistema CLI de automatización para simulaciones de transporte de neutrones (NTS) con ejecución paralela y gestión robusta de configuraciones.
 
 ## 🚀 Características
 
@@ -8,9 +8,10 @@ Sistema de automatización CLI para simulaciones de transporte de neutrones (NTS
 - ✅ **CLI completo** para operaciones batch y scripting
 - ✅ **Ejecución paralela** de múltiples simulaciones
 - ✅ **Validación robusta** de configuraciones antes de ejecutar
-- ✅ **Parser de salidas** a formato JSON estructurado
-- ✅ **Sistema de logging** con métricas
+- ✅ **Outputs JSON directo** desde solvers (sin parsing adicional)
+- ✅ **Sistema de logging** con métricas y logs detallados
 - ✅ **Gestión de múltiples solvers** (NTS_DD, NTS_LD, NTS_RM_CN, NTS_RM_LLN)
+- ✅ **Solver por defecto** (NTS_DD) - no es necesario especificar siempre
 
 ## 📋 Requisitos
 

@@ -1,5 +1,6 @@
 """Configuration data models for NTS simulations using Pydantic."""
 
+import json
 from typing import List
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -106,7 +107,6 @@ class SimulationConfig(BaseModel):
     @classmethod
     def from_json_file(cls, filepath: str) -> "SimulationConfig":
         """Load configuration from JSON file, ignoring comment fields."""
-        import json
         with open(filepath, 'r') as f:
             data = json.load(f)
         
@@ -117,6 +117,5 @@ class SimulationConfig(BaseModel):
     
     def to_json_file(self, filepath: str):
         """Save configuration to JSON file."""
-        import json
         with open(filepath, 'w') as f:
             json.dump(self.model_dump(), f, indent=2)

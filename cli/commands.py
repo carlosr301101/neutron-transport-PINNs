@@ -277,9 +277,11 @@ def create_parser():
     
     # Run command
     run_parser = subparsers.add_parser('run', help='Run simulations')
-    run_parser.add_argument('-s', '--solver', default='NTS_DD', choices=AVAILABLE_SOLVERS, help='Solver to use')
+    run_parser.add_argument('-s', '--solver', default='NTS_DD', choices=AVAILABLE_SOLVERS, 
+                           help='Solver to use (default: NTS_DD)')
     run_parser.add_argument('-i', '--inputs', nargs='+', help='Input files (default: all in outputs/inputs/)')
-    run_parser.add_argument('-p', '--parallel', type=int, default=4, help='Number of parallel processes')
+    run_parser.add_argument('-p', '--parallel', type=int, default=4, 
+                           help='Number of parallel processes (default: 4)')
     run_parser.set_defaults(func=cmd_run)
     
     # List command
