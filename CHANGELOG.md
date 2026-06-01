@@ -19,6 +19,23 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
 
 ---
 
+## [1.3.0] - 2026-05-26 - Graficado de MFLUX y Empaquetado CLI
+
+### Added
+- Nuevo comando CLI `plot` para graficar MFLUX en 2D con barra de color
+- Directorio de plots `outputs/results/plots/` y numeración automática de imágenes
+- Dependencia de `matplotlib` para generación de gráficos
+
+### Changed
+- Configuración de empaquetado con `build-system` y `tool.uv.package` para habilitar entry points
+- Inclusión explícita de paquetes y módulo `main` en configuración de setuptools
+- Resultados de `run` ahora se guardan como `output_*.json`
+
+### Fixed
+- Entrada `nts` ahora funciona con `uv run nts ...`
+
+---
+
 ## [1.1.0] - 2026-03-30 - Correcciones Post-Implementación
 
 ### Removed

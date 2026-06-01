@@ -8,7 +8,21 @@ dependencies = [
     "textual>=0.50.0",
     "pydantic>=2.6.0",
     "rich>=13.7.0",
+    "matplotlib>=3.8.0",
 ]
 
 [project.scripts]
 nts = "main:main"
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["cli", "core", "execution", "utils"]
+
+[tool.setuptools]
+py-modules = ["main"]

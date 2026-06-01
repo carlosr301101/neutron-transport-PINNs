@@ -3,8 +3,8 @@
 import argparse
 import sys
 import json
+from typing import Optional
 from pathlib import Path
-from typing import List
 
 from rich.console import Console
 from rich.table import Table
@@ -17,7 +17,7 @@ from execution.parallel import run_parallel, run_batch
 from utils.paths import (
     list_input_files, list_output_files, get_next_input_index,
     ensure_directories, verify_solver_binaries, AVAILABLE_SOLVERS,
-    get_template_path
+    get_template_path, PLOTS_DIR
 )
 from utils.logger import setup_logging, get_logger
 
@@ -132,7 +132,7 @@ def cmd_run(args):
     from utils.paths import RESULTS_DIR
     tasks = []
     for i, input_file in enumerate(input_files, 1):
-        output_file = RESULTS_DIR / f"output_{i:03d}.txt"
+        output_file = RESULTS_DIR / f"output_{i:03d}.json"
         tasks.append((solver, input_file, str(output_file)))
     
     # Run with progress bar
@@ -252,6 +252,128 @@ def cmd_status(args):
     return 0
 
 
+def _load_mflux(result_path: Path) -> list[list[float]]:
+    with open(result_path, "r") as f:
+        data = json.load(f)
+
+    if "MFLUX" not in data:
+        raise ValueError("Result file does not contain 'MFLUX'")
+
+    mflux = data["MFLUX"]
+    if not isinstance(mflux, list) or not mflux:
+        raise ValueError("MFLUX is empty or invalid")
+
+    first_row = mflux[0]
+    if not isinstance(first_row, list) or not first_row:
+        raise ValueError("MFLUX must be a 2D array")
+
+    row_len = len(first_row)
+    for row in mflux:
+        if not isinstance(row, list) or len(row) != row_len:
+            raise ValueError("MFLUX rows must have consistent length")
+
+    return mflux
+
+
+def _select_result_file(result_path: Optional[str]) -> Path:
+    if result_path:
+        return Path(result_path)
+
+    files = sorted(PLOTS_DIR.parent.glob("output_*.json"))
+    if not files:
+        raise FileNotFoundError("No output files found in outputs/results/")
+
+    return files[-1]
+
+
+def _get_next_plot_index() -> int:
+    existing = list(PLOTS_DIR.glob("plot_*.png"))
+    if not existing:
+        return 1
+
+    indices = []
+    for path in existing:
+        try:
+            num_str = path.stem.split("_")[1]
+            indices.append(int(num_str))
+        except (IndexError, ValueError):
+            continue
+
+    return max(indices) + 1 if indices else 1
+
+
+def cmd_plot(args):
+    """Plot MFLUX as a 2D heatmap."""
+    logger = get_logger()
+    ensure_directories()
+
+    try:
+        result_file = _select_result_file(args.result)
+    except Exception as e:
+        console.print(f"[bold red]✗ Error:[/] {str(e)}")
+        return 1
+
+    if not result_file.exists():
+        console.print(f"[bold red]✗ File not found:[/] {result_file}")
+        return 1
+
+    try:
+        mflux = _load_mflux(result_file)
+    except Exception as e:
+        console.print(f"[bold red]✗ Error:[/] {str(e)}")
+        return 1
+
+    if args.out is None:
+        index = _get_next_plot_index()
+        plot_path = PLOTS_DIR / f"plot_{index:03d}.png"
+    else:
+        plot_path = Path(args.out)
+
+    if args.show:
+        import matplotlib
+        matplotlib.use("TkAgg")
+        import matplotlib.pyplot as plt
+    else:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+    try:
+        fig, ax = plt.subplots(figsize=(7.5, 6.0), dpi=150)
+    except Exception:
+        if args.show:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            console.print("[yellow]GUI backend unavailable; saving PNG only.[/]")
+            fig, ax = plt.subplots(figsize=(7.5, 6.0), dpi=150)
+        else:
+            raise
+    im = ax.imshow(mflux, origin="lower", cmap="viridis", aspect="auto")
+    ax.set_title("Neutron Flux (MFLUX)")
+    ax.set_xlabel("X index")
+    ax.set_ylabel("Y index")
+
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Flux intensity")
+
+    plot_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(plot_path, bbox_inches="tight")
+
+    if args.show:
+        if plt.get_backend().lower() == "agg":
+            console.print("[yellow]Plot saved (no GUI backend available). Use the PNG output instead.[/]")
+        else:
+            plt.show()
+
+    plt.close(fig)
+
+    console.print(f"[bold green]✓ Plot saved:[/] {plot_path}")
+    logger.info(f"Plot saved: {plot_path}")
+    return 0
+
+
 def create_parser():
     """Create CLI argument parser."""
     parser = argparse.ArgumentParser(
@@ -297,6 +419,13 @@ def create_parser():
     # Status command
     status_parser = subparsers.add_parser('status', help='Show system status')
     status_parser.set_defaults(func=cmd_status)
+
+    # Plot command
+    plot_parser = subparsers.add_parser('plot', help='Plot MFLUX heatmap from results')
+    plot_parser.add_argument('-r', '--result', help='Result file path (JSON). Default: latest output_*.json')
+    plot_parser.add_argument('-o', '--out', help='Output plot path (default: outputs/results/plots/plot_###.png)')
+    plot_parser.add_argument('--show', action='store_true', help='Display the plot window')
+    plot_parser.set_defaults(func=cmd_plot)
     
     return parser
 

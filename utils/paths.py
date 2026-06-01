@@ -14,6 +14,7 @@ SOLVERS_DIR = PROJECT_ROOT / "solvers" / "runners"
 OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 INPUTS_DIR = OUTPUTS_DIR / "inputs"
 RESULTS_DIR = OUTPUTS_DIR / "results"
+PLOTS_DIR = RESULTS_DIR / "plots"
 LOGS_DIR = OUTPUTS_DIR / "logs"
 
 # Template directory
@@ -133,12 +134,25 @@ def list_output_files() -> list[Path]:
     return sorted(RESULTS_DIR.glob("output_*.json"))
 
 
+def list_plot_files() -> list[Path]:
+    """
+    List all plot files in the plots directory.
+
+    Returns:
+        Sorted list of plot file paths
+    """
+    if not PLOTS_DIR.exists():
+        return []
+
+    return sorted(PLOTS_DIR.glob("plot_*.png"))
+
+
 def ensure_directories():
     """
     Ensure all required directories exist.
     Creates directories if they don't exist.
     """
-    directories = [OUTPUTS_DIR, INPUTS_DIR, RESULTS_DIR, LOGS_DIR, TEMPLATES_DIR]
+    directories = [OUTPUTS_DIR, INPUTS_DIR, RESULTS_DIR, PLOTS_DIR, LOGS_DIR, TEMPLATES_DIR]
 
     for directory in directories:
         directory.mkdir(parents=True, exist_ok=True)
