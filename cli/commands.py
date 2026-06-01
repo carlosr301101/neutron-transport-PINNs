@@ -5,6 +5,10 @@ import sys
 import json
 from typing import Optional
 from pathlib import Path
+from datetime import datetime
+import importlib.util
+import pprint
+from decimal import Decimal
 
 from rich.console import Console
 from rich.table import Table
@@ -17,7 +21,7 @@ from execution.parallel import run_parallel, run_batch
 from utils.paths import (
     list_input_files, list_output_files, get_next_input_index,
     ensure_directories, verify_solver_binaries, AVAILABLE_SOLVERS,
-    get_template_path, PLOTS_DIR
+    get_template_path, PLOTS_DIR, RESULTS_DIR
 )
 from utils.logger import setup_logging, get_logger
 
@@ -27,9 +31,16 @@ console = Console()
 def cmd_generate(args):
     """Generate input.txt file from configuration."""
     logger = get_logger()
-    
+
+    if args.place_holder:
+        return cmd_generate_placeholder(args)
+
     config_file = args.config
     output_name = args.output
+
+    if config_file is None:
+        console.print("[bold red]✗ Configuration JSON file is required[/]")
+        return 1
     
     console.print(f"[bold blue]Generating input from:[/] {config_file}")
     
@@ -252,6 +263,295 @@ def cmd_status(args):
     return 0
 
 
+def _load_config_dicts(
+    config_path: Path, placeholder_names: Optional[set[str]] = None
+) -> list[tuple[str, dict]]:
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+
+    spec = importlib.util.spec_from_file_location("inputs_config", config_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Unable to load config module: {config_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    if placeholder_names:
+        for name in placeholder_names:
+            module.__dict__[name] = name
+    spec.loader.exec_module(module)
+
+    configs = []
+    for name, value in vars(module).items():
+        if name.startswith("_"):
+            continue
+        if isinstance(value, dict):
+            configs.append((name, value))
+
+    return sorted(configs, key=lambda item: item[0])
+
+
+def _build_placeholder_values(start: float, end: float, step: float) -> list[float]:
+    if step <= 0:
+        raise ValueError("Step must be greater than 0")
+    if end < start:
+        raise ValueError("End must be greater than or equal to start")
+
+    values = []
+    idx = 0
+    epsilon = 1e-12
+    while True:
+        value = start + (step * idx)
+        if value > end + epsilon:
+            break
+        if value > end:
+            value = end
+        values.append(value)
+        idx += 1
+
+    if not values:
+        values.append(start)
+
+    return values
+
+
+def _replace_placeholders(value, replacements: dict[str, float]):
+    if isinstance(value, dict):
+        return {k: _replace_placeholders(v, replacements) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_replace_placeholders(v, replacements) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_replace_placeholders(v, replacements) for v in value)
+    if isinstance(value, str) and value in replacements:
+        return replacements[value]
+    return value
+
+
+def _contains_placeholders(value, placeholder_names: set[str]) -> bool:
+    if isinstance(value, dict):
+        return any(_contains_placeholders(v, placeholder_names) for v in value.values())
+    if isinstance(value, list) or isinstance(value, tuple):
+        return any(_contains_placeholders(v, placeholder_names) for v in value)
+    if isinstance(value, str):
+        return value in placeholder_names
+    return False
+
+
+def _round_floats(value, ndigits: int = 8):
+    if isinstance(value, dict):
+        return {k: _round_floats(v, ndigits) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_round_floats(v, ndigits) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_round_floats(v, ndigits) for v in value)
+    if isinstance(value, float):
+        return round(value, ndigits)
+    return value
+
+
+def _decimal_places(value_str: str) -> int:
+    try:
+        decimal_value = Decimal(value_str)
+    except Exception:
+        return 0
+
+    exponent = decimal_value.as_tuple().exponent
+    return -exponent if exponent < 0 else 0
+
+
+def _should_validate_simulation_config(cfg: dict) -> bool:
+    required_keys = {"N", "NZ", "zones", "NR_X", "XDOM", "NR_Y", "YDOM", "ZMAP", "QMAP", "BC", "TOL"}
+    return required_keys.issubset(set(cfg.keys()))
+
+
+def cmd_generate_placeholder(args):
+    """Generate outputs/inputs/inputs.py from inputs_placeholder.py."""
+    logger = get_logger()
+    ensure_directories()
+
+    placeholder_file = Path("outputs/inputs/inputs_placeholder.py")
+    output_file = Path("outputs/inputs/inputs.py")
+
+    placeholders = {}
+    rounding_digits = 0
+    for name, start, end, step in args.place_holder:
+        try:
+            placeholders[name] = _build_placeholder_values(
+                float(start), float(end), float(step)
+            )
+            rounding_digits = max(rounding_digits, _decimal_places(step))
+        except Exception as e:
+            console.print(f"[bold red]✗ Invalid placeholder '{name}':[/] {str(e)}")
+            return 1
+
+    if not placeholders:
+        console.print("[bold red]✗ No placeholders provided[/]")
+        return 1
+
+    try:
+        base_configs = _load_config_dicts(placeholder_file, set(placeholders.keys()))
+    except Exception as e:
+        console.print(f"[bold red]✗ Error:[/] {str(e)}")
+        return 1
+
+    if not base_configs:
+        console.print("[bold red]✗ No config dictionaries found in inputs_placeholder.py[/]")
+        return 1
+
+    lengths = {name: len(values) for name, values in placeholders.items()}
+    min_len = min(lengths.values())
+    max_len = max(lengths.values())
+    if min_len != max_len:
+        console.print(
+            f"[yellow]Warning:[/] Placeholder ranges have different lengths; using {min_len} steps"
+        )
+        logger.warning("Placeholder ranges lengths differ: %s", lengths)
+
+    placeholder_names = set(placeholders.keys())
+    results = []
+    errors = []
+    validation_errors = []
+
+    for idx in range(min_len):
+        replacements = {name: values[idx] for name, values in placeholders.items()}
+        for base_name, base_cfg in base_configs:
+            cfg = _replace_placeholders(base_cfg, replacements)
+            if _contains_placeholders(cfg, placeholder_names):
+                errors.append(
+                    f"Step {idx + 1} ({base_name}): unresolved placeholders"
+                )
+                continue
+            if _should_validate_simulation_config(cfg):
+                try:
+                    SimulationConfig.model_validate(cfg)
+                except Exception as e:
+                    validation_errors.append(
+                        f"Step {idx + 1} ({base_name}): {str(e)}"
+                    )
+                    continue
+            results.append(cfg)
+
+    if not results:
+        console.print("[bold red]✗ No configurations generated[/]")
+        if errors:
+            console.print("[yellow]Errors:[/]")
+            for err in errors:
+                console.print(f"  • {err}")
+        return 1
+
+    try:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_file, "w") as f:
+            for i, cfg in enumerate(results, start=1):
+                name = f"config_dict_{i:03d}"
+                rounded = _round_floats(cfg, rounding_digits)
+                formatted = pprint.pformat(rounded, sort_dicts=True, width=100)
+                f.write(f"{name} = {formatted}\n\n")
+    except Exception as e:
+        console.print(f"[bold red]✗ Failed to write inputs.py:[/] {str(e)}")
+        return 1
+
+    console.print(
+        f"[bold green]✓ Generated {len(results)} config(s).[/] Output: {output_file}"
+    )
+    if errors or validation_errors:
+        skipped = len(errors) + len(validation_errors)
+        console.print(f"[yellow]Warning:[/] {skipped} config(s) skipped")
+        for err in errors:
+            console.print(f"  • {err}")
+        for err in validation_errors:
+            console.print(f"  • {err}")
+        return 1
+
+    return 0
+
+
+def cmd_run_1d(args):
+    """Run NTS_DD_1D solver for all configs in inputs.py."""
+    logger = get_logger()
+    ensure_directories()
+
+    config_path = Path(args.config)
+    try:
+        configs = _load_config_dicts(config_path)
+    except Exception as e:
+        console.print(f"[bold red]✗ Error:[/] {str(e)}")
+        return 1
+
+    if not configs:
+        console.print("[bold red]✗ No config dictionaries found in inputs file[/]")
+        return 1
+
+    from solvers.runners.NTS_DD_1D import Config, Runner
+
+    results = []
+    failures = 0
+
+    for name, cfg in configs:
+        try:
+            conf = Config(manual=False, **cfg)
+            runner = Runner(conf)
+            result = runner()
+
+            results.append(
+                {
+                    "config_name": name,
+                    "scalar_flux": result["scalar_flux"].tolist(),
+                    "iteration": int(result["iteration"]),
+                    "converged": bool(result["converged"]),
+                    "timestamp": datetime.now().isoformat(timespec="seconds"),
+                }
+            )
+        except Exception as e:
+            failures += 1
+            logger.exception("NTS_DD_1D run failed")
+            results.append(
+                {
+                    "config_name": name,
+                    "error": str(e),
+                    "timestamp": datetime.now().isoformat(timespec="seconds"),
+                }
+            )
+
+    if args.output:
+        output_path = Path(args.output)
+    else:
+        existing = sorted(RESULTS_DIR.glob("output_1d_*.json"))
+        if existing:
+            last_name = existing[-1].stem
+            try:
+                index = int(last_name.split("_")[-1]) + 1
+            except ValueError:
+                index = len(existing) + 1
+        else:
+            index = 1
+        output_path = RESULTS_DIR / f"output_1d_{index:03d}.json"
+
+    payload = {
+        "solver": "NTS_DD_1D",
+        "runs": results,
+        "total": len(results),
+        "failures": failures,
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+    }
+
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            json.dump(payload, f, indent=2)
+    except Exception as e:
+        console.print(f"[bold red]✗ Failed to write output:[/] {str(e)}")
+        return 1
+
+    console.print(
+        f"[bold green]✓ Completed {len(results)} run(s).[/] Output: {output_path}"
+    )
+
+    if failures > 0:
+        console.print(f"[yellow]Warning:[/] {failures} run(s) failed")
+        return 1
+
+    return 0
+
+
 def _load_mflux(result_path: Path) -> list[list[float]]:
     with open(result_path, "r") as f:
         data = json.load(f)
@@ -387,9 +687,16 @@ def create_parser():
     
     # Generate command
     gen_parser = subparsers.add_parser('generate', help='Generate input.txt from configuration')
-    gen_parser.add_argument('config', help='Configuration JSON file')
+    gen_parser.add_argument('config', nargs='?', help='Configuration JSON file')
     gen_parser.add_argument('-o', '--output', help='Output file path (default: auto-numbered)')
     gen_parser.add_argument('-p', '--preview', action='store_true', help='Show preview of generated input')
+    gen_parser.add_argument(
+        '--place-holder',
+        nargs=4,
+        action='append',
+        metavar=('NAME', 'START', 'END', 'STEP'),
+        help='Generate outputs/inputs/inputs.py from inputs_placeholder.py'
+    )
     gen_parser.set_defaults(func=cmd_generate)
     
     # Validate command
@@ -426,6 +733,13 @@ def create_parser():
     plot_parser.add_argument('-o', '--out', help='Output plot path (default: outputs/results/plots/plot_###.png)')
     plot_parser.add_argument('--show', action='store_true', help='Display the plot window')
     plot_parser.set_defaults(func=cmd_plot)
+
+    # Run 1D solver command
+    run1d_parser = subparsers.add_parser('run-1d', help='Run NTS_DD_1D solver from outputs/inputs/inputs.py')
+    run1d_parser.add_argument('-c', '--config', default='outputs/inputs/inputs.py',
+                              help='Path to inputs.py file (default: outputs/inputs/inputs.py)')
+    run1d_parser.add_argument('-o', '--output', help='Output JSON path (default: outputs/results/output_1d.json)')
+    run1d_parser.set_defaults(func=cmd_run_1d)
     
     return parser
 

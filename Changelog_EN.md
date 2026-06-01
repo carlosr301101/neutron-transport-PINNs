@@ -19,6 +19,18 @@ Record of all notable changes in the NTS Automation System project.
 
 ---
 
+## [1.3.1] - 2026-06-01 - 1D CLI and Placeholders
+
+### Added
+- `run-1d` CLI command to execute `NTS_DD_1D` and write consolidated JSON outputs
+- `generate --place-holder` to build `outputs/inputs/inputs.py` from `inputs_placeholder.py`
+- `utils/plot_scs_flux.py` to plot SCS vs scalar flux (positions 0 and 99)
+
+### Changed
+- 1D outputs now use `output_1d_###.json`
+
+---
+
 ## [1.2.0] - 2026-03-30 - Update and Refinement
 
 ### Added

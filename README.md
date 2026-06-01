@@ -1,5 +1,7 @@
 # NTS Automation System
 
+Versión: 1.3.1
+
 Sistema CLI de automatización para simulaciones de transporte de neutrones (NTS) con ejecución paralela y gestión robusta de configuraciones.
 
 ## 🚀 Características
@@ -52,6 +54,13 @@ uv run python main.py generate templates/base_input.json
 uv run python main.py generate templates/base_input.json --preview
 ```
 
+#### 3.1 Generar inputs con placeholders
+```bash
+uv run python main.py generate --place-holder KK 0.1 0.95 0.05
+```
+
+Lee `outputs/inputs/inputs_placeholder.py` y sobrescribe `outputs/inputs/inputs.py` con variantes `config_dict_###`.
+
 #### 4. Listar archivos
 ```bash
 # Listar inputs generados
@@ -73,7 +82,15 @@ uv run python main.py run -i outputs/inputs/input_001.txt
 uv run python main.py run --solver NTS_DD --parallel 4
 ```
 
-#### 6. Ver resultados
+#### 6. Ejecutar solver 1D (NTS_DD_1D)
+```bash
+# Ejecutar todos los configs en outputs/inputs/inputs.py
+uv run python main.py run-1d
+```
+
+Genera un JSON consolidado en `outputs/results/output_1d_###.json` con `scalar_flux` y metadata por config.
+
+#### 7. Ver resultados
 ```bash
 # Ver archivo de salida
 cat outputs/results/output_001.txt
@@ -129,6 +146,22 @@ Los solvers generan salida JSON con:
 - `CPU`: Tiempo de CPU
 - `MFLUX`: Matriz de flujos medios
 - `MFLOW`: Matrices de flujos direccionales
+
+El comando `run-1d` genera un JSON consolidado con:
+- `runs`: Lista de ejecuciones
+- `scalar_flux`: Flujo escalar por celda
+- `iteration`: Iteraciones realizadas
+- `converged`: Estado de convergencia
+- `timestamp`: Marca de tiempo
+- `config_name`: Nombre del config en `outputs/inputs/inputs.py`
+
+## 📈 Post-procesado
+
+```bash
+uv run python utils/plot_scs_flux.py
+```
+
+Genera un PNG en `outputs/results/plots/scs_flux.png` usando `outputs/results/datos.json`.
 
 Ejemplo:
 ```json

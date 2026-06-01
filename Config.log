@@ -1,0 +1,24 @@
+INFO:solvers.runners.NTS_DD_1D:Configuración cargada desde diccionario.
+
+Configuracion del programa: 1 regiones, 1 zonas.            
+Discretizacion espacial: [100]
+Espesores: [100.]
+Distribucion de zonas: [1]            
+Propiedades materiales:
+Sigma_T: [1.]
+Sigma_S: [0.95]
+Fuentes: [0.]            
+Orden de cuadratura: S4 con 2 direcciones.            
+Pesos: [0.34785485 0.65214515]
+Direcciones: [0.86113631 0.33998104]
+
+INFO:solvers.runners.NTS_DD_1D:Usando condiciones de frontera izquierda desde configuración: [1. 1.]
+INFO:solvers.runners.NTS_DD_1D:Usando condiciones de frontera Derecha desde configuración: [0. 0.]
+INFO:solvers.runners.NTS_DD_1D:Iniciando Iteracion de Fuente...
+INFO:solvers.runners.NTS_DD_1D:Iter 100: Error Max = 1.21e-01
+INFO:solvers.runners.NTS_DD_1D:Iter 200: Error Max = 3.91e-02
+INFO:solvers.runners.NTS_DD_1D:Iter 300: Error Max = 9.27e-03
+INFO:solvers.runners.NTS_DD_1D:Iter 400: Error Max = 9.50e-04
+INFO:solvers.runners.NTS_DD_1D:Iter 500: Error Max = 3.69e-05
+INFO:solvers.runners.NTS_DD_1D:Tiempo demorado de los calculos: 0.36295485496520996
+INFO:solvers.runners.NTS_DD_1D:Resultados guardados en: resultados_runner_01-06-2026_19-02-59.xlsx
