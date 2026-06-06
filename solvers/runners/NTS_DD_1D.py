@@ -382,9 +382,6 @@ class Runner:
 
                 psi_out = num / den
 
-                if psi_out < 0:
-                    psi_out = (source + alpha * psi_in) / (alpha + st)
-
                 self.PSI_RIGHT[k + 1, m] = psi_out  # Nodo k+1 (salida)
 
         # --- BARRIDO HACIA LA IZQUIERDA (mu < 0) ---
@@ -405,9 +402,6 @@ class Runner:
                 den = alpha + 0.5 * st
 
                 psi_out = num / den
-
-                if psi_out < 0:
-                    psi_out = (source + alpha * psi_in) / (alpha + st)
 
                 self.PSI_LEFT[k, m] = psi_out
 
