@@ -8,6 +8,15 @@ outputs/results/*.txt
 outputs/results/*.json
 outputs/logs/*.log
 
+# Outputs del solver Python 1D (NTS_DD_1D.py)
+resultados_runner_*.xlsx
+Config.log
+
+# Placeholders y configs generados (se regeneran con nts-generate)
+outputs/inputs/inputs.py
+outputs/inputs/inputs_placeholder.py
+outputs/inputs/__pycache__/
+
 # Mantener estructura de directorios
 !outputs/inputs/.gitkeep
 !outputs/results/.gitkeep
@@ -22,6 +31,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.png
+
 
 # Distribution / packaging
 .Python
@@ -41,8 +52,10 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.agents/
 
 # Virtual environments
+extras/
 venv/
 .venv/
 ENV/

@@ -93,7 +93,7 @@ def validate_file(filepath: str) -> ValidationResult:
         ValidationResult object
     """
     try:
-        config = SimulationConfig.from_json_file(filepath)
+        SimulationConfig.from_json_file(filepath)
         return ValidationResult(is_valid=True)
     
     except ValidationError as e:

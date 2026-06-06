@@ -25,6 +25,8 @@ Record of all notable changes in the NTS Automation System project.
 - `run-1d` CLI command to execute `NTS_DD_1D` and write consolidated JSON outputs
 - `generate --place-holder` to build `outputs/inputs/inputs.py` from `inputs_placeholder.py`
 - `utils/plot_scs_flux.py` to plot SCS vs scalar flux (positions 0 and 99)
+- `utils/extract_1d_flux.py` to extract scalar flux values into `datos.json`
+- Shortcuts: `nts-1d-data`, `nts-1d-plot`, `nts-1d-run`, `nts-generate`
 
 ### Changed
 - 1D outputs now use `output_1d_###.json`

@@ -16,14 +16,14 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeEl
 
 from core.config import SimulationConfig
 from core.validator import validate_file, get_validation_summary
-from core.input_builder import InputBuilder, build_input_from_file
-from execution.parallel import run_parallel, run_batch
+from core.input_builder import InputBuilder
+from execution.parallel import run_parallel
 from utils.paths import (
     list_input_files, list_output_files, get_next_input_index,
     ensure_directories, verify_solver_binaries, AVAILABLE_SOLVERS,
     get_template_path, PLOTS_DIR, RESULTS_DIR
 )
-from utils.logger import setup_logging, get_logger
+from utils.logger import get_logger
 
 console = Console()
 
@@ -111,7 +111,7 @@ def cmd_validate(args):
 
 def cmd_run(args):
     """Run simulations."""
-    logger = get_logger()
+    get_logger()
     
     ensure_directories()
     
@@ -156,7 +156,7 @@ def cmd_run(args):
         console=console
     ) as progress:
         
-        task = progress.add_task(f"Running simulations...", total=len(tasks))
+        task = progress.add_task("Running simulations...", total=len(tasks))
         
         def progress_callback(completed, total):
             progress.update(task, completed=completed)
@@ -257,7 +257,7 @@ def cmd_status(args):
     template_path = get_template_path()
     template_exists = template_path.exists()
     status = "[green]✓[/]" if template_exists else "[red]✗[/]"
-    console.print(f"\n[bold blue]Template:[/]")
+    console.print("\n[bold blue]Template:[/]")
     console.print(f"  {status} {template_path}")
     
     return 0

@@ -39,8 +39,9 @@ $\Psi_2(100) = 0$
 
 Leitura dos detectores, fluxo escalar nos contornos
 
-$ \phi(0) = \frac{1}{2} \left ( \psi_1 (0) * \omega_1 + \psi_2(0) * \omega(2) \right) $
+$$ \phi(0) = \frac{1}{2} \left ( \psi_1 (0) * \omega_1 + \psi_2(0) * \omega(2) \right) $$
 
-$ \phi(100) = \frac{1}{2} \left ( \psi_1 (100) * \omega_1 + \psi_2(100) * \omega(2) \right) $
+$$ \phi(100) = \frac{1}{2} \left ( \psi_1 (100) * \omega_1 + \psi_2(100) * \omega(2) \right) $$
 
-Conjunto de validação 32 amostras com valores aleatorios $ 0.1 \ge \sigma_{s0} \le 0.95$
+Conjunto de validação 32 amostras com valores aleatorios 
+$$ 0.1 \le \sigma_{s0} \le 0.95$$

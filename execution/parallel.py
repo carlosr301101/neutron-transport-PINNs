@@ -1,7 +1,7 @@
 """Parallel execution of multiple NTS solvers."""
 
 from multiprocessing import Pool, cpu_count
-from typing import List, Tuple, Callable, Optional, Any
+from typing import List, Tuple, Callable, Optional
 import time
 from pathlib import Path
 

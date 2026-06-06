@@ -12,7 +12,7 @@ def load_data(path: Path) -> dict:
         return json.load(f)
 
 
-def main():
+def main() -> int:
     root = Path(__file__).resolve().parent.parent
     data_path = root / "outputs" / "results" / "datos.json"
     plot_path = root / "outputs" / "results" / "plots" / "scs_flux.png"
@@ -61,7 +61,8 @@ def main():
     plt.close(fig)
 
     print(f"✓ Plot saved: {plot_path}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

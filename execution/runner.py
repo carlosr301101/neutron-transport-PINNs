@@ -3,7 +3,7 @@
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 from utils.logger import SimulationLogger, get_logger
 from utils.paths import get_solver_path
 

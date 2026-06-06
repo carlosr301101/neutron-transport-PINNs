@@ -15,6 +15,10 @@ dependencies = [
 
 [project.scripts]
 nts = "main:main"
+nts-1d-data = "utils.extract_1d_flux:main"
+nts-1d-plot = "utils.plot_scs_flux:main"
+nts-1d-run = "cli.run_1d:cli"
+nts-generate = "cli.generate_placeholder:cli"
 
 [tool.uv]
 package = true

@@ -42,6 +42,8 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
 - Comando CLI `run-1d` para ejecutar el solver `NTS_DD_1D` y guardar resultados JSON consolidados
 - Soporte `generate --place-holder` para crear `outputs/inputs/inputs.py` desde `inputs_placeholder.py`
 - Script `utils/plot_scs_flux.py` para graficar SCS vs flujo escalar (posiciones 0 y 99)
+- Script `utils/extract_1d_flux.py` para extraer flujos escalares a `datos.json`
+- Atajos: `nts-1d-data`, `nts-1d-plot`, `nts-1d-run`, `nts-generate`
 
 ### Changed
 - Outputs 1D numerados como `output_1d_###.json`
