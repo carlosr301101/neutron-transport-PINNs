@@ -1,73 +1,73 @@
 # NTS Automation System
 
-Versión: 1.3.1
+Version: 1.3.1
 
-Sistema CLI de automatización para simulaciones de transporte de neutrones (NTS) con ejecución paralela, gestión robusta de configuraciones, solver 1D Python y herramientas de post-procesado.
+CLI automation system for neutron transport (NTS) simulations with parallel execution, robust configuration management, Python 1D solver, and post-processing tools.
 
-## 🚀 Características
+## 🚀 Features
 
-- ✅ **Generación automática de archivos input.txt** con validación física estricta
-- ✅ **CLI completo** para operaciones batch y scripting
-- ✅ **Ejecución paralela** de múltiples simulaciones
-- ✅ **Validación robusta** de configuraciones antes de ejecutar
-- ✅ **Outputs JSON directo** desde solvers (sin parsing adicional)
-- ✅ **Sistema de logging** con métricas y logs detallados
-- ✅ **Gestión de múltiples solvers** (NTS_DD, NTS_LD, NTS_RM_CN, NTS_RM_LLN)
-- ✅ **Solver 1D Python** (`NTS_DD_1D`) con Diamond Difference
-- ✅ **Generación con placeholders** para barridos paramétricos
-- ✅ **Atajos CLI** para flujos 1D
-- ✅ **Post-procesado**: extracción de datos y ploteo automático
+- ✅ **Automatic input.txt generation** with strict physical validation
+- ✅ **Complete CLI** for batch operations and scripting
+- ✅ **Parallel execution** of multiple simulations
+- ✅ **Robust configuration validation** before running
+- ✅ **Direct JSON outputs** from solvers (no extra parsing)
+- ✅ **Logging system** with metrics and detailed logs
+- ✅ **Multiple solver management** (NTS_DD, NTS_LD, NTS_RM_CN, NTS_RM_LLN)
+- ✅ **Python 1D solver** (`NTS_DD_1D`) with Diamond Difference
+- ✅ **Placeholder generation** for parametric sweeps
+- ✅ **CLI shortcuts** for 1D workflows
+- ✅ **Post-processing**: data extraction and automatic plotting
 
-## 📋 Requisitos
+## 📋 Requirements
 
 - Python 3.14+
-- uv (gestor de paquetes)
-- Binarios NTS compilados en `solvers/runners/` (para solver 2D)
-- Solver 1D Python integrado en `solvers/runners/NTS_DD_1D.py`
+- uv (package manager)
+- Compiled NTS binaries in `solvers/runners/` (for 2D solver)
+- Python 1D solver bundled in `solvers/runners/NTS_DD_1D.py`
 
-## 🔧 Instalación
+## 🔧 Installation
 
 ```bash
-# Instalar dependencias con uv
+# Install dependencies with uv
 uv sync
 
-# Verificar instalación
+# Verify installation
 uv run nts status
 ```
 
-## 🎯 Uso
+## 🎯 Usage
 
-### Comandos Disponibles
+### Available Commands
 
-#### 1. Ver estado del sistema
+#### 1. View system status
 ```bash
 uv run nts status
 ```
 
-#### 2. Validar configuración
+#### 2. Validate configuration
 ```bash
 uv run nts validate templates/base_input.json
 ```
 
-#### 3. Generar archivo input.txt
+#### 3. Generate input.txt
 ```bash
-# Generar desde configuración JSON
+# Generate from JSON configuration
 uv run nts generate templates/base_input.json
 
-# Con preview
+# With preview
 uv run nts generate templates/base_input.json --preview
 ```
 
-#### 3.1 Generar inputs con placeholders (barrido paramétrico)
+#### 3.1 Generate inputs with placeholders (parametric sweep)
 ```bash
-# Lee outputs/inputs/inputs_placeholder.py y genera outputs/inputs/inputs.py
+# Reads outputs/inputs/inputs_placeholder.py and writes outputs/inputs/inputs.py
 uv run nts-generate --place-holder KK 0.1 0.95 0.05
 
-# Múltiples placeholders en paralelo
+# Multiple placeholders in parallel
 uv run nts-generate --place-holder KK 0.1 0.95 0.05 --place-holder QQ 1 3 1
 ```
 
-**Ejemplo de `inputs_placeholder.py`:**
+**Example `inputs_placeholder.py`:**
 ```python
 config_dict = {
     "num_regions": 1,
@@ -82,63 +82,63 @@ config_dict = {
 }
 ```
 
-El resultado es `outputs/inputs/inputs.py` con `config_dict_001`, `config_dict_002`, etc.
+The result is `outputs/inputs/inputs.py` with `config_dict_001`, `config_dict_002`, etc.
 
-#### 4. Listar archivos
+#### 4. List files
 ```bash
-# Listar inputs generados
+# List generated inputs
 uv run nts list inputs
 
-# Listar resultados
+# List results
 uv run nts list outputs
 ```
 
-#### 5. Ejecutar simulaciones 2D (binarios)
+#### 5. Run 2D simulations (binaries)
 ```bash
-# Ejecutar con solver específico
+# Run with a specific solver
 uv run nts run --solver NTS_DD
 
-# Ejecutar inputs específicos
+# Run specific inputs
 uv run nts run -i outputs/inputs/input_001.txt
 
-# Ejecutar en paralelo (4 procesos)
+# Run in parallel (4 processes)
 uv run nts run --solver NTS_DD --parallel 4
 ```
 
-#### 6. Ejecutar solver 1D (Python)
+#### 6. Run 1D solver (Python)
 ```bash
-# Ejecuta todos los configs en outputs/inputs/inputs.py
+# Runs all configs in outputs/inputs/inputs.py
 uv run nts-1d-run
-# o
+# or
 uv run nts run-1d
 ```
 
-Genera JSON consolidado en `outputs/results/output_1d_###.json` con `scalar_flux` y metadata por config.
+Generates a consolidated JSON in `outputs/results/output_1d_###.json` with `scalar_flux` and metadata per config.
 
-#### 7. Ver resultados
+#### 7. View results
 ```bash
-# Ver archivo de salida del solver 2D
+# View 2D solver output file
 cat outputs/results/output_001.json
 
-# La salida es JSON con STATUS, ITER, MFLUX, MFLOW, etc.
+# Output is JSON with STATUS, ITER, MFLUX, MFLOW, etc.
 ```
 
-#### 8. Plotear MFLUX
+#### 8. Plot MFLUX
 ```bash
 uv run nts plot
 uv run nts plot --result outputs/results/output_002.json --show
 ```
 
-### ⚡ Atajos (entry points)
+### ⚡ Shortcuts (entry points)
 
-| Atajo | Descripción |
-|-------|-------------|
-| `nts-1d-data` | Extrae flujos escalares a `datos.json` desde outputs 1D |
-| `nts-1d-plot` | Grafica SCS vs flujo escalar (posiciones 0 y 99) |
-| `nts-1d-run` | Ejecuta el solver 1D para los configs en `inputs.py` |
-| `nts-generate` | Genera `inputs.py` desde `inputs_placeholder.py` |
+| Shortcut | Description |
+|----------|-------------|
+| `nts-1d-data` | Extract scalar flux values into `datos.json` from 1D outputs |
+| `nts-1d-plot` | Plot SCS vs scalar flux (positions 0 and 99) |
+| `nts-1d-run` | Run the 1D solver for the configs in `inputs.py` |
+| `nts-generate` | Generate `inputs.py` from `inputs_placeholder.py` |
 
-**Uso:**
+**Usage:**
 ```bash
 uv run nts-1d-data --latest
 uv run nts-1d-data --latest --positions 0 50 99
@@ -147,80 +147,80 @@ uv run nts-1d-run
 uv run nts-generate --place-holder KK 0.1 0.95 0.05
 ```
 
-## 📈 Post-procesado
+## 📈 Post-processing
 
-### Extraer datos
+### Extract data
 ```bash
 uv run nts-1d-data --latest
 ```
 
-Genera `outputs/results/datos.json` con `SCS` y `scalar_flux` en posiciones configurables.
+Generates `outputs/results/datos.json` with `SCS` and `scalar_flux` at configurable positions.
 
-### Graficar SCS vs Flujo
+### Plot SCS vs Flux
 ```bash
 uv run nts-1d-plot
 ```
 
-Genera PNG en `outputs/results/plots/scs_flux.png` con dos subplots (posición 0 y posición 99).
+Generates PNG in `outputs/results/plots/scs_flux.png` with two subplots (position 0 and position 99).
 
-## 📁 Estructura del Proyecto
+## 📁 Project Structure
 
 ```
 neutron-transport-PINNs/
-├── main.py                      # Entry point CLI
-├── cli/                         # Interfaz CLI
-│   ├── commands.py             # Comandos principales
+├── main.py                      # CLI entry point
+├── cli/                         # CLI interface
+│   ├── commands.py             # Main commands
 │   ├── run_1d.py               # Entry point: nts-1d-run
 │   └── generate_placeholder.py # Entry point: nts-generate
-├── core/                        # Generación y validación
-├── execution/                   # Ejecución de solvers
-├── utils/                       # Utilidades
+├── core/                        # Generation and validation
+├── execution/                   # Solver execution
+├── utils/                       # Utilities
 │   ├── paths.py
 │   ├── logger.py
-│   ├── plot_scs_flux.py        # Plotear SCS vs flujo
-│   └── extract_1d_flux.py      # Extraer datos 1D
-├── templates/                   # Plantillas de configuración
-├── outputs/                     # Outputs del sistema (gitignored)
-│   ├── inputs/                 # Archivos input_XXX.txt, inputs.py
-│   ├── results/                # Archivos output_*.json, datos.json
-│   └── logs/                   # Logs de simulaciones
+│   ├── plot_scs_flux.py        # Plot SCS vs flux
+│   └── extract_1d_flux.py      # Extract 1D data
+├── templates/                   # Configuration templates
+├── outputs/                     # System outputs (gitignored)
+│   ├── inputs/                 # input_XXX.txt files, inputs.py
+│   ├── results/                # output_*.json files, datos.json
+│   └── logs/                   # Simulation logs
 └── solvers/
-    └── runners/                # Binarios NTS + solver Python 1D
+    └── runners/                # NTS binaries + Python 1D solver
         ├── NTS_DD_1D.py
         └── cuadraturas.py
 ```
 
-## 📝 Formato de Configuración
+## 📝 Configuration Format
 
-Ver `templates/base_input.json` para un ejemplo completo con comentarios.
+See `templates/base_input.json` for a complete example with comments.
 
-Parámetros principales:
-- **N**: Ordenadas discretas (par)
-- **NZ**: Número de zonas
-- **zones**: Secciones eficaces (σ_s < σ_t)
-- **XDOM, YDOM**: Geometría del dominio
-- **ZMAP**: Mapa de materiales
-- **QMAP**: Mapa de fuentes
-- **BC**: Condiciones de frontera
-- **TOL**: Tolerancia de convergencia
+Main parameters:
+- **N**: Discrete ordinates (even)
+- **NZ**: Number of zones
+- **zones**: Cross sections (σ_s < σ_t)
+- **XDOM, YDOM**: Domain geometry
+- **ZMAP**: Material map
+- **QMAP**: Source map
+- **BC**: Boundary conditions
+- **TOL**: Convergence tolerance
 
-### Formato 1D (solver Python)
+### 1D format (Python solver)
 
-Para `NTS_DD_1D`, los configs usan formato simplificado:
+For `NTS_DD_1D`, configs use a simplified format:
 - `num_regions`, `num_zones`
-- `NC`: celdas por región
-- `HR`: espesores
-- `IZL`: zonas de cada región
-- `SCT`: sigma total por zona
-- `SCS`: sigma scattering por zona
-- `Q`: fuente por región
-- `N`: orden de cuadratura
-- `reflex_izq`, `reflex_der`: condiciones reflexivas
-- `bound_left`, `bound_right`: condiciones de frontera
+- `NC`: cells per region
+- `HR`: thicknesses
+- `IZL`: zone for each region
+- `SCT`: total sigma per zone
+- `SCS`: scattering sigma per zone
+- `Q`: source per region
+- `N`: quadrature order
+- `reflex_izq`, `reflex_der`: reflective conditions
+- `bound_left`, `bound_right`: boundary conditions
 
-## 📊 Formato de Salida
+## 📊 Output Format
 
-### Solver 2D (binarios C)
+### 2D solver (C binaries)
 ```json
 {
   "STATUS": 0,
@@ -231,7 +231,7 @@ Para `NTS_DD_1D`, los configs usan formato simplificado:
 }
 ```
 
-### Solver 1D (Python)
+### 1D solver (Python)
 ```json
 {
   "solver": "NTS_DD_1D",
@@ -247,64 +247,64 @@ Para `NTS_DD_1D`, los configs usan formato simplificado:
 }
 ```
 
-## 🔄 Workflow Típico
+## 🔄 Typical Workflow
 
-### Solver 2D
-1. **Crear/editar configuración** en JSON
-2. **Validar** configuración
-3. **Generar** archivos input.txt
-4. **Ejecutar** simulaciones en paralelo
-5. **Analizar** resultados JSON
+### 2D solver
+1. **Create/edit** configuration in JSON
+2. **Validate** configuration
+3. **Generate** input.txt files
+4. **Run** simulations in parallel
+5. **Analyze** JSON results
 
-### Solver 1D
-1. **Crear/editar** `outputs/inputs/inputs_placeholder.py` con placeholders
-2. **Generar** variantes con `uv run nts-generate --place-holder ...`
-3. **Ejecutar** con `uv run nts-1d-run`
-4. **Extraer datos** con `uv run nts-1d-data --latest`
-5. **Visualizar** con `uv run nts-1d-plot`
+### 1D solver
+1. **Create/edit** `outputs/inputs/inputs_placeholder.py` with placeholders
+2. **Generate** variants with `uv run nts-generate --place-holder ...`
+3. **Run** with `uv run nts-1d-run`
+4. **Extract data** with `uv run nts-1d-data --latest`
+5. **Visualize** with `uv run nts-1d-plot`
 
 ## 🐛 Troubleshooting
 
 ```bash
-# Verificar solvers disponibles
+# Check available solvers
 uv run nts status
 
-# Ver logs detallados
+# View detailed logs
 cat outputs/logs/nts_automation_*.log
 
-# Verificar que el solver 1D genera resultados
+# Verify the 1D solver produces results
 uv run nts-1d-run
 
-# Regenerar inputs desde placeholders
+# Regenerate inputs from placeholders
 uv run nts-generate --place-holder KK 0.1 0.95 0.05
 ```
 
-## 📚 Ayuda
+## 📚 Help
 
 ```bash
-# Ayuda general
+# General help
 uv run nts --help
 
-# Ayuda de comando específico
+# Specific command help
 uv run nts [command] --help
 ```
 
-## 📂 Gestión del Repositorio
+## 📂 Repository Management
 
-### Archivos Ignorados
+### Ignored Files
 
-El `.gitignore` está configurado para ignorar archivos generados:
+The `.gitignore` is configured to ignore generated files:
 
-- ✅ **Outputs generados**: `outputs/inputs/*.txt`, `outputs/results/*.json`, `outputs/logs/*.log`
-- ✅ **Placeholders regenerables**: `outputs/inputs/inputs.py`, `inputs_placeholder.py`
-- ✅ **Solver 1D outputs**: `resultados_runner_*.xlsx`, `Config.log`
-- ✅ **Cache de Python**: `__pycache__/`, `*.pyc`
-- ✅ **Entornos virtuales**: `.venv/`, `venv/`
-- ✅ **Archivos de IDE**: `.vscode/`, `.idea/`
-- ✅ **Temporales**: `*.tmp`, `*.bak`, `Notas.md`
+- ✅ **Generated outputs**: `outputs/inputs/*.txt`, `outputs/results/*.json`, `outputs/logs/*.log`
+- ✅ **Regenerable placeholders**: `outputs/inputs/inputs.py`, `inputs_placeholder.py`
+- ✅ **1D solver outputs**: `resultados_runner_*.xlsx`, `Config.log`
+- ✅ **Python cache**: `__pycache__/`, `*.pyc`
+- ✅ **Virtual environments**: `.venv/`, `venv/`
+- ✅ **IDE files**: `.vscode/`, `.idea/`
+- ✅ **Temporary files**: `*.tmp`, `*.bak`, `Notas.md`
 
-La estructura de directorios se mantiene con archivos `.gitkeep` en `outputs/`.
+The directory structure is preserved with `.gitkeep` files in `outputs/`.
 
 ---
 
-**NTS Automation System** - Automatización de simulaciones de transporte de neutrones 🚀
+**NTS Automation System** - Neutron transport simulation automation 🚀
