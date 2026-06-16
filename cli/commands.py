@@ -521,6 +521,7 @@ def cmd_run_1d(args):
                     "config_name": name,
                     "configuration": cfg,
                     "scalar_flux": result["scalar_flux"].tolist(),
+                    "angular_flux": result["angular_flux"].tolist(),
                     "iteration": int(result["iteration"]),
                     "converged": bool(result["converged"]),
                     "timestamp": datetime.now().isoformat(timespec="seconds"),

@@ -1,8 +1,8 @@
 config_dict = {
     "num_regions": 1,
     "num_zones": 1,
-    "NC": [20],
-    "HR": [100],
+    "NC": [101],
+    "HR": [20],
     "IZL": [1],
     "SCT": [1.0],
     "SCS": [kk],

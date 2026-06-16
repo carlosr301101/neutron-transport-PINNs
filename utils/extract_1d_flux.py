@@ -123,8 +123,8 @@ def main() -> int:
         "--positions",
         nargs="+",
         type=parse_position,
-        default=[0, 99],
-        help="Flux positions to extract (default: 0 99)",
+        default=[0, 100],
+        help="Flux positions to extract (default: 0 100)",
     )
     parser.add_argument(
         "--inputs",

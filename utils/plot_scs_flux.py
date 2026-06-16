@@ -27,7 +27,7 @@ def main() -> int:
 
     scs_vals = [row["SCS"] for row in rows]
     flux_0 = [row["flux_0"] for row in rows]
-    flux_99 = [row["flux_99"] for row in rows]
+    flux_100 = [row["flux_100"] for row in rows]
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -45,8 +45,8 @@ def main() -> int:
     axes[0].grid(True, which="minor", linestyle=":", linewidth=0.5, alpha=0.4)
     axes[0].legend()
 
-    axes[1].plot(scs_vals, flux_99, marker="s", label="Flux at position 99")
-    axes[1].set_title("Scalar Flux vs SCS (Position 99)")
+    axes[1].plot(scs_vals, flux_100, marker="s", label="Flux at position 100")
+    axes[1].set_title("Scalar Flux vs SCS (Position 100)")
     axes[1].set_xlabel("SCS")
     axes[1].set_ylabel("Scalar Flux")
     axes[1].xaxis.set_major_locator(MultipleLocator(0.05))

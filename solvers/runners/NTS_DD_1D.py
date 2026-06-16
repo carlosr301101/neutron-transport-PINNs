@@ -280,7 +280,7 @@ class Runner:
         # PSI_LEFT:  neutrones viajando hacia x- (mu < 0)
         self.PSI_RIGHT = np.zeros((config.NTP, config.N_HALF))
         self.PSI_LEFT = np.zeros((config.NTP, config.N_HALF))
-
+        self.angular_flux = np.zeros((config.NTP, config.N_HALF))  # Suma de ambos
         # Flujo Escalar [Celdas]
         self.scalar_flux = np.zeros(config.NTC)
 
@@ -411,6 +411,7 @@ class Runner:
 
         # Reiniciar flujo escalar
         self.scalar_flux[:] = 0.0
+        self.angular_flux[:] = 0.0
 
         for k in range(self.config.NTC):
             suma = 0.0
@@ -425,6 +426,7 @@ class Runner:
                 # Sumamos ambas direcciones (asumiendo simetría de pesos x2 o sumando explícitamente)
                 # Si w es para todo el ángulo sólido, w_izq = w_der
                 suma += w * (psi_avg_der + psi_avg_izq)
+                self.angular_flux[k, m] = w * (psi_avg_der + psi_avg_izq)
 
             self.scalar_flux[k] = suma
 
@@ -503,11 +505,15 @@ class Runner:
         df_output = self._crear_dataframe_salida()
 
         # Guardar automáticamente en Excel
-        self._guardar_excel(df_output)
+        # self._guardar_excel(df_output)
+
+        # Suma Flujos angulares
+        self.PSI_TOTAL = self.PSI_RIGHT + self.PSI_LEFT
 
         # Retornar diccionario con resultados
         resultado = {
             "scalar_flux": self.scalar_flux,
+            "angular_flux": self.angular_flux,
             "iteration": self.iteration,
             "PSI_RIGHT": self.PSI_RIGHT,
             "PSI_LEFT": self.PSI_LEFT,
