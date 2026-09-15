@@ -5,19 +5,37 @@
       "id": 1,
       "prompt": "Ejecuta un barrido en el problema 1D con SCS (kk) desde 0.20 hasta 0.80 en pasos de 0.10, mantén N=8 como cuadratura, y al final dime cuántas configs corrieron y si todas convergieron. Guarda los datos por orden como se hace siempre antes de sobreescribir.",
       "expected_output": "Uses the 5-step sweep recipe: backs up existing datos.json/scs_flux.png with per-order names, edits inputs_placeholder.py (keeps N=8, bound_left/right length 4), runs nts-generate --place-holder kk 0.2 0.8 0.1 (7 configs), runs nts-1d-run, verifies 7/7 converged with 0 failures, then nts-1d-data + nts-1d-plot, and reports proper artifact naming per the backup convention.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Backs up datos.json/scs_flux.png under per-order names before overwriting",
+        "Runs exactly the requested configs, 0 failures, all converged",
+        "Keeps the requested N and N/2-length boundary vectors",
+        "Uses nts-generate / nts-1d-run instead of reimplementing the solver"
+      ]
     },
     {
       "id": 2,
       "prompt": "Corre el barrido kk 0.1..0.95 con cuadratura S10.",
       "expected_output": "Recognizes N=10 has no tabulated quadrature in cuadraturas.py (would silently fall back to S2 with a warning); surfaces this instead of reporting S2 results as S10; adds Gauss-Legendre S10 rows (positive half, m=1 largest mu, half-weights summing to 1.0, verified programmatically) and resizes bound_left/bound_right to 5 entries before running.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Catches the missing S10 in cuadraturas.py (only S2/4/6/8 are currently tabulated)",
+        "States explicitly that S10 has no rows before running — never presents S2 results as S10",
+        "If adding rows: positive half, m=1 largest mu, half-weights sum 1.0, boundary vectors length N/2",
+        "Sweep completes with 18 configs, all converged, 0 failures"
+      ]
     },
     {
       "id": 3,
       "prompt": "Preparame las tablas comparativas de KPIs de las tres cuadraturas que corrimos en una sola salida markdown para la reunion.",
       "expected_output": "Uses scripts/sweep_kpis.py with the three output_1d_N*.json files rather than hand-rolling joins; produces validated-runs line, iterations table, flux tables at pos 0 and 100, and max Δ(S4/S6 vs S8) convergence KPI.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "Markdown tables: iterations for 18 kk values x 3 orders",
+        "Flux tables at positions 0 and 100 for S4/S6/S8",
+        "Includes max |delta flux| vs S8 convergence KPI",
+        "Values match outputs (kk=0.10 pos-0: 0.8468/0.8295/0.8195 +/- 1e-3)"
+      ]
     }
   ]
 }
