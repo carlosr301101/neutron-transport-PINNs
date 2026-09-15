@@ -9,6 +9,7 @@ Program      | Method                    | Iterations | CPU (ms) | Priority
 ─────────────────────────────────────────────────────────────────────────
 NTS_DD       | Domain Decomposition      | 30-100     | 5-20     | Balanced
 NTS_LD       | Line Diffusion            | 20-40      | 2-10     | FASTEST ⚡
+NTS_STEP     | Characteristic Sweeps     | 15-30      | 2-10     | Beam ⚡
 NTS_RM_CN    | RM + Crank-Nicolson      | 5-20       | 2-10     | Precise
 NTS_RM_LLN   | RM + Linear Lattice      | 5-15       | 2-10     | Lattice ★
 
@@ -16,9 +17,9 @@ NTS_RM_LLN   | RM + Linear Lattice      | 5-15       | 2-10     | Lattice ★
 COMPILATION (All Programs)
 ═══════════════════════════════════════════════════════════════════════════
 
-Basic:   gcc -O2 -o NTS_DD programs/NTS_DD.c -lm
+Basic:   gcc -O2 -o NTS_DD solvers/runners/NTS_DD.c -lm
 
-Fast:    gcc -O3 -march=native -o NTS_DD programs/NTS_DD.c -lm
+Fast:    gcc -O3 -march=native -o NTS_DD solvers/runners/NTS_DD.c -lm
 
 
 INPUT FILE FORMAT (11 lines)
@@ -33,7 +34,7 @@ Next line:      NR_Y (number of Y regions)
 Next NR_Y lines: YDOM (length[cm] nodes) for each Y region
 Next NR_Y lines: ZMAP (zone indices, 1-based)
 Next NR_Y lines: QMAP (source values)
-Next line:      BC (BOTTOM TOP LEFT RIGHT)
+Next line:      BC (LEFT RIGHT BOTTOM TOP)
 Last line:      TOL (tolerance, e.g., 1e-5)
 
 

@@ -1,10 +1,24 @@
 #!/usr/bin/env python3
-"""Plot SCS against scalar flux values from datos.json."""
+"""Plot SCS against scalar flux values from datos.json.
+
+Usage:
+    uv run nts-1d-plot [-i INPUT] [-o OUTPUT]
+
+Reads the data produced by `nts-1d-data` (``datos.json`` by default) and
+generates one subplot per requested position, plotting scalar flux against
+SCS. The plot keys are discovered dynamically from the JSON entries
+(``flux_<position>``), so any set of positions works.
+"""
 
 from pathlib import Path
+import argparse
 import json
 
 import matplotlib
+
+
+DEFAULT_INPUT = Path("outputs/results/datos.json")
+DEFAULT_OUTPUT = Path("outputs/results/plots/scs_flux.png")
 
 
 def load_data(path: Path) -> dict:
@@ -13,47 +27,70 @@ def load_data(path: Path) -> dict:
 
 
 def main() -> int:
-    root = Path(__file__).resolve().parent.parent
-    data_path = root / "outputs" / "results" / "datos.json"
-    plot_path = root / "outputs" / "results" / "plots" / "scs_flux.png"
+    parser = argparse.ArgumentParser(
+        prog="nts-1d-plot",
+        description="Plot SCS vs scalar flux from datos.json",
+    )
+    parser.add_argument(
+        "-i", "--input",
+        default=DEFAULT_INPUT,
+        type=Path,
+        help=f"Path to the data JSON (default: {DEFAULT_INPUT})",
+    )
+    parser.add_argument(
+        "-o", "--output",
+        default=DEFAULT_OUTPUT,
+        type=Path,
+        help=f"Path for the PNG plot (default: {DEFAULT_OUTPUT})",
+    )
+    args = parser.parse_args()
+
+    data_path = args.input
+    plot_path = args.output
 
     if not data_path.exists():
-        raise FileNotFoundError(f"datos.json not found: {data_path}")
+        raise FileNotFoundError(f"Input data not found: {data_path}")
 
     data = load_data(data_path)
     rows = data.get("data", [])
     if not rows:
-        raise ValueError("No data found in datos.json")
+        raise ValueError(f"No data found in {data_path}")
 
     scs_vals = [row["SCS"] for row in rows]
-    flux_0 = [row["flux_0"] for row in rows]
-    flux_100 = [row["flux_100"] for row in rows]
+
+    # Discover flux series dynamically (all flux_<position> keys present)
+    flux_keys = sorted(
+        (k for k in rows[0] if k.startswith("flux_")),
+        key=lambda k: int(k.split("_", 1)[1]),
+    )
+    if not flux_keys:
+        raise ValueError("No flux_* entries found in input data")
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     from matplotlib.ticker import MultipleLocator
 
-    fig, axes = plt.subplots(2, 1, figsize=(7.5, 8.5), dpi=150, sharex=True)
+    fig, axes = plt.subplots(
+        len(flux_keys), 1, figsize=(7.5, 4.2 * len(flux_keys)), dpi=150,
+        sharex=True,
+    )
+    if len(flux_keys) == 1:
+        axes = [axes]
 
-    axes[0].plot(scs_vals, flux_0, marker="o", label="Flux at position 0")
-    axes[0].set_title("Scalar Flux vs SCS (Position 0)")
-    axes[0].set_ylabel("Scalar Flux")
-    axes[0].xaxis.set_major_locator(MultipleLocator(0.05))
-    axes[0].xaxis.set_minor_locator(MultipleLocator(0.025))
-    axes[0].grid(True, which="major", linestyle="--", linewidth=0.6, alpha=0.5)
-    axes[0].grid(True, which="minor", linestyle=":", linewidth=0.5, alpha=0.4)
-    axes[0].legend()
+    for ax, key in zip(axes, flux_keys):
+        position = key.split("_", 1)[1]
+        values = [row[key] for row in rows]
+        ax.plot(scs_vals, values, marker="o", label=f"Flux at position {position}")
+        ax.set_title(f"Scalar Flux vs SCS (Position {position})")
+        ax.set_ylabel("Scalar Flux")
+        ax.grid(True, which="major", linestyle="--", linewidth=0.6, alpha=0.5)
+        ax.grid(True, which="minor", linestyle=":", linewidth=0.5, alpha=0.4)
+        ax.xaxis.set_major_locator(MultipleLocator(0.05))
+        ax.xaxis.set_minor_locator(MultipleLocator(0.025))
+        ax.legend()
 
-    axes[1].plot(scs_vals, flux_100, marker="s", label="Flux at position 100")
-    axes[1].set_title("Scalar Flux vs SCS (Position 100)")
-    axes[1].set_xlabel("SCS")
-    axes[1].set_ylabel("Scalar Flux")
-    axes[1].xaxis.set_major_locator(MultipleLocator(0.05))
-    axes[1].xaxis.set_minor_locator(MultipleLocator(0.025))
-    axes[1].grid(True, which="major", linestyle="--", linewidth=0.6, alpha=0.5)
-    axes[1].grid(True, which="minor", linestyle=":", linewidth=0.5, alpha=0.4)
-    axes[1].legend()
+    axes[-1].set_xlabel("SCS")
 
     plot_path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()

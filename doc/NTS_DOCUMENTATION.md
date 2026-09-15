@@ -2,7 +2,7 @@
 
 ## Overview
 
-Comprehensive documentation for 4 neutron transport simulation programs implemented in C, each using different numerical methods.
+Comprehensive documentation for 5 neutron transport simulation programs implemented in C, each using different numerical methods.
 
 ## Programs Documented
 
@@ -45,12 +45,12 @@ cd /path/to/nts
 
 # Fix mingw pragma if present
 for prog in DD LD RM_CN RM_LLN; do
-  sed -i 's/#define printf __mingw_printf/\/\/ #define printf __mingw_printf/' programs/NTS_${prog}.c
+  sed -i 's/#define printf __mingw_printf/\/\/ #define printf __mingw_printf/' solvers/runners/NTS_${prog}.c
 done
 
 # Compile all
 for prog in DD LD RM_CN RM_LLN; do
-  gcc -O2 -o programs/linux/NTS_${prog} programs/NTS_${prog}.c -lm
+  gcc -O2 -o solvers/runners/NTS_${prog} solvers/runners/NTS_${prog}.c -lm
 done
 ```
 
@@ -77,10 +77,10 @@ cat > input.txt << 'EOF'
 EOF
 
 # Run each program
-./programs/linux/NTS_DD input.txt > output_dd.json
-./programs/linux/NTS_LD input.txt > output_ld.json
-./programs/linux/NTS_RM_CN input.txt > output_rm_cn.json
-./programs/linux/NTS_RM_LLN input.txt > output_rm_lln.json
+./solvers/runners/NTS_DD input.txt > output_dd.json
+./solvers/runners/NTS_LD input.txt > output_ld.json
+./solvers/runners/NTS_RM_CN input.txt > output_rm_cn.json
+./solvers/runners/NTS_RM_LLN input.txt > output_rm_lln.json
 
 # Check results
 cat output_dd.json | grep ITER
@@ -150,7 +150,7 @@ cat output_dd.json | grep ITER
 
 ## Input Parameters (Standard for All Methods)
 
-All four programs accept **11 input parameters**:
+All five programs accept **11 input parameters**:
 
 ```
 N             - Quadrature order (2-18, must be EVEN)
@@ -162,7 +162,7 @@ NR_Y          - Number of Y regions
 YDOM          - Y region lengths and nodes: L[cm] M [...] for each region
 ZMAP          - Zone map matrix (NR_Y × NR_X) with indices 1 to NZ
 QMAP          - Source map matrix (NR_Y × NR_X)
-BC            - Boundary conditions: BOTTOM TOP LEFT RIGHT
+BC            - Boundary conditions: LEFT RIGHT BOTTOM TOP
 TOL           - Convergence tolerance (1e-2 to 1e-7 recommended)
 ```
 
@@ -254,13 +254,13 @@ All methods enforce these physical constraints:
 
 ```bash
 # Standard (recommended)
-gcc -O2 -o NTS_DD programs/NTS_DD.c -lm
+gcc -O2 -o NTS_DD solvers/runners/NTS_DD.c -lm
 
 # Maximum optimization
-gcc -O3 -march=native -o NTS_DD programs/NTS_DD.c -lm
+gcc -O3 -march=native -o NTS_DD solvers/runners/NTS_DD.c -lm
 
 # With debugging symbols
-gcc -O2 -g -o NTS_DD programs/NTS_DD.c -lm
+gcc -O2 -g -o NTS_DD solvers/runners/NTS_DD.c -lm
 ```
 
 **Important:** `-lm` flag is REQUIRED (math library)

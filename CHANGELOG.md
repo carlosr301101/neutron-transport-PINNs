@@ -2,6 +2,24 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.0.0] - 2026-09-14 - Documentación y Consistencia
+
+### Added
+- README.md completamente reescrito en inglés con referencia completa de comandos, arquitectura y flujos de trabajo
+- `nts-1d-plot` ahora acepta `-i/--input` y `-o/--output` y descubre dinámicamente las posiciones de flujo (`flux_*`) en `datos.json`
+
+### Changed
+- Versión alineada a 2.0.0 en `pyproject.toml` y `README.md` (antes 0.1.0 vs 1.3.1)
+- `QUICKSTART.md`, `IMPLEMENTATION_SUMMARY.md` y `FIXES_APPLIED.md` movidos a `doc/`
+- `doc/NTS_DOCUMENTATION.md` ahora referencia los 5 programas (incluyendo `NTS_STEP`)
+- `run-1d --output` help corregido: el default es `output_1d_###.json` auto-numerado
+
+### Fixed
+- `run_batch` y `run_solver_comparison` en `execution/parallel.py` ahora escriben `output_*.json` (antes `.txt`)
+- `doc/example_imput.txt` renombrado a `doc/example_input.txt`
+
+---
+
 ## [1.2.0] - 2026-03-30 - Actualización y Refinamiento
 
 ### Added

@@ -197,7 +197,7 @@ def run_batch(
     tasks = []
     for i, input_file in enumerate(input_files, 1):
         input_path = Path(input_file)
-        output_file = output_path / f"{output_prefix}_{i:03d}.txt"
+        output_file = output_path / f"{output_prefix}_{i:03d}.json"
         tasks.append((solver, str(input_path), str(output_file)))
     
     return run_parallel(tasks, nproc)
@@ -229,7 +229,7 @@ def run_solver_comparison(
     # Create tasks
     tasks = []
     for solver in solvers:
-        output_file = output_path / f"{input_name}_{solver}.txt"
+        output_file = output_path / f"{input_name}_{solver}.json"
         tasks.append((solver, input_file, str(output_file)))
     
     return run_parallel(tasks, nproc)

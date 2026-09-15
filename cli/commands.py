@@ -809,7 +809,7 @@ def create_parser():
     run1d_parser.add_argument(
         "-o",
         "--output",
-        help="Output JSON path (default: outputs/results/output_1d.json)",
+        help="Output JSON path (default: auto-numbered outputs/results/output_1d_###.json)",
     )
     run1d_parser.set_defaults(func=cmd_run_1d)
 

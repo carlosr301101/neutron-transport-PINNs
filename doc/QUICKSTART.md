@@ -1,121 +1,137 @@
-# Quick Reference - NTS Automation System
+# Quickstart — NTS Automation System
 
-## 🚀 Start
+One-page cheatsheet. Full reference: [README](../README.md).
+
+All commands use the `nts` entry point (see `pyproject.toml`):
 
 ```bash
-uv run python main.py [command]
+uv run nts [command]        # main CLI
+uv run nts-1d-run           # shortcuts
+uv run nts-generate
+uv run nts-1d-data --latest
+uv run nts-1d-plot
 ```
 
-## 📝 CLI Commands
+## 🚀 First Steps
 
-### System Status
 ```bash
-uv run python main.py status
+# 1. Install dependencies
+uv sync
+
+# 2. Check system status (solvers, files)
+uv run nts status
+
+# 3. List available commands
+uv run nts --help
 ```
 
-### Validate Configuration
-```bash
-uv run python main.py validate <config.json>
-```
+## 🧠 Command Cheatsheet
 
-### Generate Input File
 ```bash
-uv run python main.py generate <config.json> [--preview] [-o output.txt]
-```
-
-### List Files
-```bash
-uv run python main.py list inputs   # List input files
-uv run python main.py list outputs  # List output files
-```
-
-### Run Simulations
-```bash
-uv run python main.py run --solver <SOLVER> [--parallel <N>] [-i input1.txt ...]
-
-# Examples:
-uv run python main.py run --solver NTS_DD --parallel 4
-uv run python main.py run --solver NTS_LD -i outputs/inputs/input_001.txt
-```
-
-### Show Results
-```bash
-cat outputs/results/output_001.txt
+uv run nts status                       # System overview
+uv run nts validate <config.json>       # Validate JSON config (Pydantic)
+uv run nts generate <config.json>       # Generate input_###.txt
+uv run nts generate <config.json> -p    # Preview the 11-line input
+uv run nts list inputs | outputs        # List generated files
+uv run nts show <output_###.json>       # Show result summary
+uv run nts run -s NTS_DD -p 4           # Run all inputs, 4 processes
+uv run nts plot -r <output_###.json>    # Plot MFLUX heatmap
+uv run nts run-1d                       # Run the Python 1D solver
 ```
 
 ## 🎯 Available Solvers
 
-- `NTS_DD` - Diamond Difference
-- `NTS_LD` - Linear Discontinuous
-- `NTS_RM_CN` - Response Matrix CN
-- `NTS_RM_LLN` - Response Matrix LLN
+2D (C binaries in `solvers/runners/`):
 
-## 📋 Configuration Format
+- `NTS_DD` — Domain Decomposition
+- `NTS_LD` — Line Diffusion (fastest)
+- `NTS_STEP` — Characteristic STEP sweeps (beam sources)
+- `NTS_RM_CN` — Response Matrix + Crank-Nicolson (most precise)
+- `NTS_RM_LLN` — Response Matrix + Linear Lattice (assemblies)
+
+1D (Python, `solvers/runners/NTS_DD_1D.py`): Diamond Difference SN solver.
+
+## 📝 Configuration Format (2D)
 
 ```json
 {
-  "N": 4,              // Number of discrete ordinates (even)
-  "NZ": 1,             // Number of material zones
+  "N": 4,
+  "NZ": 1,
   "zones": [
     {
-      "sigma_t": 0.5,  // Total cross-section
-      "sigma_s": 0.3   // Scattering cross-section (must be < sigma_t)
+      "sigma_t": 0.5,
+      "sigma_s": 0.3
     }
   ],
-  "NR_X": 2,           // Number of X regions
-  "XDOM": [            // X domain definition
+  "NR_X": 2,
+  "XDOM": [
     {"length": 10.0, "nodes": 5},
     {"length": 10.0, "nodes": 5}
   ],
-  "NR_Y": 2,           // Number of Y regions
-  "YDOM": [            // Y domain definition
+  "NR_Y": 2,
+  "YDOM": [
     {"length": 10.0, "nodes": 5},
     {"length": 10.0, "nodes": 5}
   ],
-  "ZMAP": [[1, 1], [1, 1]],            // Zone map (NR_Y x NR_X)
-  "QMAP": [[1.0, 1.0], [1.0, 1.0]],    // Source map (NR_Y x NR_X)
-  "BC": [0.0, 0.0, 0.0, 0.0],          // Boundary conditions [L,R,B,T]
-  "TOL": 1e-5                          // Convergence tolerance
+  "ZMAP": [[1, 1], [1, 1]],
+  "QMAP": [[1.0, 1.0], [1.0, 1.0]],
+  "BC": [0.0, 0.0, 0.0, 0.0],
+  "TOL": 1e-5
 }
+```
+
+Notes:
+
+- `BC` order is **[left, right, bottom, top]**; `0.0` = vacuum, `1.0` = reflective.
+- Constraints: `N` even, `sigma_s < sigma_t`, `ZMAP` values in `[1, NZ]`, `TOL ∈ [1e-7, 1e-2]`.
+
+## ⚡ Quick Workflow — 2D
+
+```bash
+# 1. Validate config
+uv run nts validate example_config.json
+
+# 2. Generate input
+uv run nts generate example_config.json
+
+# 3. Run (all inputs, parallel)
+uv run nts run --solver NTS_DD --parallel 4
+
+# 4. Inspect and plot
+uv run nts show outputs/results/output_001.json
+uv run nts plot -r outputs/results/output_001.json
+```
+
+## ⚡ Quick Workflow — 1D (parametric sweep)
+
+```bash
+# 1. Edit outputs/inputs/inputs_placeholder.py using a bare placeholder,
+#    e.g. "SCS": [kk]
+# 2. Expand placeholders (arithmetic range 0.1 → 0.95 step 0.05)
+uv run nts-generate --place-holder kk 0.1 0.95 0.05
+
+# 3. Run the 1D solver over every generated config
+uv run nts-1d-run
+
+# 4. Extract the scalar flux at selected positions
+uv run nts-1d-data --latest --positions 0 50 100
+
+# 5. Plot SCS vs flux
+uv run nts-1d-plot
 ```
 
 ## 📁 File Locations
 
 ```
 outputs/
-├── inputs/        # Generated input files (input_XXX.txt)
-├── results/       # Simulation results (output_XXX.txt - JSON format)
-└── logs/          # Log files
-```
-
-## 📊 Output Format
-
-Results are JSON files with:
-- `STATUS`: Status code (0 = success)
-- `ITER`: Number of iterations
-- `CPU`: CPU time
-- `MFLUX`: Mean flux matrix
-- `MFLOW`: Directional flow matrices
-
-## ⚡ Quick Workflow
-
-```bash
-# 1. Validate config
-uv run python main.py validate templates/base_input.json
-
-# 2. Generate input
-uv run python main.py generate templates/base_input.json
-
-# 3. Run simulation
-uv run python main.py run --solver NTS_DD
-
-# 4. View results
-cat outputs/results/output_001.txt
+├── inputs/    # input_###.txt (2D), inputs.py + inputs_placeholder.py (1D)
+├── results/   # output_###.json (2D), output_1d_###.json (1D), datos.json, plots/
+└── logs/      # nts_automation_*.log, simulation_*.log
 ```
 
 ## 📚 More Help
 
 ```bash
-uv run python main.py --help
-uv run python main.py [command] --help
+uv run nts --help
+uv run nts <command> --help
 ```

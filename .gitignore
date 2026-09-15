@@ -53,6 +53,7 @@ wheels/
 *.egg
 MANIFEST
 .agents/
+radivald/
 
 # Virtual environments
 extras/
