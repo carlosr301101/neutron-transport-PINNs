@@ -524,6 +524,14 @@ def cmd_run_1d(args):
                     "angular_flux": result["angular_flux"].tolist(),
                     "iteration": int(result["iteration"]),
                     "converged": bool(result["converged"]),
+                    "mode": result.get("mode"),
+                    "k_eff": result.get("k_eff"),
+                    "k_balance": result.get("k_balance"),
+                    "k_history": result.get("k_history"),
+                    "k_converged": result.get("k_converged"),
+                    "outer_iterations": result.get("outer_iterations"),
+                    "power_w": result.get("power_w"),
+                    "power_scale": result.get("power_scale"),
                     "timestamp": datetime.now().isoformat(timespec="seconds"),
                 }
             )

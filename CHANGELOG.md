@@ -2,6 +2,47 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.1.0] - 2026-11-01 - Medios multiplicativos y k_eff (1D)
+
+### Added
+- `NTS_DD_1D` resuelve fisión isotrópica con `NU_SIGF` (νΣf) y cuatro
+  modos: `fixed_source`, `eigenvalue`, `fixed_k` y `driven`.
+- Power iteration para `k_eff` en `MODE=eigenvalue`, con `TOL_K`,
+  `MAX_OUTER`, `K0` e historial `k_history`.
+- Balance global `k_balance = P/(A+L)` con fuga neta (saliente − entrante).
+- Normalización opcional por potencia: `POWER_KW`, `E_F_MEV`, `NU`,
+  `AREA_CM2` y `SIGMA_F`.
+- Salida JSON enriquecida: `mode`, `k_eff`, `k_balance`, `k_history`,
+  `k_converged`, `outer_iterations`, `power_w`, `power_scale`.
+- `nts-1d-data` propaga `NU_SIGF`, `mode`, `k_eff` y `k_balance` a
+  `datos.json`.
+- `nts-1d-plot --x {SCS,NU_SIGF,k_eff}`.
+- `skills/nts-pinns-autopilot/scripts/sweep_kpis.py` incluye tabla de
+  `k_eff`.
+- Tests `tests/test_dd_1d_fission.py` (medio infinito reflectivo,
+  benchmark de 20 cm, `fixed_k` en `k*`, `driven`, potencia, regresión y
+  validaciones).
+- Guía `doc/MULTIPLICATIVE_MEDIA.md`.
+- README, QUICKSTART, NTS_DOCUMENTATION, QUICK_REFERENCE y la skill
+  `nts-pinns-autopilot` actualizados.
+
+### Changed
+- `Config` 1D: fronteras por defecto a ceros de longitud `N/2`; validación
+  de `MODE`, `NU_SIGF`, `K_EFF` y potencia.
+- `MODE` se infiere si se omite, manteniendo compatibilidad con los
+  configs existentes (`NU_SIGF=0` → `fixed_source`).
+- Versión del proyecto a 2.1.0.
+
+### Fixed
+- Peso N=6 en `solvers/runners/cuadraturas.py`:
+  `0.4679139345866910` → `0.4679139345726910`.
+- Fronteras mixtas (reflexiva/vacío): se respeta el flujo entrante de
+  `bound_left`/`bound_right`; antes se sobrescribía con `1.0`.
+
+### Notes
+- Los solvers 2D en C siguen siendo de fuente fija; no aceptan `NU_SIGF`
+  ni `k_eff`.
+
 ## [2.0.0] - 2026-09-14 - Documentación y Consistencia
 
 ### Added

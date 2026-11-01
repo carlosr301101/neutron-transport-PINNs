@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue)](CHANGELOG.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -16,6 +16,7 @@ CLI automation system for **SN neutron transport simulations**:
 - [CLI Reference](#-cli-reference)
 - [2D Workflow (binaries)](#-2d-workflow-binary-solvers)
 - [1D Workflow (Python solver)](#-1d-workflow-python-solver-nts_dd_1d)
+- [Multiplicative Media (1D)](#multiplicative-media-1d)
 - [Configuration Format](#-configuration-format)
 - [Output Formats](#-output-formats)
 - [Project Layout](#-project-layout)
@@ -29,7 +30,8 @@ CLI automation system for **SN neutron transport simulations**:
 - **Parametric sweeps** via placeholders — generate hundreds of input variants from a single template
 - **Parallel execution** of the 2D solvers with a configurable process pool
 - **1D Python solver** (`NTS_DD_1D`) with Diamond Difference + SN quadrature, executed over all configs in one shot
-- **Post-processing**: scalar-flux extraction, SCS-vs-flux plots, 2D MFLUX heatmaps
+- **1D multiplicative media** (`MODE=eigenvalue|fixed_k|driven`) with `k_eff`, power iteration and optional power normalization
+- **Post-processing**: scalar-flux extraction, SCS/NU_SIGF/k_eff-vs-flux plots, 2D MFLUX heatmaps
 - **Structured logging** per simulation plus a global rotating log
 - **5 solvers** with different numerical methods selectable from the CLI
 
@@ -73,8 +75,8 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 |----------|---------|
 | `nts-generate` | Placeholder expansion (same flags as above) |
 | `nts-1d-run` | Same as `nts run-1d` |
-| `nts-1d-data [--latest] [--positions 0 100]` | Extract scalar fluxes → `outputs/results/datos.json` |
-| `nts-1d-plot [-i datos.json] [-o plot.png]` | Plot SCS vs scalar flux, one subplot per position |
+| `nts-1d-data [--latest] [--positions 0 100]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` → `outputs/results/datos.json` |
+| `nts-1d-plot [-i datos.json] [-o plot.png] [--x SCS\|NU_SIGF\|k_eff]` | Plot flux vs SCS/NU_SIGF/k_eff, one subplot per position |
 
 ## 🌀 2D Workflow (binary solvers)
 
@@ -116,8 +118,8 @@ uv run nts plot -r outputs/results/output_001.json --show
 ## 🧪 1D Workflow (Python solver, NTS_DD_1D)
 
 The 1D solver solves the planar SN transport equation with Diamond Difference,
-including reflected boundaries, and is orchestated through Python config
-modules instead of text files.
+including reflected boundaries and multiplicative media (fission / `k_eff`),
+and is orchestrated through Python config modules instead of text files.
 
 ### 1. Define the sweep template
 
@@ -133,12 +135,14 @@ config_dict = {
     "IZL": [1],
     "SCT": [1.0],
     "SCS": [kk],   # placeholder
+    "NU_SIGF": [0.0],
     "Q": [0],
     "N": 4,
-    "reflex_izq": [1],
-    "reflex_der": [0],
-    "bound_left": [1],
-    "bound_right": [0],
+    "reflex_izq": True,
+    "reflex_der": False,
+    "bound_left": [1, 1],
+    "bound_right": [0, 0],
+    "MODE": "fixed_source",
 }
 ```
 
@@ -173,6 +177,14 @@ Produces `outputs/results/output_1d_###.json`:
       "angular_flux": [...],
       "iteration": 13,
       "converged": true,
+      "mode": "eigenvalue",
+      "k_eff": 1.026676,
+      "k_balance": 1.026677,
+      "k_history": [...],
+      "k_converged": true,
+      "outer_iterations": 25,
+      "power_w": null,
+      "power_scale": 1.0,
       "timestamp": "2026-06-01T19:02:59"
     }
   ]
@@ -191,6 +203,105 @@ uv run nts-1d-plot
   `flux_<position>` for every requested position.
 - `nts-1d-plot` reads `datos.json` and renders one subplot per position in
   `outputs/results/plots/scs_flux.png`.
+
+## Multiplicative Media (1D)
+
+`NTS_DD_1D` solves the one-group S_N equations with isotropic scattering,
+isotropic fission and an optional external source:
+
+$$
+\mu_m \frac{d\Psi_m}{dx} + \Sigma_t\Psi_m
+= \frac12\left[\Sigma_s + \frac{\nu\Sigma_f}{k}\right]\Phi
++ \frac12 Q,
+\qquad m=1,\dots,N
+$$
+
+with $\Phi=\sum_{m>0}w_m(\Psi_m^+ + \Psi_m^-)$.
+
+`NU_SIGF` is **νΣf** in cm⁻¹. The `1/2` is already in the sweep, so do
+**not** apply the `4π` convention used by the spectral tooling.
+
+### Modes
+
+| `MODE` | `NU_SIGF` | `K_EFF` | Source | Use |
+|---|---|---|---|---|
+| `fixed_source` | 0 | — | `Q` / incoming | Historical, no fission |
+| `eigenvalue` | > 0 | — | none (`Q=0`) | Compute `k_eff` |
+| `fixed_k` | > 0 | > 0 | optional | Imposed-k / parametric |
+| `driven` | > 0 | 1 (fixed) | required | Physical source + fission |
+
+- **`eigenvalue`**: homogeneous problem, computes `k_eff` by power
+  iteration. Requires `Q=0` and zero incoming flux; vacuum and reflective
+  boundaries are both allowed.
+- **`driven`**: physical source problem. Fission is **not** divided by
+  `k`; the flux amplitude is set by `Q`. Use it for a subcritical assembly
+  with an external source.
+- **`fixed_k`**: imposes `k` in the denominator. With a source it is a
+  driven problem with scaled fission; without a source it is a mode-shape
+  problem (the amplitude is arbitrary and `k_balance` reports the critical
+  `k` of that shape).
+- **`fixed_source`**: the historical no-fission mode.
+
+`k_eff` and `k_balance` obey the global balance
+`k = P/(A+L)`, with `P=∫νΣfΦdx`, `A=∫(Σt−Σs)Φdx` and `L` the net leakage.
+
+### Example: 20 cm benchmark
+
+Homogeneous 20 cm slab, vacuum on both sides, `σt=1.0`, `σs0=0.9`,
+`νσf=0.11`:
+
+```python
+config_dict = {
+    "num_regions": 1,
+    "num_zones": 1,
+    "NC": [100],
+    "HR": [20.0],
+    "IZL": [1],
+    "SCT": [1.0],
+    "SCS": [0.9],
+    "NU_SIGF": [0.11],
+    "Q": [0.0],
+    "N": 8,
+    "reflex_izq": False,
+    "reflex_der": False,
+    "bound_left": [0, 0, 0, 0],
+    "bound_right": [0, 0, 0, 0],
+    "MODE": "eigenvalue",
+}
+```
+
+```bash
+uv run nts-1d-run
+```
+
+Expected S8 result: `k_eff ≈ 1.02668` (S4 ≈ 1.02651, S2 ≈ 1.02464);
+`k_inf = νΣf/(Σt−Σs) = 1.1`. The slab is slightly supercritical.
+
+### Power normalization
+
+If `POWER_KW` is set, the flux is rescaled after convergence so that
+
+$$
+P = A\,E_f\,(1.602176634\times10^{-13})
+\int_0^L \Sigma_f\Phi\,dx,
+$$
+
+with `P` in W, `A` in cm², `E_f` in MeV/fission and `Σf` in cm⁻¹. Use
+`SIGMA_F` per zone or `NU` (nu_bar) to convert `NU_SIGF` into `Σf`.
+`E_F_MEV` defaults to 200 and `AREA_CM2` to 1. The normalization does not
+change `k_eff`.
+
+### Output
+
+Each run in `output_1d_###.json` adds `mode`, `k_eff`, `k_balance`,
+`k_history`, `k_converged`, `outer_iterations`, `power_w` and
+`power_scale`. `nts-1d-data` propagates `NU_SIGF`, `mode`, `k_eff` and
+`k_balance` to `datos.json`; `nts-1d-plot --x k_eff` (or
+`--x NU_SIGF`) plots against the new variables.
+
+See [doc/MULTIPLICATIVE_MEDIA.md](doc/MULTIPLICATIVE_MEDIA.md) for the full
+reference, algorithm, validation and pitfalls. The 2D C solvers remain
+fixed-source only.
 
 ## 📝 Configuration Format
 
@@ -219,10 +330,16 @@ See `templates/base_input.json` (2D, with `_comment` keys) and `example_config.j
 | `HR` | Region thicknesses |
 | `IZL` | Zone index (1-based) per region |
 | `SCT`, `SCS` | Total / scattering cross sections per zone |
+| `NU_SIGF` | νΣf per zone [cm⁻¹]; 0 = no fission |
+| `SIGMA_F` | Optional Σf per zone [cm⁻¹] (power normalization) |
 | `Q` | Source per region |
-| `N` | Quadrature order (2, 4 or 8 have tabulated quadratures) |
+| `N` | Quadrature order (2, 4, 6 or 8 have tabulated quadratures) |
 | `reflex_izq`, `reflex_der` | Reflective boundary on left/right |
 | `bound_left`, `bound_right` | Incoming flux per quadrature direction at each boundary (vectors of length N/2) |
+| `MODE` | `fixed_source` (default), `eigenvalue`, `fixed_k` or `driven` |
+| `K_EFF` | Imposed k; only `fixed_k` (`driven` forces 1) |
+| `TOL_K`, `MAX_OUTER`, `K0` | Eigenvalue convergence controls |
+| `POWER_KW`, `E_F_MEV`, `NU`, `AREA_CM2` | Optional power normalization |
 
 ## 📊 Output Formats
 
@@ -277,11 +394,13 @@ neutron-transport-PINNs/
 │   └── plot_scs_flux.py         # nts-1d-plot: SCS vs flux plots
 ├── solvers/
 │   ├── runners/                 # C binaries + sources + Python solver
-│   │   ├── NTS_DD_1D.py         # 1D Diamond Difference solver
-│   │   └── cuadraturas.py       # SN quadrature tables (N=2,4,8)
+│   │   ├── NTS_DD_1D.py         # 1D DD solver (fission, k_eff, power norm)
+│   │   └── cuadraturas.py       # SN quadrature tables (N=2,4,6,8)
 │   └── doc_solvers/             # Method-by-method EXPLICACION.md guides
+├── tests/                       # unittest suite (1D multiplicative media)
 ├── templates/                   # base_input.json (annotated 2D template)
 ├── doc/                         # Project documentation & notes
+│   └── MULTIPLICATIVE_MEDIA.md  # k_eff modes, benchmark and validation
 ├── outputs/                     # Generated artifacts (gitignored)
 │   ├── inputs/                  # input_###.txt, inputs.py, inputs_placeholder.py
 │   ├── results/                 # output_###.json, datos.json, plots/
@@ -316,6 +435,9 @@ Key details:
 - **The 1D solver** iterates source iterations (sweep → scalar flux →
   convergence check every 100 iterations) with default `epsilon=1e-5`,
   `max_iter=2000`; quadrature data lives in `solvers/runners/cuadraturas.py`.
+  In `MODE=eigenvalue` it wraps the source iteration in a power iteration
+  (outer loop over the fission source and `k_eff`) and updates
+  `k_new = k·P_new/P_old`.
 
 ## 🐛 Troubleshooting
 
@@ -339,6 +461,10 @@ Common issues:
 | `nts-1d-data` finds no `SCS` | Make sure the config dicts in `inputs.py` define `SCS` |
 | Placeholder variables error when loading `inputs.py` | Regenerate with `uv run nts-generate` |
 | Validation errors on `ZMAP`/`QMAP` | `ZMAP` must be NR_Y × NR_X with zone indices in `[1, NZ]` |
+| `MODE='eigenvalue'` errors with a source | Use `MODE='driven'` (k=1) or `fixed_k`; the eigenvalue is homogeneous |
+| `MODE='fixed_k'` complains about `K_EFF` | Set `K_EFF > 0`, or use `MODE='eigenvalue'` to compute it |
+| `k_eff` does not converge | Increase `MAX_OUTER`, tighten `TOL_K`, refine the mesh |
+| `POWER_KW` fails | Provide `SIGMA_F` per zone or `NU`; the solver needs Σf |
 
 ## 📚 Additional Documentation
 
@@ -346,6 +472,7 @@ Common issues:
 |----------|---------|
 | `doc/QUICKSTART.md` | One-page command cheatsheet |
 | `doc/NTS_DOCUMENTATION.md` | Master reference for the 5 C programs (input format, method selection, performance) |
+| `doc/MULTIPLICATIVE_MEDIA.md` | 1D fission/`k_eff` modes, benchmark, power normalization, validation |
 | `doc/QUICK_REFERENCE.txt` | Compact printable reference for the C solvers |
 | `doc/desc.md` | Reference 1D problem definition (S2 benchmark dataset) |
 | `solvers/doc_solvers/*_EXPLICACION.md` | Detailed per-method guides (Spanish): DD, LD, STEP, RM_CN, RM_LLN |

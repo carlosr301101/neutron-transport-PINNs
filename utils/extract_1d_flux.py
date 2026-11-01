@@ -71,6 +71,8 @@ def extract_flux(
             errors.append(f"Invalid SCS for {name}")
             continue
 
+        nu_sigf_list = cfg.get("NU_SIGF")
+
         scalar_flux = run.get("scalar_flux") or []
         if not scalar_flux:
             errors.append(f"Empty scalar_flux for {name}")
@@ -86,13 +88,18 @@ def extract_flux(
                 )
 
         if len(flux_values) == len(positions):
-            results.append(
-                {
-                    "config_name": name,
-                    "SCS": scs_list[0],
-                    **flux_values,
-                }
-            )
+            row = {
+                "config_name": name,
+                "SCS": scs_list[0],
+                **flux_values,
+            }
+            if isinstance(nu_sigf_list, list) and nu_sigf_list:
+                row["NU_SIGF"] = nu_sigf_list[0]
+            for key in ("mode", "k_eff", "k_balance"):
+                value = run.get(key)
+                if value is not None:
+                    row[key] = value
+            results.append(row)
 
     payload = {
         "source": str(source_path),

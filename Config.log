@@ -1,20 +1,17 @@
 INFO:solvers.runners.NTS_DD_1D:Configuración cargada desde diccionario.
 
-Configuracion del programa: 1 regiones, 1 zonas.            
-Discretizacion espacial: [101]
+Configuracion del programa: 1 regiones, 1 zonas.
+Discretizacion espacial: [20]
 Espesores: [20.]
-Distribucion de zonas: [1]            
+Distribucion de zonas: [1]
 Propiedades materiales:
 Sigma_T: [1.]
-Sigma_S: [0.95]
-Fuentes: [0.]            
-Orden de cuadratura: S4 con 2 direcciones.            
-Pesos: [0.34785485 0.65214515]
-Direcciones: [0.86113631 0.33998104]
-
-INFO:solvers.runners.NTS_DD_1D:Usando condiciones de frontera izquierda desde configuración: [1. 1.]
-INFO:solvers.runners.NTS_DD_1D:Usando condiciones de frontera Derecha desde configuración: [0. 0.]
-INFO:solvers.runners.NTS_DD_1D:Iniciando Iteracion de Fuente...
-INFO:solvers.runners.NTS_DD_1D:Iter 100: Error Max = 5.31e-03
-INFO:solvers.runners.NTS_DD_1D:Iter 200: Error Max = 2.34e-05
-INFO:solvers.runners.NTS_DD_1D:Tiempo demorado de los calculos: 0.10941433906555176
+Sigma_S: [0.5]
+nu*Sigma_f: [0.3]
+Fuentes: [0.]
+Orden de cuadratura: S8 con 4 direcciones.
+Pesos: [0.10122854 0.22238103 0.31370665 0.36268378]
+Direcciones: [0.96028986 0.79666648 0.52553241 0.18343464]
+Modo: eigenvalue | K_EFF: None
+Potencia: None kW (E_f=200.0 MeV, area=1.0 cm2)
+INFO:solvers.runners.NTS_DD_1D:Tiempo demorado de los calculos: 0.004262208938598633

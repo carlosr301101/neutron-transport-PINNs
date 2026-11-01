@@ -209,6 +209,39 @@ Tolerance:
   1e-6 → Strict (~50 iter for DD)
 
 
+1D PYTHON SOLVER — MULTIPLICATIVE MEDIA (k_eff)
+═══════════════════════════════════════════════════════════════════════════
+
+The 1D solver (NTS_DD_1D.py) supports fission; the 2D C programs do NOT.
+
+Config keys:
+  NU_SIGF   : nu*Sigma_f per zone [cm^-1]      (0 = no fission)
+  MODE      : fixed_source | eigenvalue | fixed_k | driven
+  K_EFF     : imposed k (fixed_k only; driven forces 1)
+  TOL_K     : k_eff tolerance (default 1e-6)
+  MAX_OUTER : outer power iterations (default 200)
+  K0        : initial k guess (default integral nu*Sf / integral Sa)
+  POWER_KW  : optional power normalization [kW]
+  E_F_MEV   : 200.0 (default), NU: nu_bar, AREA_CM2: 1.0
+
+Mode rules:
+  eigenvalue : Q=0, zero incoming flux; computes k_eff
+  driven     : k=1, requires Q or incoming flux; physical source problem
+  fixed_k    : imposes k; without source it is a mode-shape problem
+
+Benchmark (20 cm, vacuum, Sigma_t=1.0, Sigma_s=0.9, nu*Sf=0.11):
+  S2 k_eff ≈ 1.02465 | S4 ≈ 1.02652 | S8 ≈ 1.02668
+  k_inf = 1.1 (upper bound); system is slightly supercritical.
+
+Commands:
+  uv run nts-1d-run
+  uv run nts-1d-data --latest --positions 0 50 100
+  uv run nts-1d-plot --x k_eff          # or --x NU_SIGF
+  uv run python -m unittest discover -s tests -v
+
+Full reference: MULTIPLICATIVE_MEDIA.md
+
+
 ═══════════════════════════════════════════════════════════════════════════
 For full details, see NTS_DOCUMENTATION.md and method-specific guides.
 ═══════════════════════════════════════════════════════════════════════════

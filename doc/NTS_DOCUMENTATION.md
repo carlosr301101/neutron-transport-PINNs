@@ -14,6 +14,13 @@ Comprehensive documentation for 5 neutron transport simulation programs implemen
 | **NTS_RM_CN.c** | Response Matrix + Crank-Nicolson | 5-20 iter | High-precision work | ✅ Complete |
 | **NTS_RM_LLN.c** | Response Matrix + Linear Lattice | 5-15 iter | Reactor assemblies/lattices | ✅ Complete |
 
+> **Scope note (2D vs 1D):** the five C programs above solve the
+> **fixed-source** 2D transport equation. The Python 1D solver
+> (`solvers/runners/NTS_DD_1D.py`) additionally supports **multiplicative
+> media and `k_eff`**; see
+> [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md). The 2D programs do
+> not accept `NU_SIGF` or `k_eff`.
+
 ## Files Per Program
 
 Each program has **2 documentation files**:
@@ -272,6 +279,29 @@ gcc -O2 -g -o NTS_DD solvers/runners/NTS_DD.c -lm
 - **CPU:** 1 GHz+ (modern CPU recommended for performance)
 - **OS:** Linux, macOS, Windows (with MinGW or WSL)
 
+## 1D Python Solver (Multiplicative Media)
+
+The 1D Python solver `NTS_DD_1D.py` is not one of the compiled C programs
+documented above. It uses the same S_N / Diamond-Difference formulation but
+is driven by Python config dicts (`outputs/inputs/inputs.py`) and adds:
+
+- `NU_SIGF` (νΣf) per material zone;
+- `MODE = fixed_source | eigenvalue | fixed_k | driven`;
+- power iteration for `k_eff` (`eigenvalue`);
+- global balance `k_balance = P/(A+L)`;
+- optional power normalization (`POWER_KW`).
+
+Quick benchmark (20 cm homogeneous slab, vacuum, `σt=1.0`, `σs0=0.9`,
+`νσf=0.11`):
+
+```bash
+uv run nts-1d-run     # with MODE="eigenvalue", NU_SIGF=[0.11]
+```
+
+Expected S8 result: `k_eff ≈ 1.02668`; `k_inf = 1.1`.
+
+Full reference: [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md).
+
 ## References
 
 ### Physical Model
@@ -279,6 +309,8 @@ gcc -O2 -g -o NTS_DD solvers/runners/NTS_DD.c -lm
 - Isotropic scattering approximation
 - Vacuum or specified boundary conditions
 - Arbitrary material heterogeneity
+- **Fixed-source only** in the 2D C programs; fission/`k_eff` is a 1D Python
+  feature (see [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md))
 
 ### Numerical Methods
 - **DD:** Alternating sweep method over spatial blocks

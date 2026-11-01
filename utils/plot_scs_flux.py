@@ -43,6 +43,12 @@ def main() -> int:
         type=Path,
         help=f"Path for the PNG plot (default: {DEFAULT_OUTPUT})",
     )
+    parser.add_argument(
+        "--x",
+        choices=["SCS", "NU_SIGF", "k_eff"],
+        default="SCS",
+        help="Variable for the x-axis (default: SCS)",
+    )
     args = parser.parse_args()
 
     data_path = args.input
@@ -56,7 +62,16 @@ def main() -> int:
     if not rows:
         raise ValueError(f"No data found in {data_path}")
 
-    scs_vals = [row["SCS"] for row in rows]
+    rows = [row for row in rows if row.get(args.x) is not None]
+    if not rows:
+        raise ValueError(f"No rows with x={args.x!r} found in {data_path}")
+
+    x_label = {
+        "SCS": "SCS",
+        "NU_SIGF": "nu*Sigma_f [cm^-1]",
+        "k_eff": "k_eff",
+    }[args.x]
+    x_vals = [row[args.x] for row in rows]
 
     # Discover flux series dynamically (all flux_<position> keys present)
     flux_keys = sorted(
@@ -81,8 +96,8 @@ def main() -> int:
     for ax, key in zip(axes, flux_keys):
         position = key.split("_", 1)[1]
         values = [row[key] for row in rows]
-        ax.plot(scs_vals, values, marker="o", label=f"Flux at position {position}")
-        ax.set_title(f"Scalar Flux vs SCS (Position {position})")
+        ax.plot(x_vals, values, marker="o", label=f"Flux at position {position}")
+        ax.set_title(f"Scalar Flux vs {x_label} (Position {position})")
         ax.set_ylabel("Scalar Flux")
         ax.grid(True, which="major", linestyle="--", linewidth=0.6, alpha=0.5)
         ax.grid(True, which="minor", linestyle=":", linewidth=0.5, alpha=0.4)
@@ -90,7 +105,7 @@ def main() -> int:
         ax.xaxis.set_minor_locator(MultipleLocator(0.025))
         ax.legend()
 
-    axes[-1].set_xlabel("SCS")
+    axes[-1].set_xlabel(x_label)
 
     plot_path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()

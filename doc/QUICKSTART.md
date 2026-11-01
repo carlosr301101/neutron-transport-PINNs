@@ -120,6 +120,48 @@ uv run nts-1d-data --latest --positions 0 50 100
 uv run nts-1d-plot
 ```
 
+## ⚛️ Multiplicative Media (1D, k_eff)
+
+The Python 1D solver supports fission and `k_eff` through `NU_SIGF` and
+`MODE`. The 2D C solvers remain fixed-source only.
+
+```python
+# outputs/inputs/inputs.py — 20 cm homogeneous slab, vacuum, S8
+config_dict = {
+    "num_regions": 1, "num_zones": 1,
+    "NC": [100], "HR": [20.0], "IZL": [1],
+    "SCT": [1.0], "SCS": [0.9],
+    "NU_SIGF": [0.11],          # nu*Sigma_f [cm^-1]
+    "Q": [0.0], "N": 8,
+    "reflex_izq": False, "reflex_der": False,
+    "bound_left": [0, 0, 0, 0], "bound_right": [0, 0, 0, 0],
+    "MODE": "eigenvalue",       # compute k_eff
+}
+```
+
+```bash
+uv run nts-1d-run
+uv run nts-1d-data --latest --positions 0 50 100
+uv run nts-1d-plot --x k_eff
+```
+
+Expected S8 result: `k_eff ≈ 1.02668` (`k_inf = 1.1`).
+
+| `MODE` | What it does |
+|---|---|
+| `fixed_source` | No fission (historical mode) |
+| `eigenvalue` | Homogeneous problem, computes `k_eff` (`Q=0`) |
+| `fixed_k` | Imposes `k`; with a source it is driven, without it a mode shape |
+| `driven` | Physical source + fission (`k=1`); requires `Q` or incoming flux |
+
+Optional power normalization:
+
+```python
+"POWER_KW": 10.0, "E_F_MEV": 200.0, "NU": 2.4, "AREA_CM2": 1.0,
+```
+
+Full reference: [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md).
+
 ## 📁 File Locations
 
 ```

@@ -1,16 +1,19 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v2.0.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v2.1.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
-  datos.json to plots), adding SN quadrature orders (N=2,4,6,8), and extracting
-  flux KPI tables. Use this skill ANY time the user works in this repository,
-  runs `uv run nts*` commands, or mentions kk/SCT/SCS placeholders,
-  inputs_placeholder.py, inputs.py, cuadraturas.py, output_1d_*.json,
-  datos.json, N=4/N=6/N=8 quadrature orders, or asks to run/compare/plot DD
-  simulations or prepare KPI summaries — even if they never name the system.
+  datos.json to plots), adding SN quadrature orders (N=2,4,6,8), extracting
+  flux KPI tables, and solving 1D multiplicative media with fission and k_eff
+  (MODE=eigenvalue|fixed_k|driven, NU_SIGF, power iteration, power
+  normalization). Use this skill ANY time the user works in this repository,
+  runs `uv run nts*` commands, or mentions kk/SCT/SCS/NU_SIGF placeholders,
+  k_eff, medio multiplicativo, eigenvalue, fixed_k, driven, inputs_placeholder.py,
+  inputs.py, cuadraturas.py, output_1d_*.json, datos.json, N=4/N=6/N=8
+  quadrature orders, or asks to run/compare/plot DD simulations or prepare KPI
+  summaries — even if they never name the system.
 ---
 
 # NTS PINNs Autopilot
@@ -54,7 +57,7 @@ Shortcuts (`pyproject.toml` scripts):
 | `nts-generate` | `nts generate` in placeholder mode |
 | `nts-1d-run` | `nts run-1d` |
 | `nts-1d-data [--latest] [--positions 0 50 100]` | extract fluxes → `datos.json` |
-| `nts-1d-plot [-i datos.json] [-o plot.png]` | SCS vs flux, one subplot per position |
+| `nts-1d-plot [-i datos.json] [-o plot.png] [--x SCS\|NU_SIGF\|k_eff]` | flux vs the chosen x variable, one subplot per position |
 
 ## Parametric sweep recipe (1D workflow)
 
@@ -103,6 +106,110 @@ scattering ratio kk from 0.1 to 0.95 with quadrature order N.
 Report to the user: iterations range (first/last config), the pos-0 and
 pos-100 flux trend vs kk, and the artifact paths.
 
+## Multiplicative media / k_eff (1D)
+
+`NTS_DD_1D` solves the one-group S_N equations with isotropic fission:
+
+```text
+mu_m dPsi_m/dx + Sigma_t Psi_m
+    = 1/2 [Sigma_s + nu*Sigma_f/k] Phi + 1/2 Q
+```
+
+`NU_SIGF` is **nu*Sigma_f** [cm^-1]. Do **not** multiply by `4*pi`: the
+`sn-spectral` skill uses `4*pi*nu*Sigma_f` in its own convention, but the
+solver equation already carries the `1/2`. The 2D C binaries do **not**
+support fission.
+
+### Modes
+
+| `MODE` | `NU_SIGF` | `K_EFF` | Source | Purpose |
+|---|---|---|---|---|
+| `fixed_source` | 0 | — | `Q` / incoming | Historical, no fission |
+| `eigenvalue` | > 0 | — | `Q = 0` | Compute `k_eff` |
+| `fixed_k` | > 0 | > 0 | optional | Imposed-k / parametric |
+| `driven` | > 0 | 1 (fixed) | required | Physical source + fission |
+
+- **`eigenvalue`**: homogeneous problem. Requires `Q = 0` and zero incoming
+  flux; vacuum and reflective boundaries are both valid. The amplitude is
+  arbitrary; the solver normalizes it.
+- **`driven`**: physical source problem. Fission is **not** divided by `k`.
+  Requires `Q != 0` or incoming flux. A critical system with a source has no
+  steady state; `driven` is for subcritical assemblies.
+- **`fixed_k`**: imposes `k` in the denominator. With a source it is driven;
+  without a source it is a mode-shape problem and `k_balance` is the critical
+  `k` of the computed shape.
+- If `MODE` is omitted: `NU_SIGF=0` -> `fixed_source`; `NU_SIGF>0` with no
+  `K_EFF` -> `eigenvalue`; `NU_SIGF>0` with `K_EFF` -> `fixed_k`.
+
+### Config keys
+
+```python
+"NU_SIGF": [0.11],   # nu*Sigma_f per zone [cm^-1]
+"MODE": "eigenvalue",
+# "K_EFF": 1.0,      # fixed_k only
+"TOL_K": 1e-6,
+"MAX_OUTER": 200,
+"K0": 1.1,           # optional; default integral nu*Sf / integral Sa
+# "POWER_KW": 10.0,  # optional power normalization
+# "E_F_MEV": 200.0,
+# "NU": 2.4,         # or "SIGMA_F": [0.045833]
+# "AREA_CM2": 1.0,
+```
+
+### Benchmark (20 cm, vacuum, S8)
+
+`L=20 cm`, `Sigma_t=1.0`, `Sigma_s0=0.9`, `nu*Sigma_f=0.11`,
+`NC=[100]`, `N=8`, vacuum:
+
+| Order | `k_eff` |
+|---|---|
+| S2 | 1.02464 |
+| S4 | 1.02651 |
+| S8 | 1.02668 |
+
+`k_inf = 1.1` is the upper bound. Mesh convergence at S8 (default
+`TOL_K=1e-6`): 25 -> 1.026539, 50 -> 1.026649, 100 -> 1.026676,
+200 -> 1.026683, 400 -> 1.026685. Tighter tolerances converge to ~1.026689. The slab is slightly supercritical. The exact test is a
+reflective slab: `k_eff = nu*Sigma_f / Sigma_a` (e.g. 0.3/0.5 = 0.6).
+
+### Multiplicative sweep
+
+```python
+# inputs_placeholder.py
+"NU_SIGF": [nn],
+"MODE": "eigenvalue",
+"Q": [0],
+"bound_left": [0]*4, "bound_right": [0]*4,
+```
+
+```bash
+uv run nts-generate --place-holder nn 0.05 0.20 0.05
+uv run nts-1d-run
+uv run nts-1d-data --latest --positions 0 100
+uv run nts-1d-plot --x NU_SIGF     # or --x k_eff
+```
+
+`datos.json` rows carry `NU_SIGF`, `k_eff`, `k_balance` and `mode`, so the
+sweep can be summarised directly with `sweep_kpis.py`.
+
+### Output and post-processing
+
+Each run in `output_1d_###.json` adds `mode`, `k_eff`, `k_balance`,
+`k_history`, `k_converged`, `outer_iterations`, `power_w`, `power_scale`.
+`nts-1d-data` propagates `NU_SIGF`, `mode`, `k_eff`, `k_balance` to
+`datos.json`. Use `nts-1d-plot --x k_eff` or `--x NU_SIGF` for the new
+x-axes. `sweep_kpis.py` prints a `k_eff` table when the runs contain it.
+
+### Validation
+
+```bash
+uv run python -m unittest discover -s tests -v
+```
+
+Covers: reflective infinite medium (exact), 20 cm benchmark, `fixed_k` at
+`k*`, `driven` subcritical balance, 10 kW normalization, `NU_SIGF=0`
+regression, invalid mode combinations.
+
 ## Adding a quadrature order (cuadraturas.py)
 
 `solvers/runners/cuadraturas.py` is a flat `DATA` dict with columns
@@ -142,6 +249,10 @@ N=2/4/8 rows all follow them):
 - Zone physics: `σs < σt` per zone; `N` even; `ZMAP` values in `[1, NZ]`;
   `TOL ∈ [1e-7, 1e-2]` (defaults: ε=1e-5 relative, max_iter=2000 in the 1D
   solver).
+- 1D multiplicative: `NU_SIGF >= 0`; `K_EFF > 0` for `fixed_k`;
+  `eigenvalue` requires `Q=0` and zero incoming flux; `driven` requires
+  `Q != 0` or incoming flux and forces `k=1`; `POWER_KW` requires
+  `SIGMA_F` or `NU`.
 - `BC` order is **[left, right, bottom, top]** (0.0 vacuum, 1.0 reflective).
   Some older docs claim another order — the code and `core/input_builder.py`
   are the truth.
@@ -191,3 +302,18 @@ vector); total samples = Σ orders × configs × NC.
 - Iterations blow up as kk → 1 (c = σs/σt ≈ 1): 9 iterations at c=0.1, ~215
   at c=0.95 with ε=1e-5. That is expected source-iteration behavior, not a
   bug; accelerating or loosening ε is the remedy, not a bugfix.
+- `MODE='eigenvalue'` with `Q != 0` is rejected on purpose: that is a driven
+  problem, not an eigenvalue. Use `MODE='driven'` (k=1) or `fixed_k`.
+- `fixed_k` with no source is a **mode-shape** calculation: the amplitude is
+  arbitrary, and only `k = k*` gives a stationary solution. Read
+  `k_balance`, not the raw amplitude.
+- At `k = k*` with a source the operator is singular; there is no steady
+  state. Do not combine `K_EFF = k*` with `Q != 0`.
+- Normalize the **whole** state (`scalar_flux`, `PSI_RIGHT`, `PSI_LEFT`,
+  `angular_flux`) when renormalizing; scaling only the scalar flux makes the
+  next sweep inconsistent.
+- `4*pi` trap: `NU_SIGF` is plain `nu*Sigma_f`. The spectral skill's `4*pi`
+  convention does not apply here.
+- `POWER_KW` needs a way to get `Sigma_f`: provide `SIGMA_F` per zone or
+  `NU` (nu_bar). The normalization scales the flux but does not change
+  `k_eff`.

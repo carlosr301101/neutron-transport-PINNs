@@ -8,6 +8,7 @@ Usage:
 Reads one or more NTS_DD_1D consolidated output JSONs, aligns runs by SCS,
 and prints markdown tables:
   - iterations vs kk per order
+  - k_eff / k_balance per run when the source used a multiplicative mode
   - flux at each requested position per order (index 0 = first cell centre)
   - max |flux(order) - flux(reference)| at the first position as the
     quadrature-convergence KPI
@@ -37,9 +38,21 @@ def load_sweep(path: Path, positions: list[int]) -> list[dict]:
     data = json.load(path.open())
     rows = []
     for run in data.get("runs", []):
+        if "error" in run:
+            continue
         sf = run["scalar_flux"]
+        cfg = run["configuration"]
+        nu_sigf = cfg.get("NU_SIGF")
         row = {
-            "kk": run["configuration"]["SCS"][0],
+            "kk": cfg["SCS"][0],
+            "nu_sigf": (
+                nu_sigf[0]
+                if isinstance(nu_sigf, list) and nu_sigf
+                else None
+            ),
+            "mode": run.get("mode"),
+            "k_eff": run.get("k_eff"),
+            "k_balance": run.get("k_balance"),
             "iters": run["iteration"],
             "converged": run["converged"],
             **{f"flux_{p}": sf[p] for p in positions},
@@ -81,8 +94,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: reference order {ref_label} not among inputs", file=sys.stderr)
         return 2
 
-    ref_key = positions[0]
-
     # Validated runs
     print("## Validated runs\n")
     for label in labels:
@@ -104,6 +115,27 @@ def main(argv: list[str] | None = None) -> int:
         cells = " | ".join(f"{sweeps[l][i]['iters']}" for l in labels)
         print(f"| {kk} | {cells} |")
     print()
+
+    # k_eff / k_balance (multiplicative media)
+    if any(
+        row.get("k_eff") is not None
+        for label in labels
+        for row in sweeps[label]
+    ):
+        print("## k_eff\n")
+        print("| kk | " + " | ".join(labels) + " |")
+        print("|" + "------|" * (len(labels) + 1))
+        for i, row in enumerate(sweeps[ref_label]):
+            cells = " | ".join(
+                (
+                    f"{sweeps[l][i]['k_eff']:.8f}"
+                    if sweeps[l][i].get("k_eff") is not None
+                    else "—"
+                )
+                for l in labels
+            )
+            print(f"| {row['kk']:.2f} | {cells} |")
+        print()
 
     # Flux per position
     for pos in positions:

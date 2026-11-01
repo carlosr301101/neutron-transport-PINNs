@@ -36,6 +36,18 @@
         "Includes max |delta flux| vs S8 convergence KPI",
         "Values match outputs (kk=0.10 pos-0: 0.8468/0.8295/0.8195 +/- 1e-3)"
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Resuelve la placa homogénea de 20 cm con vacío en ambas caras, sigma_t=1.0, sigma_s0=0.9 y nu*Sigma_f=0.11 con S8. Necesito el factor efectivo de multiplicación y, si se puede, el flujo normalizado a 10 kW.",
+      "expected_output": "Identifies MODE='eigenvalue' (Q=0, vacuum, NU_SIGF=0.11), uses NC=100/N=8, runs nts-1d-run, reports k_eff ~= 1.02668 with k_balance consistent, and explains that 10 kW normalization needs E_F_MEV, NU (or SIGMA_F) and AREA_CM2. Does not multiply NU_SIGF by 4*pi and does not add a source to eigenvalue mode.",
+      "files": [],
+      "expectations": [
+        "Uses MODE='eigenvalue' with Q=0 and zero incoming flux",
+        "Reports k_eff ~ 1.02668 (S8) and a consistent k_balance",
+        "Does not multiply NU_SIGF by 4*pi",
+        "For 10 kW, provides/asks E_F_MEV, NU or SIGMA_F, and AREA_CM2; notes k_eff is scale-independent"
+      ]
     }
   ]
 }
