@@ -14,11 +14,22 @@ def cli() -> int:
     from cli.commands import cmd_run_1d
 
     parser = argparse.ArgumentParser(prog="nts-1d-run", add_help=True)
-    parser.add_argument(
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument(
         "-c",
         "--config",
         default="outputs/inputs/inputs.py",
         help="Path to inputs.py file (default: outputs/inputs/inputs.py)",
+    )
+    source.add_argument(
+        "--json",
+        type=Path,
+        help="Path to a JSON config object or list of objects",
+    )
+    source.add_argument(
+        "--manual",
+        action="store_true",
+        help="Interactive step-by-step configuration",
     )
     parser.add_argument(
         "-o",

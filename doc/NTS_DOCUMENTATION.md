@@ -295,7 +295,9 @@ Quick benchmark (20 cm homogeneous slab, vacuum, `σt=1.0`, `σs0=0.9`,
 `νσf=0.11`):
 
 ```bash
-uv run nts-1d-run     # with MODE="eigenvalue", NU_SIGF=[0.11]
+uv run nts-1d-run                    # MODE="eigenvalue", NU_SIGF=[0.11]
+uv run nts-1d-run --manual           # interactive step-by-step wizard
+uv run nts-1d-run --json config.json # one object or a list of objects
 ```
 
 Expected S8 result: `k_eff ≈ 1.02668`; `k_inf = 1.1`.

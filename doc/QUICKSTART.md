@@ -120,6 +120,21 @@ uv run nts-1d-data --latest --positions 0 50 100
 uv run nts-1d-plot
 ```
 
+### Manual or JSON configuration
+
+```bash
+# Interactive step-by-step wizard (one run)
+uv run nts-1d-run --manual
+
+# One JSON object or a list of objects
+uv run nts-1d-run --json config.json
+```
+
+`--manual`, `--json` and `-c` are mutually exclusive. The wizard prints a
+summary and asks “¿Ejecutar?” before running. `nts-1d-data` uses the
+`configuration` embedded in the output, so it also works for manual/JSON
+runs.
+
 ## ⚛️ Multiplicative Media (1D, k_eff)
 
 The Python 1D solver supports fission and `k_eff` through `NU_SIGF` and

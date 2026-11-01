@@ -2,6 +2,32 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.2.0] - 2026-11-01 - Configuración manual y JSON (1D)
+
+### Added
+- `nts-1d-run --manual` / `nts run-1d --manual`: asistente interactivo paso
+  a paso (geometría, materiales, cuadratura, fisión con `NU_SIGF`, `MODE`,
+  `K_EFF`, `TOL_K`/`MAX_OUTER`/`K0`, potencia y fronteras), con resumen y
+  confirmación antes de ejecutar.
+- `nts-1d-run --json` / `nts run-1d --json`: carga uno o varios dicts 1D
+  desde un archivo JSON (objeto o lista).
+- `Config.as_dict()`: configuración efectiva serializable.
+- Los outputs embeben `configuration`; `nts-1d-data` y `sweep_kpis.py` la
+  usan sin depender de `outputs/inputs/inputs.py`.
+- 15 tests nuevos (manual y JSON); 24 en total.
+- `SKILL.md`, `evals.json`, README, QUICKSTART, NTS_DOCUMENTATION,
+  QUICK_REFERENCE y MULTIPLICATIVE_MEDIA actualizados.
+
+### Changed
+- `manual_input` pregunta `Q` después de conocer el `MODE` (se omite en
+  `eigenvalue`) y pide las fronteras dentro del asistente.
+- `--manual`, `--json` y `-c` son mutuamente excluyentes.
+- Versión del proyecto a 2.2.0.
+
+### Fixed
+- `nts-1d-data` puede extraer flujos de runs manuales/JSON usando la
+  configuración embebida.
+
 ## [2.1.0] - 2026-11-01 - Medios multiplicativos y k_eff (1D)
 
 ### Added

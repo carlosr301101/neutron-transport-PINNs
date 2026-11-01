@@ -48,6 +48,18 @@
         "Does not multiply NU_SIGF by 4*pi",
         "For 10 kW, provides/asks E_F_MEV, NU or SIGMA_F, and AREA_CM2; notes k_eff is scale-independent"
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "Quiero resolver la placa multiplicativa de 20 cm entrando los datos a mano desde la consola, sin editar inputs.py. ¿Cómo lo hago y qué me va a preguntar?",
+      "expected_output": "Uses nts-1d-run --manual (or nts run-1d --manual) and describes the step-by-step prompts: geometry, materials, N, fission/NU_SIGF/MODE/K_EFF, TOL_K/MAX_OUTER/K0, optional power, Q (skipped for eigenvalue), boundaries, summary and ¿Ejecutar?. Reports k_eff ~1.02668. Mentions --json as the non-interactive alternative and that -c still works.",
+      "files": [],
+      "expectations": [
+        "Uses --manual (or nts run-1d --manual) instead of editing inputs.py",
+        "Describes the prompt order and the final confirmation",
+        "Skips Q for eigenvalue and forces zero incoming flux",
+        "Reports k_eff ~1.02668 and mentions --json as the non-interactive option"
+      ]
     }
   ]
 }

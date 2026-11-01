@@ -234,7 +234,9 @@ Benchmark (20 cm, vacuum, Sigma_t=1.0, Sigma_s=0.9, nu*Sf=0.11):
   k_inf = 1.1 (upper bound); system is slightly supercritical.
 
 Commands:
-  uv run nts-1d-run
+  uv run nts-1d-run                     # from outputs/inputs/inputs.py
+  uv run nts-1d-run --manual            # interactive step-by-step wizard
+  uv run nts-1d-run --json config.json  # one object or a list of objects
   uv run nts-1d-data --latest --positions 0 50 100
   uv run nts-1d-plot --x k_eff          # or --x NU_SIGF
   uv run python -m unittest discover -s tests -v

@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v2.1.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v2.2.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -45,7 +45,7 @@ Main CLI (`cli/commands.py` via `main.py`):
 | `nts validate <config.json>` | Pydantic validation + summary | — |
 | `nts generate <config.json>` | JSON config → `input_###.txt` | `-p` preview, `--place-holder NAME START END STEP` (repeatable, nargs=4) |
 | `nts run` | 2D binaries (parallel) | `-s SOLVER`, `-i input.txt…`, `-p N` (default 4) |
-| `nts run-1d` | Python 1D solver over `inputs.py` | `-c` config path, `-o` output path |
+| `nts run-1d` | Python 1D solver from file, JSON, or wizard | `-c` config path, `--json`, `--manual`, `-o` output path |
 | `nts list inputs\|outputs` | Rich tables of generated files | — |
 | `nts show <result.json>` | STATUS / ITER / CPU summary | — |
 | `nts plot [-r result.json]` | MFLUX heatmap of a 2D JSON result | `-o` png path, `--show` |
@@ -55,8 +55,8 @@ Shortcuts (`pyproject.toml` scripts):
 | Shortcut | Equivalent |
 |----------|-----------|
 | `nts-generate` | `nts generate` in placeholder mode |
-| `nts-1d-run` | `nts run-1d` |
-| `nts-1d-data [--latest] [--positions 0 50 100]` | extract fluxes → `datos.json` |
+| `nts-1d-run` | `nts run-1d` (`-c`, `--json`, `--manual`) |
+| `nts-1d-data [--latest] [--positions 0 50 100]` | extract fluxes + embedded config → `datos.json` |
 | `nts-1d-plot [-i datos.json] [-o plot.png] [--x SCS\|NU_SIGF\|k_eff]` | flux vs the chosen x variable, one subplot per position |
 
 ## Parametric sweep recipe (1D workflow)
@@ -210,6 +210,29 @@ Covers: reflective infinite medium (exact), 20 cm benchmark, `fixed_k` at
 `k*`, `driven` subcritical balance, 10 kW normalization, `NU_SIGF=0`
 regression, invalid mode combinations.
 
+## Manual and JSON configuration (1D)
+
+Besides `-c inputs.py`, the 1D runner accepts:
+
+```bash
+uv run nts-1d-run --manual
+uv run nts-1d-run --json config.json
+```
+
+- **`--manual`**: step-by-step wizard. Asks geometry, materials, `N`, then
+  fission (`NU_SIGF`, `MODE`, `K_EFF`), `TOL_K`/`MAX_OUTER`/`K0`, optional
+  power normalization, `Q` (skipped for `eigenvalue`), and boundaries. It
+  prints a summary and asks `¿Ejecutar?`; `n` cancels.
+- **`--json`**: a JSON object or a list of objects with the same keys as
+  `inputs.py`. Names become `json_config_001`, etc.
+- `--manual`, `--json` and `-c` are mutually exclusive; `-o` works in all
+  three cases.
+- Every output run embeds its effective `configuration`, so `nts-1d-data`
+  and `sweep_kpis.py` work without a matching entry in `inputs.py`.
+- Manual `eigenvalue` forces `Q=0` and zero incoming flux; `driven` requires
+  `Q` or incoming flux; `fixed_k` without a source is a mode-shape
+  calculation (read `k_balance`).
+
 ## Adding a quadrature order (cuadraturas.py)
 
 `solvers/runners/cuadraturas.py` is a flat `DATA` dict with columns
@@ -317,3 +340,9 @@ vector); total samples = Σ orders × configs × NC.
 - `POWER_KW` needs a way to get `Sigma_f`: provide `SIGMA_F` per zone or
   `NU` (nu_bar). The normalization scales the flux but does not change
   `k_eff`.
+- `--manual` does not run until you answer `s` to `¿Ejecutar?`; answering
+  `n` cancels with rc 0 and writes no JSON.
+- `--json` must be an object or a list of objects; a scalar or a list of
+  scalars is rejected. `--manual`, `--json` and `-c` are mutually exclusive.
+- Manual/JSON runs embed `configuration`, but older outputs do not. If
+  `nts-1d-data` says a config is missing, pass the matching `--inputs`.

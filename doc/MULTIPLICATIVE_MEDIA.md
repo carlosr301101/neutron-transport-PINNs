@@ -175,6 +175,70 @@ AUTOVALOR CONVERGIDO: k_eff = 1.026676...
 k_balance (P/(A+L)) = 1.026677...
 ```
 
+### 3.1 Configuración manual por consola
+
+```bash
+uv run nts-1d-run --manual
+# equivalente
+uv run nts run-1d --manual
+```
+
+El asistente pregunta, paso a paso:
+
+1. geometría (`NC`, `HR`, `IZL`) y materiales (`SCT`, `SCS`);
+2. cuadratura `N` (2, 4, 6, 8; default 8);
+3. si hay fisión: `NU_SIGF` por zona, `MODE`, `K_EFF` (solo `fixed_k`),
+   `TOL_K`, `MAX_OUTER`, `K0`;
+4. normalización de potencia opcional (`POWER_KW`, `E_F_MEV`, `AREA_CM2` y
+   conversión con `NU` o `SIGMA_F`);
+5. `Q` por región (se omite en `eigenvalue`, donde vale 0);
+6. fronteras reflexivas/vacío y flujo entrante por dirección (se fuerza a 0
+   en `eigenvalue`);
+7. resumen de la configuración y confirmación “¿Ejecutar?”.
+
+Validaciones del asistente:
+
+- `NU_SIGF ≥ 0`;
+- `fixed_k` exige `K_EFF > 0`;
+- `driven` exige `Q ≠ 0` o flujo entrante;
+- `POWER_KW` exige `NU` o `SIGMA_F`;
+- `IZL` en `[1, num_zones]`;
+- `N` par y tabulado (si no, se avisa del fallback a S2).
+
+### 3.2 Carga desde JSON
+
+```bash
+uv run nts-1d-run --json config_multiplicativo.json
+```
+
+El archivo puede ser un objeto o una lista de objetos con las mismas claves
+que un dict de `inputs.py`. Ejemplo para el benchmark:
+
+```json
+{
+  "num_regions": 1,
+  "num_zones": 1,
+  "NC": [100],
+  "HR": [20.0],
+  "IZL": [1],
+  "SCT": [1.0],
+  "SCS": [0.9],
+  "NU_SIGF": [0.11],
+  "Q": [0.0],
+  "N": 8,
+  "reflex_izq": false,
+  "reflex_der": false,
+  "bound_left": [0, 0, 0, 0],
+  "bound_right": [0, 0, 0, 0],
+  "MODE": "eigenvalue"
+}
+```
+
+`--manual`, `--json` y `-c` son mutuamente excluyentes. Cada run guarda su
+`configuration` efectiva en el JSON de salida; `nts-1d-data` y
+`sweep_kpis.py` la usan, así que no hace falta que el `config_name` exista
+en `outputs/inputs/inputs.py`.
+
 ## 4. Algoritmo
 
 ### 4.1 Power iteration (`eigenvalue`)

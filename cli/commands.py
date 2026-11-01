@@ -489,52 +489,57 @@ def cmd_generate_placeholder(args):
     return 0
 
 
+def _serialize_1d_run(name: str, cfg_dict: dict, result: dict) -> dict:
+    """Build one run entry for the consolidated output_1d JSON."""
+    return {
+        "config_name": name,
+        "configuration": cfg_dict,
+        "scalar_flux": result["scalar_flux"].tolist(),
+        "angular_flux": result["angular_flux"].tolist(),
+        "iteration": int(result["iteration"]),
+        "converged": bool(result["converged"]),
+        "mode": result.get("mode"),
+        "k_eff": result.get("k_eff"),
+        "k_balance": result.get("k_balance"),
+        "k_history": result.get("k_history"),
+        "k_converged": result.get("k_converged"),
+        "outer_iterations": result.get("outer_iterations"),
+        "power_w": result.get("power_w"),
+        "power_scale": result.get("power_scale"),
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
+def _load_json_configs(path: Path) -> list[tuple[str, dict]]:
+    """Load one 1D config object, or a list of them, from JSON."""
+    with path.open("r") as f:
+        data = json.load(f)
+
+    if isinstance(data, dict):
+        return [("json_config_001", data)]
+    if isinstance(data, list) and all(isinstance(item, dict) for item in data):
+        return [
+            (f"json_config_{i:03d}", item)
+            for i, item in enumerate(data, 1)
+        ]
+    raise ValueError("JSON must be an object or a list of objects")
+
+
 def cmd_run_1d(args):
-    """Run NTS_DD_1D solver for all configs in inputs.py."""
+    """Run NTS_DD_1D from inputs.py, a JSON file, or the manual wizard."""
     logger = get_logger()
     ensure_directories()
-
-    config_path = Path(args.config)
-    try:
-        configs = _load_config_dicts(config_path)
-    except Exception as e:
-        console.print(f"[bold red]✗ Error:[/] {str(e)}")
-        return 1
-
-    if not configs:
-        console.print("[bold red]✗ No config dictionaries found in inputs file[/]")
-        return 1
 
     from solvers.runners.NTS_DD_1D import Config, Runner
 
     results = []
     failures = 0
 
-    for name, cfg in configs:
+    def execute(name: str, conf, cfg_dict: dict):
+        nonlocal failures
         try:
-            conf = Config(manual=False, **cfg)
-            runner = Runner(conf)
-            result = runner()
-
-            results.append(
-                {
-                    "config_name": name,
-                    "configuration": cfg,
-                    "scalar_flux": result["scalar_flux"].tolist(),
-                    "angular_flux": result["angular_flux"].tolist(),
-                    "iteration": int(result["iteration"]),
-                    "converged": bool(result["converged"]),
-                    "mode": result.get("mode"),
-                    "k_eff": result.get("k_eff"),
-                    "k_balance": result.get("k_balance"),
-                    "k_history": result.get("k_history"),
-                    "k_converged": result.get("k_converged"),
-                    "outer_iterations": result.get("outer_iterations"),
-                    "power_w": result.get("power_w"),
-                    "power_scale": result.get("power_scale"),
-                    "timestamp": datetime.now().isoformat(timespec="seconds"),
-                }
-            )
+            result = Runner(conf)()
+            results.append(_serialize_1d_run(name, cfg_dict, result))
         except Exception as e:
             failures += 1
             logger.exception("NTS_DD_1D run failed")
@@ -545,6 +550,67 @@ def cmd_run_1d(args):
                     "timestamp": datetime.now().isoformat(timespec="seconds"),
                 }
             )
+
+    manual = bool(getattr(args, "manual", False))
+    json_path = getattr(args, "json", None)
+
+    if manual:
+        try:
+            conf = Config(manual=True)
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[yellow]Cancelado.[/]")
+            return 130
+        except Exception as e:
+            console.print(f"[bold red]✗ Error:[/] {str(e)}")
+            return 1
+
+        print("\n--- RESUMEN DE LA CONFIGURACIÓN ---")
+        print(conf)
+        try:
+            answer = input("\n¿Ejecutar? (s/n) [s]: ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[yellow]Cancelado.[/]")
+            return 130
+        if answer == "n":
+            console.print("[yellow]Cancelado.[/]")
+            return 0
+        execute("manual", conf, conf.as_dict())
+    else:
+        if json_path is not None:
+            try:
+                configs = _load_json_configs(Path(json_path))
+            except Exception as e:
+                console.print(f"[bold red]✗ Error:[/] {str(e)}")
+                return 1
+        else:
+            config_path = Path(
+                getattr(args, "config", None) or "outputs/inputs/inputs.py"
+            )
+            try:
+                configs = _load_config_dicts(config_path)
+            except Exception as e:
+                console.print(f"[bold red]✗ Error:[/] {str(e)}")
+                return 1
+
+        if not configs:
+            console.print("[bold red]✗ No config dictionaries found in input[/]")
+            return 1
+
+        for name, cfg in configs:
+            try:
+                conf = Config(manual=False, **cfg)
+            except Exception as e:
+                failures += 1
+                logger.exception("NTS_DD_1D configuration failed")
+                results.append(
+                    {
+                        "config_name": name,
+                        "error": str(e),
+                        "timestamp": datetime.now().isoformat(timespec="seconds"),
+                    }
+                )
+                continue
+            execute(name, conf, cfg)
 
     if args.output:
         output_path = Path(args.output)
@@ -808,11 +874,22 @@ def create_parser():
     run1d_parser = subparsers.add_parser(
         "run-1d", help="Run NTS_DD_1D solver from outputs/inputs/inputs.py"
     )
-    run1d_parser.add_argument(
+    run1d_source = run1d_parser.add_mutually_exclusive_group()
+    run1d_source.add_argument(
         "-c",
         "--config",
         default="outputs/inputs/inputs.py",
         help="Path to inputs.py file (default: outputs/inputs/inputs.py)",
+    )
+    run1d_source.add_argument(
+        "--json",
+        type=Path,
+        help="Path to a JSON config object or list of objects",
+    )
+    run1d_source.add_argument(
+        "--manual",
+        action="store_true",
+        help="Interactive step-by-step configuration",
     )
     run1d_parser.add_argument(
         "-o",

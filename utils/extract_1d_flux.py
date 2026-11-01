@@ -50,7 +50,7 @@ def extract_flux(
     with source_path.open("r") as f:
         data = json.load(f)
 
-    configs = load_configs(inputs_path)
+    configs = None
 
     results = []
     errors = []
@@ -61,9 +61,19 @@ def extract_flux(
             errors.append("Missing config_name in run")
             continue
 
-        cfg = configs.get(name)
+        # Prefer the configuration embedded in the output (manual/JSON runs).
+        cfg = run.get("configuration")
         if cfg is None:
-            errors.append(f"Config not found in inputs.py: {name}")
+            if configs is None:
+                configs = (
+                    load_configs(inputs_path) if inputs_path.exists() else {}
+                )
+            cfg = configs.get(name)
+        if cfg is None:
+            errors.append(
+                f"Config not found for {name}: no embedded configuration "
+                f"and not present in {inputs_path}"
+            )
             continue
 
         scs_list = cfg.get("SCS")
@@ -136,7 +146,10 @@ def main() -> int:
     parser.add_argument(
         "--inputs",
         default="outputs/inputs/inputs.py",
-        help="Path to inputs.py (default: outputs/inputs/inputs.py)",
+        help=(
+            "Path to inputs.py (default: outputs/inputs/inputs.py). "
+            "Optional for runs that embed their configuration (manual/JSON)."
+        ),
     )
     parser.add_argument(
         "--output",

@@ -335,7 +335,7 @@ class Config:
                 )
 
     def manual_input(self):
-        """Método separado para inputs para no bloquear la inicialización"""
+        """Carga interactiva paso a paso (incluye medios multiplicativos)."""
         print("\n--- CONFIGURACIÓN ESPACIAL ---")
         self.NC = np.array(
             [int(input(f"Celdas en Región {i + 1}: ")) for i in range(self.num_regions)]
@@ -363,42 +363,83 @@ class Config:
                 for i in range(self.num_zones)
             ]
         )
-        self.Q = np.array(
-            [
-                float(input(f"Fuente (Q) Región {i + 1}: "))
-                for i in range(self.num_regions)
-            ]
-        )
 
         print("\n--- CONFIGURACIÓN CUADRATURA ---")
-        self.N = int(input("Orden de cuadratura (ej. 2, 4, 8) -> "))
+        n_text = input("Orden de cuadratura (2, 4, 6, 8) [8]: ").strip()
+        self.N = int(n_text) if n_text else 8
         if self.N % 2 != 0:
-            raise ValueError("Debe ser par.")
+            raise ValueError("El orden de cuadratura debe ser par.")
         self.N_HALF = self.N // 2
         self.weights_directions()
 
         # Medio multiplicativo (opcional)
         self._fission_input()
 
-        # Preguntar si es reflexiva
-        reflex_izq = (
-            input("¿Condiciones reflexivas por la Izquierda? (s/n): ").lower() == "s"
+        # Fuente externa: se pregunta después de conocer el modo
+        if self.MODE == "eigenvalue":
+            self.Q = np.zeros(self.num_regions)
+            print("\nModo eigenvalue: Q = 0 (problema homogéneo).")
+        else:
+            print("\n--- FUENTE EXTERNA ---")
+            self.Q = np.array(
+                [
+                    float(
+                        input(f"Fuente (Q) Región {i + 1} [0]: ").strip()
+                        or 0.0
+                    )
+                    for i in range(self.num_regions)
+                ]
+            )
+
+        # Fronteras
+        print("\n--- CONDICIONES DE FRONTERA ---")
+        self.reflex_izq = (
+            input("¿Reflexiva izquierda? (s/n) [n]: ").strip().lower() == "s"
         )
-        self.reflex_izq = reflex_izq
-        reflex_der = (
-            input("¿Condiciones reflexivas por la Derecha? (s/n): ").lower() == "s"
+        self.reflex_der = (
+            input("¿Reflexiva derecha? (s/n) [n]: ").strip().lower() == "s"
         )
-        self.reflex_der = reflex_der
+        self.bound_left = self._manual_boundary_values(
+            "izquierda", self.reflex_izq
+        )
+        self.bound_right = self._manual_boundary_values(
+            "derecha", self.reflex_der
+        )
 
         # Validar la combinación de modo/fuente también en modo manual
         self._validate_fission_config()
 
-        # Calculos preliminares
+        # Cálculos preliminares
         self.prelim_calculations()
         logger.info(f"Configuración completa.\n{self}")
 
+    def _manual_boundary_values(self, side: str, reflective: bool):
+        """Pide el flujo entrante de una frontera (N/2 valores)."""
+        if reflective:
+            print(f"Frontera {side}: reflexiva; flujo entrante = 0.")
+            return np.zeros(self.N_HALF)
+        if self.MODE == "eigenvalue":
+            print(f"Frontera {side}: eigenvalue; flujo entrante = 0.")
+            return np.zeros(self.N_HALF)
+
+        default = " ".join(["0"] * self.N_HALF)
+        text = input(
+            f"Flujo entrante {side} ({self.N_HALF} valores) [{default}]: "
+        ).strip()
+        if not text:
+            values = np.zeros(self.N_HALF)
+        else:
+            values = np.array(
+                [float(v) for v in text.replace(",", " ").split()], dtype=float
+            )
+        if len(values) != self.N_HALF:
+            raise ValueError(
+                f"Se esperaban {self.N_HALF} valores para la frontera {side}."
+            )
+        return values
+
     def _fission_input(self):
-        """Preguntas opcionales para medios multiplicativos en modo manual."""
+        """Preguntas para medios multiplicativos en modo manual."""
         self.NU_SIGF = np.zeros(self.num_zones)
         self.SIGMA_F = None
         self.MODE = "fixed_source"
@@ -411,13 +452,16 @@ class Config:
         self.NU = None
         self.AREA_CM2 = 1.0
 
-        resp = input("¿Medio multiplicativo (fisión)? (s/n): ").strip().lower()
+        resp = (
+            input("¿Medio multiplicativo (fisión)? (s/n) [n]: ").strip().lower()
+        )
         if resp != "s":
+            print("Modo fixed_source (sin fisión).")
             return
 
         for i in range(self.num_zones):
             self.NU_SIGF[i] = float(
-                input(f"nu*Sigma_f Zona {i + 1} [cm^-1]: ")
+                input(f"nu*Sigma_f Zona {i + 1} [cm^-1]: ").strip()
             )
 
         mode = (
@@ -431,23 +475,52 @@ class Config:
         self.MODE = mode
 
         if mode == "fixed_k":
-            self.K_EFF = float(input("k_eff impuesto: "))
+            self.K_EFF = float(input("k_eff impuesto: ").strip())
         elif mode == "driven":
             self.K_EFF = 1.0
-            print("Modo driven: se usará k = 1 y se pedirá flujo entrante.")
+            print("Modo driven: k = 1 (fisión física) y se pedirá fuente/flujo.")
         else:
-            # El autovalor exige fronteras homogéneas y Q = 0.
-            self.bound_left = np.zeros(self.N_HALF)
-            self.bound_right = np.zeros(self.N_HALF)
-            self.Q[:] = 0.0
+            self.K_EFF = None
 
-        if input("¿Normalizar a una potencia? (s/n): ").strip().lower() == "s":
-            self.POWER_KW = float(input("Potencia [kW]: "))
-            ef_text = input("E_f [MeV/fisión] (200): ").strip()
+        tol_text = input("TOL_K [1e-6]: ").strip()
+        self.TOL_K = float(tol_text) if tol_text else 1e-6
+        max_text = input("MAX_OUTER [200]: ").strip()
+        self.MAX_OUTER = int(max_text) if max_text else 200
+        k0_text = input("K0 (vacío = automático): ").strip()
+        self.K0 = float(k0_text) if k0_text else None
+
+        if (
+            input("¿Normalizar a una potencia? (s/n) [n]: ").strip().lower()
+            == "s"
+        ):
+            self.POWER_KW = float(input("Potencia [kW]: ").strip())
+            ef_text = input("E_f [MeV/fisión] [200]: ").strip()
             self.E_F_MEV = float(ef_text) if ef_text else 200.0
-            area_text = input("Área transversal [cm^2] (1): ").strip()
+            area_text = input("Área transversal [cm^2] [1]: ").strip()
             self.AREA_CM2 = float(area_text) if area_text else 1.0
-            self.NU = float(input("nu (neutrones/fisión, p.ej. 2.4): "))
+
+            conv = (
+                input("Conversión de fisión: nu o sigma_f [nu]: ")
+                .strip()
+                .lower()
+                or "nu"
+            )
+            if conv not in {"nu", "sigma_f"}:
+                raise ValueError("La conversión debe ser 'nu' o 'sigma_f'.")
+            if conv == "nu":
+                self.NU = float(
+                    input("nu (neutrones/fisión, p.ej. 2.4): ").strip()
+                )
+            else:
+                self.SIGMA_F = np.array(
+                    [
+                        float(
+                            input(f"Sigma_f Zona {i + 1} [cm^-1]: ").strip()
+                        )
+                        for i in range(self.num_zones)
+                    ],
+                    dtype=float,
+                )
 
     def weights_directions(self):
         df = pd.DataFrame(DATA)
@@ -525,6 +598,43 @@ class Config:
             f"\nPotencia: {self.POWER_KW} kW "
             f"(E_f={self.E_F_MEV} MeV, area={self.AREA_CM2} cm2)"
         )
+
+    def as_dict(self) -> dict:
+        """Configuración efectiva serializable (JSON, datos.json)."""
+
+        def _as_list(value):
+            if value is None:
+                return None
+            if isinstance(value, np.ndarray):
+                return value.tolist()
+            return list(value)
+
+        return {
+            "num_regions": self.num_regions,
+            "num_zones": self.num_zones,
+            "NC": _as_list(self.NC),
+            "HR": _as_list(self.HR),
+            "IZL": _as_list(self.IZL),
+            "SCT": _as_list(self.SCT),
+            "SCS": _as_list(self.SCS),
+            "NU_SIGF": _as_list(self.NU_SIGF),
+            "SIGMA_F": _as_list(self.SIGMA_F),
+            "Q": _as_list(self.Q),
+            "N": self.N,
+            "reflex_izq": self.reflex_izq,
+            "reflex_der": self.reflex_der,
+            "bound_left": _as_list(self.bound_left),
+            "bound_right": _as_list(self.bound_right),
+            "MODE": self.MODE,
+            "K_EFF": self.K_EFF,
+            "TOL_K": self.TOL_K,
+            "MAX_OUTER": self.MAX_OUTER,
+            "K0": self.K0,
+            "POWER_KW": self.POWER_KW,
+            "E_F_MEV": self.E_F_MEV,
+            "NU": self.NU,
+            "AREA_CM2": self.AREA_CM2,
+        }
 
 
 # =================================================================

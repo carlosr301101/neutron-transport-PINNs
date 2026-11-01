@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue)](CHANGELOG.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -31,6 +31,7 @@ CLI automation system for **SN neutron transport simulations**:
 - **Parallel execution** of the 2D solvers with a configurable process pool
 - **1D Python solver** (`NTS_DD_1D`) with Diamond Difference + SN quadrature, executed over all configs in one shot
 - **1D multiplicative media** (`MODE=eigenvalue|fixed_k|driven`) with `k_eff`, power iteration and optional power normalization
+- **1D manual or JSON configuration**: interactive `--manual` wizard or `--json` file, with the effective config embedded in the output
 - **Post-processing**: scalar-flux extraction, SCS/NU_SIGF/k_eff-vs-flux plots, 2D MFLUX heatmaps
 - **Structured logging** per simulation plus a global rotating log
 - **5 solvers** with different numerical methods selectable from the CLI
@@ -64,7 +65,7 @@ Main entry point: `uv run nts <command>` (implemented in `main.py` → `cli/comm
 | `nts generate <config.json>` [-p] [-o PATH] | Generate a numbered `input_###.txt` for the 2D solvers |
 | `nts generate --place-holder NAME START END STEP` | Expand placeholders in `outputs/inputs/inputs_placeholder.py` → `inputs.py` |
 | `nts run [-s SOLVER] [-i input.txt ...] [-p N]` | Run 2D simulations in parallel → `output_###.json` |
-| `nts run-1d [-c inputs.py] [-o output.json]` | Run the Python 1D solver over all configs |
+| `nts run-1d [-c inputs.py \| --json config.json \| --manual] [-o output.json]` | Run the Python 1D solver from a file, JSON, or the interactive wizard |
 | `nts list inputs\|outputs` | List generated inputs / results |
 | `nts show <result.json>` | Show a result summary (STATUS, ITER, CPU) |
 | `nts plot [-r result.json] [-o out.png] [--show]` | Plot the `MFLUX` heatmap of a 2D result |
@@ -74,8 +75,8 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 | Shortcut | Purpose |
 |----------|---------|
 | `nts-generate` | Placeholder expansion (same flags as above) |
-| `nts-1d-run` | Same as `nts run-1d` |
-| `nts-1d-data [--latest] [--positions 0 100]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` → `outputs/results/datos.json` |
+| `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`) |
+| `nts-1d-data [--latest] [--positions 0 100] [--inputs inputs.py]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` (uses embedded config when available) |
 | `nts-1d-plot [-i datos.json] [-o plot.png] [--x SCS\|NU_SIGF\|k_eff]` | Plot flux vs SCS/NU_SIGF/k_eff, one subplot per position |
 
 ## 🌀 2D Workflow (binary solvers)
@@ -173,6 +174,7 @@ Produces `outputs/results/output_1d_###.json`:
   "runs": [
     {
       "config_name": "config_dict_001",
+      "configuration": {"SCS": [0.9], "NU_SIGF": [0.11], "MODE": "eigenvalue"},
       "scalar_flux": [...],
       "angular_flux": [...],
       "iteration": 13,
@@ -203,6 +205,40 @@ uv run nts-1d-plot
   `flux_<position>` for every requested position.
 - `nts-1d-plot` reads `datos.json` and renders one subplot per position in
   `outputs/results/plots/scs_flux.png`.
+
+### Manual and JSON configuration
+
+Besides a Python `inputs.py` file, the 1D runner accepts a single manual
+configuration from the console or from JSON:
+
+```bash
+# Interactive step-by-step wizard (one run)
+uv run nts-1d-run --manual
+
+# One JSON object, or a list of objects
+uv run nts-1d-run --json config.json
+```
+
+The wizard asks geometry, materials, quadrature, fission/`MODE`, `k_eff`,
+tolerances, power normalization and boundary conditions, then prints a
+summary and asks for confirmation. `--manual`, `--json` and `-c` are
+mutually exclusive; `-o/--output` works in all three cases.
+
+```json
+{
+  "num_regions": 1, "num_zones": 1,
+  "NC": [100], "HR": [20.0], "IZL": [1],
+  "SCT": [1.0], "SCS": [0.9],
+  "NU_SIGF": [0.11],
+  "Q": [0.0], "N": 8,
+  "reflex_izq": false, "reflex_der": false,
+  "bound_left": [0, 0, 0, 0], "bound_right": [0, 0, 0, 0],
+  "MODE": "eigenvalue"
+}
+```
+
+Each output run stores its effective `configuration`, so `nts-1d-data` and
+`sweep_kpis.py` work for manual/JSON runs without `outputs/inputs/inputs.py`.
 
 ## Multiplicative Media (1D)
 
@@ -465,6 +501,9 @@ Common issues:
 | `MODE='fixed_k'` complains about `K_EFF` | Set `K_EFF > 0`, or use `MODE='eigenvalue'` to compute it |
 | `k_eff` does not converge | Increase `MAX_OUTER`, tighten `TOL_K`, refine the mesh |
 | `POWER_KW` fails | Provide `SIGMA_F` per zone or `NU`; the solver needs Σf |
+| `--manual` finishes without running | Answer `s` to the final “¿Ejecutar?” prompt; `n` cancels |
+| `--json` fails | The file must be a JSON object or a list of objects with the 1D keys |
+| `nts-1d-data` says config not found | Use a run with embedded `configuration`, or pass the matching `--inputs` |
 
 ## 📚 Additional Documentation
 
