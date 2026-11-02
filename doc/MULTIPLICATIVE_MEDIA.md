@@ -242,7 +242,7 @@ en `outputs/inputs/inputs.py`.
 ### 3.3 Generador de configuración con placeholders
 
 ```bash
-uv run nts-1d-generate -o outputs/inputs/config_1d_001.json
+uv run nts-1d-config -o outputs/inputs/config_1d_001.json
 ```
 
 Es el mismo asistente que `--manual`, pero escribe un JSON en vez de

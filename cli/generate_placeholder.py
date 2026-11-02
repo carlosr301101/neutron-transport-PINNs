@@ -24,7 +24,7 @@ def cli() -> int:
     parser.add_argument(
         "--json",
         type=Path,
-        help="Read a JSON placeholder config (from nts-1d-generate)",
+        help="Read a JSON placeholder config (from nts-1d-config)",
     )
     parser.add_argument(
         "-o",

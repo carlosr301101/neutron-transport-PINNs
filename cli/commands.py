@@ -845,7 +845,7 @@ def create_parser():
     gen_parser.add_argument(
         "--json",
         type=Path,
-        help="Read a JSON placeholder config (from nts-1d-generate)",
+        help="Read a JSON placeholder config (from nts-1d-config)",
     )
     gen_parser.set_defaults(func=cmd_generate)
 

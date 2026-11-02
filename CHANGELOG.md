@@ -2,6 +2,15 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.6.0] - 2026-11-02 - Comando `nts-1d-config`
+
+### Changed
+- El entry point del generador de configs 1D pasa a llamarse
+  `nts-1d-config`.
+- README, QUICKSTART, QUICK_REFERENCE, NTS_DOCUMENTATION,
+  MULTIPLICATIVE_MEDIA, skill y tests actualizados con el nuevo nombre.
+- Versión del proyecto a 2.6.0.
+
 ## [2.5.0] - 2026-11-02 - Entry point `nts-test`
 
 ### Added
@@ -17,7 +26,7 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
 ## [2.4.0] - 2026-11-02 - Generador de configs 1D con placeholders
 
 ### Added
-- `nts-1d-generate`: asistente interactivo que escribe
+- `nts-1d-config`: asistente interactivo que escribe
   `outputs/inputs/config_1d_###.json` (auto-numerado) o `-o`.
 - Placeholders directos en los prompts (`kk`, `mm`, ...) en los campos
   físicos; el JSON guarda esos nombres como strings.

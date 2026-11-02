@@ -51,7 +51,7 @@ def _expansion_hint(conf: Config, output: Path) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="nts-1d-generate",
+        prog="nts-1d-config",
         description=(
             "Interactive 1D config generator; writes a JSON for "
             "nts-1d-run --json or nts-generate --json"

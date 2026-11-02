@@ -126,7 +126,7 @@ uv run nts-1d-plot
 
 ```bash
 # Interactive generator; -o is optional (auto-numbered)
-uv run nts-1d-generate -o outputs/inputs/config_1d_001.json
+uv run nts-1d-config -o outputs/inputs/config_1d_001.json
 
 # In float fields you may type kk/mm instead of a number.
 uv run nts-generate --json outputs/inputs/config_1d_001.json \

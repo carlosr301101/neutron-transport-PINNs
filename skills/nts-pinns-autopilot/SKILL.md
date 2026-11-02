@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v2.5.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v2.6.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -10,7 +10,7 @@ description: >-
   (MODE=eigenvalue|fixed_k|driven, NU_SIGF, power iteration, power
   normalization). Use this skill ANY time the user works in this repository,
   runs `uv run nts*` commands, or mentions kk/mm/SCT/SCS/NU_SIGF placeholders,
-  k_eff, medio multiplicativo, eigenvalue, fixed_k, driven, nts-1d-generate,
+  k_eff, medio multiplicativo, eigenvalue, fixed_k, driven, nts-1d-config,
   inputs_placeholder.py, inputs.py, cuadraturas.py, output_1d_*.json, datos.json, N=4/N=6/N=8
   quadrature orders, or asks to run/compare/plot DD simulations or prepare KPI
   summaries — even if they never name the system.
@@ -53,7 +53,7 @@ Main CLI (`cli/commands.py` via `main.py`):
 | `nts status` | Solver binaries + file counts | — |
 | `nts validate <config.json>` | Pydantic validation + summary | — |
 | `nts generate <config.json>` | JSON config → `input_###.txt` | `-p` preview, `--place-holder NAME START END STEP` (repeatable, nargs=4), `--json` placeholder config, `-o` output |
-| `nts-1d-generate` | Interactive 1D config JSON generator | `-o` output; `kk`/`mm` placeholders in float fields |
+| `nts-1d-config` | Interactive 1D config JSON generator | `-o` output; `kk`/`mm` placeholders in float fields |
 | `nts run` | 2D binaries (parallel) | `-s SOLVER`, `-i input.txt…`, `-p N` (default 4) |
 | `nts run-1d` | Python 1D solver from file, JSON, or wizard | `-c` config path, `--json`, `--manual`, `-o` output path |
 | `nts list inputs\|outputs` | Rich tables of generated files | — |
@@ -65,7 +65,7 @@ Shortcuts (`pyproject.toml` scripts):
 | Shortcut | Equivalent |
 |----------|-----------|
 | `nts-generate` | `nts generate` in placeholder mode (`--place-holder`, `--json`, `-o`) |
-| `nts-1d-generate` | Interactive 1D config JSON generator |
+| `nts-1d-config` | Interactive 1D config JSON generator |
 | `nts-1d-run` | `nts run-1d` (`-c`, `--json`, `--manual`) |
 | `nts-1d-data [--latest] [--positions 0 50 100]` | extract fluxes + embedded config → `datos.json` |
 | `nts-1d-plot [-r output_1d.json \| -i datos.json] [--kind scalar\|angular\|k-history\|scs] [--run ...]` | scalar/angular flux, k_history, or legacy SCS plots |
@@ -248,7 +248,7 @@ uv run nts-1d-run --json config.json
 ## Generating a 1D config with placeholders
 
 ```bash
-uv run nts-1d-generate -o outputs/inputs/config_1d_001.json
+uv run nts-1d-config -o outputs/inputs/config_1d_001.json
 ```
 
 - Same prompts as `--manual`; without `-o`, writes
@@ -421,7 +421,7 @@ vector); total samples = Σ orders × configs × NC.
   `fixed_k`/`driven`/`fixed_source` run has an empty `k_history`.
 - `-r` and `-i` are mutually exclusive; `-i` is the legacy `datos.json`
   mode.
-- `nts-1d-generate` accepts placeholders only in float physical fields;
+- `nts-1d-config` accepts placeholders only in float physical fields;
   `N`, `NC`, `IZL` and `MAX_OUTER` must be numeric.
 - A config with placeholders is not runnable: expand it with
   `nts-generate --json ... -o ...` first. `nts-1d-run` will fail with

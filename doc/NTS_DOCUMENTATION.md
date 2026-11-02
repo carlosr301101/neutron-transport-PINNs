@@ -298,7 +298,7 @@ Quick benchmark (20 cm homogeneous slab, vacuum, `σt=1.0`, `σs0=0.9`,
 uv run nts-1d-run                    # MODE="eigenvalue", NU_SIGF=[0.11]
 uv run nts-1d-run --manual           # interactive step-by-step wizard
 uv run nts-1d-run --json config.json # one object or a list of objects
-uv run nts-1d-generate -o config_1d.json   # interactive JSON generator
+uv run nts-1d-config -o config_1d.json   # interactive JSON generator
 uv run nts-generate --json config_1d.json --place-holder kk 0.1 0.95 0.05 -o inputs_1d.json
 
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --list-runs

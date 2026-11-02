@@ -234,7 +234,7 @@ Benchmark (20 cm, vacuum, Sigma_t=1.0, Sigma_s=0.9, nu*Sf=0.11):
   k_inf = 1.1 (upper bound); system is slightly supercritical.
 
 Commands:
-  uv run nts-1d-generate -o config_1d.json   # interactive JSON generator
+  uv run nts-1d-config -o config_1d.json   # interactive JSON generator
   uv run nts-generate --json config_1d.json \
       --place-holder kk 0.1 0.95 0.05 -o inputs_1d.json
   uv run nts-1d-run                     # from outputs/inputs/inputs.py

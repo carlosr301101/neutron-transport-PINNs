@@ -1,4 +1,4 @@
-"""Tests for the nts-1d-generate interactive configuration generator."""
+"""Tests for the nts-1d-config interactive configuration generator."""
 
 from __future__ import annotations
 

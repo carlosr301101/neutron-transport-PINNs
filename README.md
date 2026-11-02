@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-2.5.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.6.0-blue)](CHANGELOG.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -32,7 +32,7 @@ CLI automation system for **SN neutron transport simulations**:
 - **1D Python solver** (`NTS_DD_1D`) with Diamond Difference + SN quadrature, executed over all configs in one shot
 - **1D multiplicative media** (`MODE=eigenvalue|fixed_k|driven`) with `k_eff`, power iteration and optional power normalization
 - **1D manual or JSON configuration**: interactive `--manual` wizard or `--json` file, with the effective config embedded in the output
-- **1D config generator**: `nts-1d-generate` writes JSON with optional `kk`/`mm` placeholders, expandable via `nts-generate --json`
+- **1D config generator**: `nts-1d-config` writes JSON with optional `kk`/`mm` placeholders, expandable via `nts-generate --json`
 - **1D result plots**: scalar flux vs `x`, angular flux per direction on one axes, `k_history`, and legacy SCS plots
 - **Post-processing**: scalar-flux extraction, SCS/NU_SIGF/k_eff-vs-flux plots, 2D MFLUX heatmaps
 - **Structured logging** per simulation plus a global rotating log
@@ -66,7 +66,7 @@ Main entry point: `uv run nts <command>` (implemented in `main.py` → `cli/comm
 | `nts validate <config.json>` | Validate a JSON configuration (Pydantic) and print a summary |
 | `nts generate <config.json>` [-p] [-o PATH] | Generate a numbered `input_###.txt` for the 2D solvers |
 | `nts generate --place-holder NAME START END STEP [--json CONFIG] [-o OUT]` | Expand placeholders from `inputs_placeholder.py` or a JSON config → `.py`/`.json` |
-| `nts-1d-generate [-o config.json]` | Interactive 1D config generator; numeric fields accept `kk`/`mm` placeholders |
+| `nts-1d-config [-o config.json]` | Interactive 1D config generator; numeric fields accept `kk`/`mm` placeholders |
 | `nts run [-s SOLVER] [-i input.txt ...] [-p N]` | Run 2D simulations in parallel → `output_###.json` |
 | `nts run-1d [-c inputs.py \| --json config.json \| --manual] [-o output.json]` | Run the Python 1D solver from a file, JSON, or the interactive wizard |
 | `nts list inputs\|outputs` | List generated inputs / results |
@@ -81,7 +81,7 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 | Shortcut | Purpose |
 |----------|---------|
 | `nts-generate` | Placeholder expansion (`--place-holder`, `--json`, `-o`) |
-| `nts-1d-generate` | Interactive 1D config JSON generator (`-o` optional) |
+| `nts-1d-config` | Interactive 1D config JSON generator (`-o` optional) |
 | `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`) |
 | `nts-test` | Run the unittest suite (`-v`, `--failfast`, `-p PATTERN`) |
 | `nts-1d-data [--latest] [--positions 0 100] [--inputs inputs.py]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` (uses embedded config when available) |
@@ -218,7 +218,7 @@ uv run nts-1d-plot
 ### Generate a config JSON (with optional placeholders)
 
 ```bash
-uv run nts-1d-generate -o outputs/inputs/config_1d_001.json
+uv run nts-1d-config -o outputs/inputs/config_1d_001.json
 ```
 
 - Without `-o`, it auto-numbers `outputs/inputs/config_1d_###.json`.
@@ -492,7 +492,7 @@ neutron-transport-PINNs/
 │   ├── paths.py                 # Directory constants + solver registry
 │   ├── logger.py                # Global + per-simulation loggers
 │   ├── extract_1d_flux.py       # nts-1d-data: flux extraction
-│   ├── generate_1d_config.py    # nts-1d-generate: interactive JSON config
+│   ├── generate_1d_config.py    # nts-1d-config: interactive JSON config
 │   ├── plot_1d_flux.py          # nts-1d-plot: scalar/angular/k_history
 │   └── plot_scs_flux.py         # legacy SCS vs flux plots
 ├── solvers/
@@ -574,7 +574,7 @@ Common issues:
 | `nts-1d-plot` says several runs | Use `--list-runs`, then `--run NAME` or `--run INDEX` |
 | `--kind k-history` fails | Only `MODE=eigenvalue` stores `k_history` |
 | `--kind angular` shape error | The output needs `configuration.NC`/`HR`; regenerate it with the current solver |
-| `nts-1d-generate` rejects `kk` | Only float physical fields accept placeholders; `N`/`NC`/`IZL`/`MAX_OUTER` are integers |
+| `nts-1d-config` rejects `kk` | Only float physical fields accept placeholders; `N`/`NC`/`IZL`/`MAX_OUTER` are integers |
 | `nts-generate --json` says unresolved | Provide a `--place-holder` for every name; missing names fail 1D validation |
 | `nts-1d-run` says “could not convert string to float” | The config still has placeholders; expand it with `nts-generate --json` first |
 
