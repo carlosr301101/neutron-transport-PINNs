@@ -22,6 +22,10 @@ PLACEHOLDER = [
     "1", "1", "40", "20", "1", "1.0", "kk",
     "", "s", "mm", "eigenvalue", "", "", "", "n", "n", "n", "s",
 ]
+GEOM_PLACEHOLDER = [
+    "1", "1", "cc", "hh", "1", "1.0", "0.9",
+    "", "s", "0.11", "eigenvalue", "", "", "", "n", "n", "n", "s",
+]
 
 
 class TestGenerate1DConfig(unittest.TestCase):
@@ -53,6 +57,18 @@ class TestGenerate1DConfig(unittest.TestCase):
         self.assertEqual(data["SCS"], ["kk"])
         self.assertEqual(data["NU_SIGF"], ["mm"])
         self.assertEqual(data["TOL_K"], 1e-6)
+
+    def test_spatial_placeholders(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "config.json"
+            with patch("builtins.input", side_effect=GEOM_PLACEHOLDER):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    rc = gen.main(["-o", str(output)])
+            self.assertEqual(rc, 0)
+            data = json.loads(output.read_text())
+        self.assertEqual(data["NC"], ["cc"])
+        self.assertEqual(data["HR"], ["hh"])
+        self.assertEqual(data["SCS"], [0.9])
 
     def test_invalid_numeric_value(self):
         bad = [

@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-2.6.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.7.0-blue)](CHANGELOG.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -222,9 +222,15 @@ uv run nts-1d-config -o outputs/inputs/config_1d_001.json
 ```
 
 - Without `-o`, it auto-numbers `outputs/inputs/config_1d_###.json`.
-- Numeric physical fields accept a number **or** a placeholder name
-  (`kk`, `mm`, ...). Structural integers (`N`, `NC`, `IZL`, `MAX_OUTER`)
-  must stay numeric.
+- Numeric fields accept a number **or** a placeholder name (`kk`, `mm`,
+  ...), including the spatial fields `NC` (cells) and `HR` (thickness).
+  `NC` must expand to positive integers; `HR` to positive floats.
+  `N`, `IZL` and `MAX_OUTER` stay numeric.
+
+```text
+Celdas Región 1 (entero o placeholder, e.g. cc): cc
+Espesor Región 1 (número o placeholder, e.g. hh): hh
+```
 - If the JSON contains placeholders, expand it before running:
 
 ```bash
@@ -574,7 +580,7 @@ Common issues:
 | `nts-1d-plot` says several runs | Use `--list-runs`, then `--run NAME` or `--run INDEX` |
 | `--kind k-history` fails | Only `MODE=eigenvalue` stores `k_history` |
 | `--kind angular` shape error | The output needs `configuration.NC`/`HR`; regenerate it with the current solver |
-| `nts-1d-config` rejects `kk` | Only float physical fields accept placeholders; `N`/`NC`/`IZL`/`MAX_OUTER` are integers |
+| `nts-1d-config` rejects `kk` | `N`/`IZL`/`MAX_OUTER` are integers; `NC`/`HR` accept placeholders (`NC` must expand to positive integers) |
 | `nts-generate --json` says unresolved | Provide a `--place-holder` for every name; missing names fail 1D validation |
 | `nts-1d-run` says “could not convert string to float” | The config still has placeholders; expand it with `nts-generate --json` first |
 

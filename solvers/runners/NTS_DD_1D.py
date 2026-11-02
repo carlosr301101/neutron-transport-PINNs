@@ -76,6 +76,25 @@ class Config:
         """True si el usuario introdujo nombres tipo kk/mm en vez de números."""
         return bool(self.placeholder_names)
 
+    @staticmethod
+    def _as_int_array(values, name: str, positive: bool = False) -> np.ndarray:
+        """Convert a list to ints, rejecting non-integers/unexpanded names."""
+        try:
+            raw = np.asarray(values, dtype=float)
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"{name} debe contener números enteros; si hay placeholders, "
+                "expándelos con nts-generate --json."
+            ) from None
+        if np.any(~np.isfinite(raw)):
+            raise ValueError(f"{name} contiene valores no finitos.")
+        if np.any(raw != np.floor(raw)):
+            raise ValueError(f"{name} debe contener enteros.")
+        ints = raw.astype(int)
+        if positive and np.any(ints <= 0):
+            raise ValueError(f"{name} debe contener enteros > 0.")
+        return ints
+
     def _parse_number(
         self,
         text: str,
@@ -178,9 +197,17 @@ class Config:
             )
 
         # Convertir a numpy arrays
-        self.NC = np.array(kwargs["NC"], dtype=int)
-        self.HR = np.array(kwargs["HR"], dtype=float)
-        self.IZL = np.array(kwargs["IZL"], dtype=int)
+        self.NC = self._as_int_array(kwargs["NC"], "NC", positive=True)
+        try:
+            self.HR = np.array(kwargs["HR"], dtype=float)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "HR debe contener números; si hay placeholders, expándelos "
+                "con nts-generate --json."
+            ) from None
+        if np.any(~np.isfinite(self.HR)) or np.any(self.HR <= 0):
+            raise ValueError("HR debe contener valores finitos > 0.")
+        self.IZL = self._as_int_array(kwargs["IZL"], "IZL", positive=True)
         self.SCT = np.array(kwargs["SCT"], dtype=float)
         self.SCS = np.array(kwargs["SCS"], dtype=float)
         self.Q = np.array(kwargs["Q"], dtype=float)
@@ -396,17 +423,21 @@ class Config:
         self.NC = np.array(
             [
                 self._prompt_number(
-                    f"Celdas en Región {i + 1}: ",
+                    f"Celdas en Región {i + 1} "
+                    f"(entero o placeholder, e.g. cc): ",
                     integer=True,
-                    allow_placeholder=False,
+                    allow_placeholder=True,
                 )
                 for i in range(self.num_regions)
             ],
-            dtype=int,
+            dtype=object,
         )
         self.HR = np.array(
             [
-                self._prompt_number(f"Espesor total [cm] Región {i + 1}: ")
+                self._prompt_number(
+                    f"Espesor total [cm] Región {i + 1} "
+                    f"(número o placeholder, e.g. hh): "
+                )
                 for i in range(self.num_regions)
             ],
             dtype=object,
@@ -414,13 +445,13 @@ class Config:
         self.IZL = np.array(
             [
                 self._prompt_number(
-                    f"ID Zona Material Región {i + 1} (1-based): ",
+                    f"ID Zona Material Región {i + 1} (entero, 1-based): ",
                     integer=True,
                     allow_placeholder=False,
                 )
                 for i in range(self.num_regions)
             ],
-            dtype=int,
+            dtype=object,
         )
 
         print("\n--- CONFIGURACIÓN MATERIALES ---")

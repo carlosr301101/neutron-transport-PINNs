@@ -223,6 +223,8 @@ Config keys:
   K0        : initial k guess (default integral nu*Sf / integral Sa)
   POWER_KW  : optional power normalization [kW]
   E_F_MEV   : 200.0 (default), NU: nu_bar, AREA_CM2: 1.0
+  Placeholders: SCS/SCT/NU_SIGF/HR/NC/...; NC must expand to integers;
+                N/IZL/MAX_OUTER must stay numeric.
 
 Mode rules:
   eigenvalue : Q=0, zero incoming flux; computes k_eff

@@ -139,6 +139,8 @@ uv run nts-1d-run --json outputs/inputs/inputs_1d.json
 
 - `-o .py` writes `inputs.py`; `-o .json` writes a list.
 - Placeholders are combined in parallel by index.
+- `NC` and `HR` also accept placeholders; `NC` must expand to positive
+  integers. `N`, `IZL` and `MAX_OUTER` stay numeric.
 
 ### Manual or JSON configuration
 

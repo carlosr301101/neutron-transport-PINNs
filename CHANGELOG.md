@@ -2,6 +2,22 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.7.0] - 2026-11-02 - Placeholders en geometría 1D
+
+### Added
+- `nts-1d-config` acepta placeholders en `NC` (celdas) y `HR` (espesor).
+- `Config.auto_input` valida que `NC` e `IZL` sean enteros positivos y que
+  `HR` sea finito y positivo.
+- Tests de generación/expansión con placeholders espaciales y rechazo de
+  `NC` no entero.
+
+### Changed
+- `NC` con placeholder debe expandirse a enteros positivos; `N`, `IZL` y
+  `MAX_OUTER` siguen siendo numéricos.
+- README, QUICKSTART, QUICK_REFERENCE, MULTIPLICATIVE_MEDIA y skill
+  actualizados.
+- Versión del proyecto a 2.7.0.
+
 ## [2.6.0] - 2026-11-02 - Comando `nts-1d-config`
 
 ### Changed

@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v2.6.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v2.7.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -253,9 +253,10 @@ uv run nts-1d-config -o outputs/inputs/config_1d_001.json
 
 - Same prompts as `--manual`; without `-o`, writes
   `outputs/inputs/config_1d_###.json`.
-- Float physical fields accept a number **or** a placeholder name
-  (`kk`, `mm`, ...). Structural integers (`N`, `NC`, `IZL`, `MAX_OUTER`)
-  must stay numeric.
+- Numeric fields accept a number **or** a placeholder name (`kk`, `mm`,
+  ...), including the spatial `NC` and `HR`. `NC` must expand to positive
+  integers; `HR` to positive floats. `N`, `IZL` and `MAX_OUTER` must stay
+  numeric.
 - The JSON stores placeholders as strings, e.g. `"SCS": ["kk"]`.
 - Expand and run:
 
@@ -421,8 +422,8 @@ vector); total samples = Σ orders × configs × NC.
   `fixed_k`/`driven`/`fixed_source` run has an empty `k_history`.
 - `-r` and `-i` are mutually exclusive; `-i` is the legacy `datos.json`
   mode.
-- `nts-1d-config` accepts placeholders only in float physical fields;
-  `N`, `NC`, `IZL` and `MAX_OUTER` must be numeric.
+- `nts-1d-config` accepts placeholders in `NC`/`HR` too; `NC` must expand
+  to positive integers. `N`, `IZL` and `MAX_OUTER` must be numeric.
 - A config with placeholders is not runnable: expand it with
   `nts-generate --json ... -o ...` first. `nts-1d-run` will fail with
   “could not convert string to float” otherwise.

@@ -11,6 +11,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from cli.commands import cmd_generate_placeholder
+from solvers.runners.NTS_DD_1D import Config
 
 
 BASE = {
@@ -109,6 +110,42 @@ class TestGeneratePlaceholderJson(unittest.TestCase):
                 rc = cmd_generate_placeholder(args)
             self.assertEqual(rc, 1)
             self.assertFalse(out.exists())
+
+    def test_expand_spatial_placeholders(self):
+        cfg = dict(BASE)
+        cfg["NC"] = ["cc"]
+        cfg["HR"] = ["hh"]
+        cfg["SCS"] = [0.9]
+        cfg["NU_SIGF"] = [0.11]
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "config_1d_001.json"
+            out = Path(tmp) / "inputs_geom.json"
+            src.write_text(json.dumps(cfg))
+            args = Namespace(
+                place_holder=[
+                    ("cc", "20", "40", "20"),
+                    ("hh", "10", "20", "10"),
+                ],
+                json=src,
+                output=out,
+                config=None,
+            )
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = cmd_generate_placeholder(args)
+            self.assertEqual(rc, 0)
+            data = json.loads(out.read_text())
+        self.assertEqual(len(data), 2)
+        self.assertEqual([item["NC"][0] for item in data], [20, 40])
+        self.assertEqual([item["HR"][0] for item in data], [10, 20])
+
+    def test_nc_must_be_integer(self):
+        cfg = dict(BASE)
+        cfg["NC"] = [20.5]
+        cfg["SCS"] = [0.9]
+        cfg["NU_SIGF"] = [0.11]
+        with self.assertRaises(ValueError):
+            with contextlib.redirect_stdout(io.StringIO()):
+                Config(manual=False, **cfg)
 
     def test_load_json_list(self):
         with tempfile.TemporaryDirectory() as tmp:

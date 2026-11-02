@@ -283,7 +283,8 @@ uv run nts-1d-run --json outputs/inputs/inputs_1d.json
 - Los placeholders se combinan en paralelo por índice (longitud mínima).
 - Solo se redondean los valores inyectados; `TOL_K`, `K0`, etc. se
   conservan.
-- Los enteros estructurales (`N`, `NC`, `IZL`, `MAX_OUTER`) no admiten
+- `NC` y `HR` admiten placeholders. `NC` debe expandirse a enteros
+  positivos; `HR` a floats positivos. `N`, `IZL` y `MAX_OUTER` no admiten
   placeholders.
 
 ## 4. Algoritmo
