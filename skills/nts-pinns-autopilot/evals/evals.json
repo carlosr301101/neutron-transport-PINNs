@@ -72,6 +72,18 @@
         "Explains --list-runs/--run when the file has several runs",
         "Notes k-history is only for eigenvalue and gives output paths"
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "Quiero generar una configuración 1D interactiva donde SCS sea kk y nu*Sigma_f sea mm, y luego expandirla con nts-generate para barrer kk 0.1..0.5 y mm 0.05..0.15. ¿Qué comandos uso?",
+      "expected_output": "Uses nts-1d-generate -o config_1d_001.json, types kk/mm in the SCS and nu*Sigma_f prompts, then nts-generate --json config_1d_001.json --place-holder kk 0.1 0.5 0.2 --place-holder mm 0.05 0.15 0.05 -o inputs_1d.json, and nts-1d-run --json inputs_1d.json. Notes N/NC/IZL/MAX_OUTER cannot be placeholders and each expanded config is validated.",
+      "files": [],
+      "expectations": [
+        "Uses nts-1d-generate and types kk/mm directly in the float prompts",
+        "Expands with nts-generate --json ... --place-holder ... -o ...",
+        "Runs with nts-1d-run --json on the expanded file",
+        "States structural integers cannot be placeholders and configs are validated"
+      ]
     }
   ]
 }

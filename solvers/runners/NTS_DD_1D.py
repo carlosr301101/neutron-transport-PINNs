@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import logging
+import re
 from time import time
 from datetime import datetime
 
@@ -15,7 +16,12 @@ logger = logging.getLogger(__name__)
 # =================================================================
 class Config:
     def __init__(
-        self, epsilon: float = 1e-5, max_iter: int = 2000, manual: bool = True, **kwargs
+        self,
+        epsilon: float = 1e-5,
+        max_iter: int = 2000,
+        manual: bool = True,
+        allow_placeholders: bool = False,
+        **kwargs,
     ):
         # Limpiamos handlers previos para evitar duplicidad en logs
         for handler in logging.root.handlers[:]:
@@ -26,6 +32,8 @@ class Config:
         self.num_zones = 0
         self.bound_left = None
         self.bound_right = None
+        self.allow_placeholders = allow_placeholders
+        self.placeholder_names: set[str] = set()
 
         # --- Medio multiplicativo (fisión) ---
         self.MODE = None
@@ -54,13 +62,61 @@ class Config:
         self.epsilon = epsilon
         self.max_iter = max_iter
 
-        self.prelim_calculations()
+        if not self.has_placeholders:
+            self.prelim_calculations()
 
     def regiones_input(self):
         self.num_regions = int(input("\n Necesita introducir el numero de Regiones: "))
 
     def zones_input(self):
         self.num_zones = int(input("\n Necesita introducir el numero de Zonas: "))
+
+    @property
+    def has_placeholders(self) -> bool:
+        """True si el usuario introdujo nombres tipo kk/mm en vez de números."""
+        return bool(self.placeholder_names)
+
+    def _parse_number(
+        self,
+        text: str,
+        integer: bool = False,
+        allow_placeholder: bool = True,
+    ):
+        text = text.strip()
+        if not text:
+            return None
+        if allow_placeholder and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", text):
+            self.placeholder_names.add(text)
+            return text
+        try:
+            return int(text) if integer else float(text)
+        except ValueError:
+            raise ValueError(f"Valor inválido: {text!r}") from None
+
+    def _prompt_number(
+        self,
+        prompt: str,
+        default=None,
+        integer: bool = False,
+        allow_placeholder: bool | None = None,
+    ):
+        if allow_placeholder is None:
+            allow_placeholder = self.allow_placeholders
+        text = input(prompt).strip()
+        if not text:
+            if default is not None:
+                return default
+            raise ValueError(f"Valor requerido: {prompt.strip()}")
+        value = self._parse_number(
+            text,
+            integer=integer,
+            allow_placeholder=allow_placeholder,
+        )
+        if value is None:
+            if default is not None:
+                return default
+            raise ValueError(f"Valor requerido: {prompt.strip()}")
+        return value
 
     def auto_input(self, kwargs: dict):
         """Carga todos los datos desde un diccionario.
@@ -338,35 +394,61 @@ class Config:
         """Carga interactiva paso a paso (incluye medios multiplicativos)."""
         print("\n--- CONFIGURACIÓN ESPACIAL ---")
         self.NC = np.array(
-            [int(input(f"Celdas en Región {i + 1}: ")) for i in range(self.num_regions)]
+            [
+                self._prompt_number(
+                    f"Celdas en Región {i + 1}: ",
+                    integer=True,
+                    allow_placeholder=False,
+                )
+                for i in range(self.num_regions)
+            ],
+            dtype=int,
         )
         self.HR = np.array(
             [
-                float(input(f"Espesor total [cm] Región {i + 1}: "))
+                self._prompt_number(f"Espesor total [cm] Región {i + 1}: ")
                 for i in range(self.num_regions)
-            ]
+            ],
+            dtype=object,
         )
         self.IZL = np.array(
             [
-                int(input(f"ID Zona Material Región {i + 1} (1-based): "))
+                self._prompt_number(
+                    f"ID Zona Material Región {i + 1} (1-based): ",
+                    integer=True,
+                    allow_placeholder=False,
+                )
                 for i in range(self.num_regions)
-            ]
+            ],
+            dtype=int,
         )
 
         print("\n--- CONFIGURACIÓN MATERIALES ---")
         self.SCT = np.array(
-            [float(input(f"Sigma_Total Zona {i + 1}: ")) for i in range(self.num_zones)]
+            [
+                self._prompt_number(f"Sigma_Total Zona {i + 1}: ")
+                for i in range(self.num_zones)
+            ],
+            dtype=object,
         )
         self.SCS = np.array(
             [
-                float(input(f"Sigma_Scattering Zona {i + 1}: "))
+                self._prompt_number(
+                    f"Sigma_Scattering Zona {i + 1} "
+                    f"(número o placeholder, e.g. kk): "
+                )
                 for i in range(self.num_zones)
-            ]
+            ],
+            dtype=object,
         )
 
         print("\n--- CONFIGURACIÓN CUADRATURA ---")
-        n_text = input("Orden de cuadratura (2, 4, 6, 8) [8]: ").strip()
-        self.N = int(n_text) if n_text else 8
+        self.N = self._prompt_number(
+            "Orden de cuadratura (2, 4, 6, 8) [8]: ",
+            default=8,
+            integer=True,
+            allow_placeholder=False,
+        )
         if self.N % 2 != 0:
             raise ValueError("El orden de cuadratura debe ser par.")
         self.N_HALF = self.N // 2
@@ -383,12 +465,13 @@ class Config:
             print("\n--- FUENTE EXTERNA ---")
             self.Q = np.array(
                 [
-                    float(
-                        input(f"Fuente (Q) Región {i + 1} [0]: ").strip()
-                        or 0.0
+                    self._prompt_number(
+                        f"Fuente (Q) Región {i + 1} [0]: ",
+                        default=0.0,
                     )
                     for i in range(self.num_regions)
-                ]
+                ],
+                dtype=object,
             )
 
         # Fronteras
@@ -406,11 +489,19 @@ class Config:
             "derecha", self.reflex_der
         )
 
-        # Validar la combinación de modo/fuente también en modo manual
-        self._validate_fission_config()
+        if self.has_placeholders:
+            print(
+                "\nPlaceholders detectados: "
+                + ", ".join(sorted(self.placeholder_names))
+                + ". La validación numérica se hará al expandir."
+            )
+        else:
+            # Validar la combinación de modo/fuente también en modo manual
+            self._validate_fission_config()
 
-        # Cálculos preliminares
-        self.prelim_calculations()
+            # Cálculos preliminares
+            self.prelim_calculations()
+
         logger.info(f"Configuración completa.\n{self}")
 
     def _manual_boundary_values(self, side: str, reflective: bool):
@@ -427,20 +518,23 @@ class Config:
             f"Flujo entrante {side} ({self.N_HALF} valores) [{default}]: "
         ).strip()
         if not text:
-            values = np.zeros(self.N_HALF)
-        else:
-            values = np.array(
-                [float(v) for v in text.replace(",", " ").split()], dtype=float
-            )
-        if len(values) != self.N_HALF:
+            return np.zeros(self.N_HALF)
+
+        tokens = text.replace(",", " ").split()
+        if len(tokens) != self.N_HALF:
             raise ValueError(
                 f"Se esperaban {self.N_HALF} valores para la frontera {side}."
             )
-        return values
+        values = [
+            self._parse_number(token, allow_placeholder=True) for token in tokens
+        ]
+        if any(isinstance(value, str) for value in values):
+            return np.array(values, dtype=object)
+        return np.array(values, dtype=float)
 
     def _fission_input(self):
         """Preguntas para medios multiplicativos en modo manual."""
-        self.NU_SIGF = np.zeros(self.num_zones)
+        self.NU_SIGF = np.array([0.0] * self.num_zones, dtype=object)
         self.SIGMA_F = None
         self.MODE = "fixed_source"
         self.K_EFF = None
@@ -460,8 +554,8 @@ class Config:
             return
 
         for i in range(self.num_zones):
-            self.NU_SIGF[i] = float(
-                input(f"nu*Sigma_f Zona {i + 1} [cm^-1]: ").strip()
+            self.NU_SIGF[i] = self._prompt_number(
+                f"nu*Sigma_f Zona {i + 1} [cm^-1] (número o placeholder, e.g. mm): "
             )
 
         mode = (
@@ -475,29 +569,34 @@ class Config:
         self.MODE = mode
 
         if mode == "fixed_k":
-            self.K_EFF = float(input("k_eff impuesto: ").strip())
+            self.K_EFF = self._prompt_number("k_eff impuesto: ")
         elif mode == "driven":
             self.K_EFF = 1.0
             print("Modo driven: k = 1 (fisión física) y se pedirá fuente/flujo.")
         else:
             self.K_EFF = None
 
-        tol_text = input("TOL_K [1e-6]: ").strip()
-        self.TOL_K = float(tol_text) if tol_text else 1e-6
-        max_text = input("MAX_OUTER [200]: ").strip()
-        self.MAX_OUTER = int(max_text) if max_text else 200
+        self.TOL_K = self._prompt_number("TOL_K [1e-6]: ", default=1e-6)
+        self.MAX_OUTER = self._prompt_number(
+            "MAX_OUTER [200]: ",
+            default=200,
+            integer=True,
+            allow_placeholder=False,
+        )
         k0_text = input("K0 (vacío = automático): ").strip()
-        self.K0 = float(k0_text) if k0_text else None
+        self.K0 = self._parse_number(k0_text) if k0_text else None
 
         if (
             input("¿Normalizar a una potencia? (s/n) [n]: ").strip().lower()
             == "s"
         ):
-            self.POWER_KW = float(input("Potencia [kW]: ").strip())
-            ef_text = input("E_f [MeV/fisión] [200]: ").strip()
-            self.E_F_MEV = float(ef_text) if ef_text else 200.0
-            area_text = input("Área transversal [cm^2] [1]: ").strip()
-            self.AREA_CM2 = float(area_text) if area_text else 1.0
+            self.POWER_KW = self._prompt_number("Potencia [kW]: ")
+            self.E_F_MEV = self._prompt_number(
+                "E_f [MeV/fisión] [200]: ", default=200.0
+            )
+            self.AREA_CM2 = self._prompt_number(
+                "Área transversal [cm^2] [1]: ", default=1.0
+            )
 
             conv = (
                 input("Conversión de fisión: nu o sigma_f [nu]: ")
@@ -508,18 +607,19 @@ class Config:
             if conv not in {"nu", "sigma_f"}:
                 raise ValueError("La conversión debe ser 'nu' o 'sigma_f'.")
             if conv == "nu":
-                self.NU = float(
-                    input("nu (neutrones/fisión, p.ej. 2.4): ").strip()
+                self.NU = self._prompt_number(
+                    "nu (neutrones/fisión, p.ej. 2.4): "
                 )
             else:
                 self.SIGMA_F = np.array(
                     [
-                        float(
-                            input(f"Sigma_f Zona {i + 1} [cm^-1]: ").strip()
+                        self._prompt_number(
+                            f"Sigma_f Zona {i + 1} [cm^-1] "
+                            f"(número o placeholder): "
                         )
                         for i in range(self.num_zones)
                     ],
-                    dtype=float,
+                    dtype=object,
                 )
 
     def weights_directions(self):

@@ -2,6 +2,46 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.5.0] - 2026-11-02 - Entry point `nts-test`
+
+### Added
+- `nts-test`: ejecuta la suite `unittest` del repositorio desde cualquier
+  cwd, con `-v`, `--failfast`, `-p/--pattern` y `--start-dir`.
+- `tests/test_run_tests.py` (2 tests; 48 en total).
+- README, QUICKSTART, QUICK_REFERENCE, MULTIPLICATIVE_MEDIA y la skill
+  actualizados para usar `nts-test`.
+
+### Changed
+- Versión del proyecto a 2.5.0.
+
+## [2.4.0] - 2026-11-02 - Generador de configs 1D con placeholders
+
+### Added
+- `nts-1d-generate`: asistente interactivo que escribe
+  `outputs/inputs/config_1d_###.json` (auto-numerado) o `-o`.
+- Placeholders directos en los prompts (`kk`, `mm`, ...) en los campos
+  físicos; el JSON guarda esos nombres como strings.
+- `nts-generate --json INPUT --place-holder ... -o OUTPUT`: expansión de
+  placeholders desde JSON a `.json` (lista de configs) o `.py`
+  (`config_dict_###` / `inputs.py`).
+- Validación de cada config 1D expandida con `Config(manual=False, **cfg)`.
+- 9 tests nuevos (46 en total).
+- README, QUICKSTART, NTS_DOCUMENTATION, QUICK_REFERENCE,
+  MULTIPLICATIVE_MEDIA y la skill `nts-pinns-autopilot` actualizados.
+
+### Changed
+- `Config` acepta `allow_placeholders`; `_prompt_number` permite números o
+  nombres; se omite la validación numérica/preliminar si hay placeholders.
+- `nts-generate` acepta `--json` y `-o`; sin `-o` sigue escribiendo
+  `outputs/inputs/inputs.py`.
+- Versión del proyecto a 2.4.0.
+
+### Fixed
+- El redondeo de la expansión ya no destruye valores como `TOL_K=1e-6`;
+  solo se redondean los valores inyectados por los placeholders.
+- `nts generate` (CLI principal) añade el repo root a `sys.path` para poder
+  validar configs 1D.
+
 ## [2.3.0] - 2026-11-01 - Gráficos de flujo 1D
 
 ### Added

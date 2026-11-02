@@ -239,6 +239,53 @@ que un dict de `inputs.py`. Ejemplo para el benchmark:
 `sweep_kpis.py` la usan, así que no hace falta que el `config_name` exista
 en `outputs/inputs/inputs.py`.
 
+### 3.3 Generador de configuración con placeholders
+
+```bash
+uv run nts-1d-generate -o outputs/inputs/config_1d_001.json
+```
+
+Es el mismo asistente que `--manual`, pero escribe un JSON en vez de
+ejecutar. En los campos físicos de tipo float puedes escribir un número o
+un placeholder:
+
+```text
+Sigma_Scattering Zona 1 (número o placeholder, e.g. kk): kk
+nu*Sigma_f Zona 1 [cm^-1] (número o placeholder, e.g. mm): mm
+```
+
+El JSON resultante contiene:
+
+```json
+{
+  "SCS": ["kk"],
+  "NU_SIGF": ["mm"],
+  "MODE": "eigenvalue",
+  "TOL_K": 1e-6
+}
+```
+
+Expansión y ejecución:
+
+```bash
+uv run nts-generate --json outputs/inputs/config_1d_001.json \
+  --place-holder kk 0.1 0.95 0.05 \
+  --place-holder mm 0.05 0.20 0.05 \
+  -o outputs/inputs/inputs_1d.json
+
+uv run nts-1d-run --json outputs/inputs/inputs_1d.json
+```
+
+- `-o .json` escribe una lista de configs; `-o .py` escribe
+  `config_dict_###` (`inputs.py`).
+- Sin `--json`, `nts-generate` sigue leyendo
+  `outputs/inputs/inputs_placeholder.py`.
+- Los placeholders se combinan en paralelo por índice (longitud mínima).
+- Solo se redondean los valores inyectados; `TOL_K`, `K0`, etc. se
+  conservan.
+- Los enteros estructurales (`N`, `NC`, `IZL`, `MAX_OUTER`) no admiten
+  placeholders.
+
 ## 4. Algoritmo
 
 ### 4.1 Power iteration (`eigenvalue`)
@@ -409,7 +456,7 @@ Reglas:
 ## 8. Validación
 
 ```bash
-uv run python -m unittest discover -s tests -v
+uv run nts-test -v
 ```
 
 Tests incluidos:

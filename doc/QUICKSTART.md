@@ -37,6 +37,8 @@ uv run nts show <output_###.json>       # Show result summary
 uv run nts run -s NTS_DD -p 4           # Run all inputs, 4 processes
 uv run nts plot -r <output_###.json>    # Plot MFLUX heatmap
 uv run nts run-1d                       # Run the Python 1D solver
+uv run nts-test                         # Run the unittest suite
+uv run nts-test -v                      # Verbose tests
 ```
 
 ## 🎯 Available Solvers
@@ -119,6 +121,24 @@ uv run nts-1d-data --latest --positions 0 50 100
 # 5. Plot SCS vs flux
 uv run nts-1d-plot
 ```
+
+### Generate a config JSON (with placeholders)
+
+```bash
+# Interactive generator; -o is optional (auto-numbered)
+uv run nts-1d-generate -o outputs/inputs/config_1d_001.json
+
+# In float fields you may type kk/mm instead of a number.
+uv run nts-generate --json outputs/inputs/config_1d_001.json \
+  --place-holder kk 0.1 0.95 0.05 \
+  --place-holder mm 0.05 0.20 0.05 \
+  -o outputs/inputs/inputs_1d.json
+
+uv run nts-1d-run --json outputs/inputs/inputs_1d.json
+```
+
+- `-o .py` writes `inputs.py`; `-o .json` writes a list.
+- Placeholders are combined in parallel by index.
 
 ### Manual or JSON configuration
 

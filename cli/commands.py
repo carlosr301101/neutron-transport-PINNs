@@ -37,6 +37,10 @@ from utils.paths import (
 )
 from utils.logger import get_logger
 
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 console = Console()
 
 
@@ -44,11 +48,11 @@ def cmd_generate(args):
     """Generate input.txt file from configuration."""
     logger = get_logger()
 
-    if args.place_holder:
+    if getattr(args, "place_holder", None) or getattr(args, "json", None):
         return cmd_generate_placeholder(args)
 
-    config_file = args.config
-    output_name = args.output
+    config_file = getattr(args, "config", None)
+    output_name = getattr(args, "output", None)
 
     if config_file is None:
         console.print("[bold red]✗ Configuration JSON file is required[/]")
@@ -350,18 +354,6 @@ def _contains_placeholders(value, placeholder_names: set[str]) -> bool:
     return False
 
 
-def _round_floats(value, ndigits: int = 8):
-    if isinstance(value, dict):
-        return {k: _round_floats(v, ndigits) for k, v in value.items()}
-    if isinstance(value, list):
-        return [_round_floats(v, ndigits) for v in value]
-    if isinstance(value, tuple):
-        return tuple(_round_floats(v, ndigits) for v in value)
-    if isinstance(value, float):
-        return round(value, ndigits)
-    return value
-
-
 def _decimal_places(value_str: str) -> int:
     try:
         decimal_value = Decimal(value_str)
@@ -390,16 +382,18 @@ def _should_validate_simulation_config(cfg: dict) -> bool:
 
 
 def cmd_generate_placeholder(args):
-    """Generate outputs/inputs/inputs.py from inputs_placeholder.py."""
+    """Expand placeholders from inputs_placeholder.py or a JSON config."""
     logger = get_logger()
     ensure_directories()
 
     placeholder_file = Path("outputs/inputs/inputs_placeholder.py")
-    output_file = Path("outputs/inputs/inputs.py")
+    output_file = Path(
+        getattr(args, "output", None) or "outputs/inputs/inputs.py"
+    )
 
     placeholders = {}
     rounding_digits = 0
-    for name, start, end, step in args.place_holder:
+    for name, start, end, step in (getattr(args, "place_holder", None) or []):
         try:
             placeholders[name] = _build_placeholder_values(
                 float(start), float(end), float(step)
@@ -413,15 +407,23 @@ def cmd_generate_placeholder(args):
         console.print("[bold red]✗ No placeholders provided[/]")
         return 1
 
+    json_path = getattr(args, "json", None)
     try:
-        base_configs = _load_config_dicts(placeholder_file, set(placeholders.keys()))
+        if json_path:
+            base_configs = _load_json_configs(Path(json_path))
+            source_label = str(json_path)
+        else:
+            base_configs = _load_config_dicts(
+                placeholder_file, set(placeholders.keys())
+            )
+            source_label = str(placeholder_file)
     except Exception as e:
         console.print(f"[bold red]✗ Error:[/] {str(e)}")
         return 1
 
     if not base_configs:
         console.print(
-            "[bold red]✗ No config dictionaries found in inputs_placeholder.py[/]"
+            f"[bold red]✗ No config dictionaries found in {source_label}[/]"
         )
         return 1
 
@@ -440,7 +442,12 @@ def cmd_generate_placeholder(args):
     validation_errors = []
 
     for idx in range(min_len):
-        replacements = {name: values[idx] for name, values in placeholders.items()}
+        # Round only the injected placeholder values; rounding every float in
+        # the config would destroy values such as TOL_K=1e-6.
+        replacements = {
+            name: round(values[idx], rounding_digits)
+            for name, values in placeholders.items()
+        }
         for base_name, base_cfg in base_configs:
             cfg = _replace_placeholders(base_cfg, replacements)
             if _contains_placeholders(cfg, placeholder_names):
@@ -452,6 +459,18 @@ def cmd_generate_placeholder(args):
                 except Exception as e:
                     validation_errors.append(f"Step {idx + 1} ({base_name}): {str(e)}")
                     continue
+            elif "num_regions" in cfg and "num_zones" in cfg:
+                try:
+                    import contextlib
+                    import io
+
+                    from solvers.runners.NTS_DD_1D import Config as Config1D
+
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        Config1D(manual=False, **cfg)
+                except Exception as e:
+                    validation_errors.append(f"Step {idx + 1} ({base_name}): {str(e)}")
+                    continue
             results.append(cfg)
 
     if not results:
@@ -460,23 +479,36 @@ def cmd_generate_placeholder(args):
             console.print("[yellow]Errors:[/]")
             for err in errors:
                 console.print(f"  • {err}")
+        if validation_errors:
+            console.print("[yellow]Validation errors:[/]")
+            for err in validation_errors:
+                console.print(f"  • {err}")
         return 1
 
     try:
         output_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_file, "w") as f:
-            for i, cfg in enumerate(results, start=1):
-                name = f"config_dict_{i:03d}"
-                rounded = _round_floats(cfg, rounding_digits)
-                formatted = pprint.pformat(rounded, sort_dicts=True, width=100)
-                f.write(f"{name} = {formatted}\n\n")
+        if output_file.suffix.lower() == ".json":
+            output_file.write_text(
+                json.dumps(results, indent=2, ensure_ascii=False) + "\n"
+            )
+        else:
+            with open(output_file, "w") as f:
+                for i, cfg in enumerate(results, start=1):
+                    name = f"config_dict_{i:03d}"
+                    formatted = pprint.pformat(cfg, sort_dicts=True, width=100)
+                    f.write(f"{name} = {formatted}\n\n")
     except Exception as e:
-        console.print(f"[bold red]✗ Failed to write inputs.py:[/] {str(e)}")
+        console.print(f"[bold red]✗ Failed to write {output_file}:[/] {str(e)}")
         return 1
 
     console.print(
         f"[bold green]✓ Generated {len(results)} config(s).[/] Output: {output_file}"
     )
+    if output_file.suffix.lower() == ".json":
+        console.print(f"[dim]Run: uv run nts-1d-run --json {output_file}[/dim]")
+    else:
+        console.print(f"[dim]Run: uv run nts-1d-run -c {output_file}[/dim]")
+
     if errors or validation_errors:
         skipped = len(errors) + len(validation_errors)
         console.print(f"[yellow]Warning:[/] {skipped} config(s) skipped")
@@ -808,7 +840,12 @@ def create_parser():
         nargs=4,
         action="append",
         metavar=("NAME", "START", "END", "STEP"),
-        help="Generate outputs/inputs/inputs.py from inputs_placeholder.py",
+        help="Expand a placeholder over START..END with STEP",
+    )
+    gen_parser.add_argument(
+        "--json",
+        type=Path,
+        help="Read a JSON placeholder config (from nts-1d-generate)",
     )
     gen_parser.set_defaults(func=cmd_generate)
 

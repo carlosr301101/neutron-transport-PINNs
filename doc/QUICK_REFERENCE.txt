@@ -234,6 +234,9 @@ Benchmark (20 cm, vacuum, Sigma_t=1.0, Sigma_s=0.9, nu*Sf=0.11):
   k_inf = 1.1 (upper bound); system is slightly supercritical.
 
 Commands:
+  uv run nts-1d-generate -o config_1d.json   # interactive JSON generator
+  uv run nts-generate --json config_1d.json \
+      --place-holder kk 0.1 0.95 0.05 -o inputs_1d.json
   uv run nts-1d-run                     # from outputs/inputs/inputs.py
   uv run nts-1d-run --manual            # interactive step-by-step wizard
   uv run nts-1d-run --json config.json  # one object or a list of objects
@@ -242,7 +245,7 @@ Commands:
   uv run nts-1d-plot -r output_1d_016.json --kind angular --run manual
   uv run nts-1d-plot -r output_1d_016.json --kind k-history --run manual
   uv run nts-1d-plot -i datos.json --x k_eff        # modo legado
-  uv run python -m unittest discover -s tests -v
+  uv run nts-test -v
 
 Full reference: MULTIPLICATIVE_MEDIA.md
 

@@ -19,7 +19,18 @@ def cli() -> int:
         nargs=4,
         action="append",
         metavar=("NAME", "START", "END", "STEP"),
-        help="Generate outputs/inputs/inputs.py from inputs_placeholder.py",
+        help="Expand a placeholder over START..END with STEP",
+    )
+    parser.add_argument(
+        "--json",
+        type=Path,
+        help="Read a JSON placeholder config (from nts-1d-generate)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Output .py (inputs.py format) or .json (list of configs)",
     )
     args = parser.parse_args()
 
