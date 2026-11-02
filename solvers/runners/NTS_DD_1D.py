@@ -66,14 +66,14 @@ class Config:
             self.prelim_calculations()
 
     def regiones_input(self):
-        self.num_regions = int(input("\n Necesita introducir el numero de Regiones: "))
+        self.num_regions = int(input("\n Enter the number of Regions: "))
 
     def zones_input(self):
-        self.num_zones = int(input("\n Necesita introducir el numero de Zonas: "))
+        self.num_zones = int(input("\n Enter the number of Zones: "))
 
     @property
     def has_placeholders(self) -> bool:
-        """True si el usuario introdujo nombres tipo kk/mm en vez de números."""
+        """True if the user entered names such as kk/mm instead of numbers."""
         return bool(self.placeholder_names)
 
     @staticmethod
@@ -83,16 +83,16 @@ class Config:
             raw = np.asarray(values, dtype=float)
         except (TypeError, ValueError):
             raise ValueError(
-                f"{name} debe contener números enteros; si hay placeholders, "
-                "expándelos con nts-generate --json."
+                f"{name} must contain integers; if there are placeholders, "
+                "expand them with nts-generate --json."
             ) from None
         if np.any(~np.isfinite(raw)):
-            raise ValueError(f"{name} contiene valores no finitos.")
+            raise ValueError(f"{name} contains non-finite values.")
         if np.any(raw != np.floor(raw)):
-            raise ValueError(f"{name} debe contener enteros.")
+            raise ValueError(f"{name} must contain integers.")
         ints = raw.astype(int)
         if positive and np.any(ints <= 0):
-            raise ValueError(f"{name} debe contener enteros > 0.")
+            raise ValueError(f"{name} must contain integers > 0.")
         return ints
 
     def _parse_number(
@@ -110,7 +110,7 @@ class Config:
         try:
             return int(text) if integer else float(text)
         except ValueError:
-            raise ValueError(f"Valor inválido: {text!r}") from None
+            raise ValueError(f"Invalid value: {text!r}") from None
 
     def _prompt_number(
         self,
@@ -125,7 +125,7 @@ class Config:
         if not text:
             if default is not None:
                 return default
-            raise ValueError(f"Valor requerido: {prompt.strip()}")
+            raise ValueError(f"Value required: {prompt.strip()}")
         value = self._parse_number(
             text,
             integer=integer,
@@ -134,7 +134,7 @@ class Config:
         if value is None:
             if default is not None:
                 return default
-            raise ValueError(f"Valor requerido: {prompt.strip()}")
+            raise ValueError(f"Value required: {prompt.strip()}")
         return value
 
     def auto_input(self, kwargs: dict):
@@ -144,17 +144,17 @@ class Config:
         {
             'num_regions': int,
             'num_zones': int,
-            'NC': list o np.array (celdas por región),
+            'NC': list or np.array (cells per region),
             'HR': list o np.array (espesores en cm),
-            'IZL': list o np.array (zona de cada región),
+            'IZL': list or np.array (zone of each region),
             'SCT': list o np.array (sigma total por zona),
             'SCS': list o np.array (sigma scattering por zona),
-            'Q': list o np.array (fuente por región),
+            'Q': list or np.array (source per region),
             'N': int (orden cuadratura)
-            'reflex_izq': bool (decide si es reflexiva o no)
-            'reflex_der': bool (decide si es reflexiva o no)
-            'bound_left': list (flujo entrante por dirección, longitud N/2)
-            'bound_right': list (flujo entrante por dirección, longitud N/2)
+            'reflex_izq': bool (reflective or not)
+            'reflex_der': bool (reflective or not)
+            'bound_left': list (incoming flux per direction, length N/2)
+            'bound_right': list (incoming flux per direction, length N/2)
 
             # --- opcionales: medio multiplicativo ---
             'NU_SIGF': list (nu * Sigma_f por zona, cm^-1),
@@ -170,7 +170,7 @@ class Config:
             'AREA_CM2': float,
         }
         """
-        print("\n--- CARGANDO CONFIGURACIÓN DESDE DICCIONARIO ---")
+        print("\n--- LOADING CONFIGURATION FROM DICTIONARY ---")
 
         # Campos de datos obligatorios
         campos_datos = ["NC", "HR", "IZL", "SCT", "SCS", "Q", "N"]
@@ -178,7 +178,7 @@ class Config:
         # Validar que estén presentes
         for campo in campos_datos:
             if campo not in kwargs:
-                raise ValueError(f"Campo obligatorio ausente: '{campo}'")
+                raise ValueError(f"Missing required field: '{campo}'")
 
         # Actualizar num_regions y num_zones si vienen en kwargs
         if "num_regions" in kwargs:
@@ -188,12 +188,12 @@ class Config:
 
         # Validación básica
         if self.num_regions <= 0:
-            raise ValueError("num_regions debe ser >= 1.")
+            raise ValueError("num_regions must be >= 1.")
         if self.num_zones <= 0:
-            raise ValueError("num_zones debe ser >= 1.")
+            raise ValueError("num_zones must be >= 1.")
         if self.num_zones > self.num_regions:
             raise ValueError(
-                "Número de zonas no puede ser mayor que el número de regiones."
+                "Number of zones cannot exceed the number of regions."
             )
 
         # Convertir a numpy arrays
@@ -202,11 +202,11 @@ class Config:
             self.HR = np.array(kwargs["HR"], dtype=float)
         except (TypeError, ValueError):
             raise ValueError(
-                "HR debe contener números; si hay placeholders, expándelos "
+                "HR must contain numbers; if there are placeholders, expand them "
                 "con nts-generate --json."
             ) from None
         if np.any(~np.isfinite(self.HR)) or np.any(self.HR <= 0):
-            raise ValueError("HR debe contener valores finitos > 0.")
+            raise ValueError("HR must contain finite values > 0.")
         self.IZL = self._as_int_array(kwargs["IZL"], "IZL", positive=True)
         self.SCT = np.array(kwargs["SCT"], dtype=float)
         self.SCS = np.array(kwargs["SCS"], dtype=float)
@@ -218,7 +218,7 @@ class Config:
         # Configurar cuadratura (N_HALF se necesita para los defaults de frontera)
         self.N = int(kwargs["N"])
         if self.N % 2 != 0:
-            raise ValueError("El orden de la cuadratura debe ser un número par.")
+            raise ValueError("Quadrature order must be an even number.")
         self.N_HALF = self.N // 2
 
         # Cargar direcciones y pesos
@@ -251,28 +251,28 @@ class Config:
 
         # Validaciones de dimensiones
         if len(self.NC) != self.num_regions:
-            raise ValueError(f"NC debe tener {self.num_regions} elementos")
+            raise ValueError(f"NC must have {self.num_regions} elements")
         if len(self.HR) != self.num_regions:
-            raise ValueError(f"HR debe tener {self.num_regions} elementos")
+            raise ValueError(f"HR must have {self.num_regions} elements")
         if len(self.IZL) != self.num_regions:
-            raise ValueError(f"IZL debe tener {self.num_regions} elementos")
+            raise ValueError(f"IZL must have {self.num_regions} elements")
         if len(self.SCT) != self.num_zones:
-            raise ValueError(f"SCT debe tener {self.num_zones} elementos")
+            raise ValueError(f"SCT must have {self.num_zones} elements")
         if len(self.SCS) != self.num_zones:
-            raise ValueError(f"SCS debe tener {self.num_zones} elementos")
+            raise ValueError(f"SCS must have {self.num_zones} elements")
         if len(self.Q) != self.num_regions:
-            raise ValueError(f"Q debe tener {self.num_regions} elementos")
+            raise ValueError(f"Q must have {self.num_regions} elements")
 
         if not self.reflex_izq:
             if len(self.bound_left) != self.N_HALF:
-                raise ValueError(f"bound_left debe tener {self.N_HALF} elementos")
+                raise ValueError(f"bound_left must have {self.N_HALF} elements")
         if not self.reflex_der:
             if len(self.bound_right) != self.N_HALF:
-                raise ValueError(f"bound_right debe tener {self.N_HALF} elementos")
+                raise ValueError(f"bound_right must have {self.N_HALF} elements")
 
         # Validar que IZL hace referencia a zonas válidas (1-based)
         if np.any(self.IZL < 1) or np.any(self.IZL > self.num_zones):
-            raise ValueError(f"IZL debe contener valores entre 1 y {self.num_zones}")
+            raise ValueError(f"IZL must contain values between 1 and {self.num_zones}")
 
         # Validaciones de fisión / modo
         self._validate_fission_config()
@@ -280,58 +280,58 @@ class Config:
         # Cálculos preliminares
         self.prelim_calculations()
 
-        print("✓ Configuración cargada exitosamente desde diccionario")
-        logger.info(f"Configuración cargada desde diccionario.\n{self}")
+        print("✓ Configuration loaded successfully from dictionary")
+        logger.info(f"Configuration loaded from dictionary.\n{self}")
 
     def _validate_fission_config(self):
-        """Valida y normaliza los parámetros de medio multiplicativo."""
+        """Validate and normalize multiplicative-medium parameters."""
         if self.NU_SIGF is None:
             self.NU_SIGF = np.zeros(self.num_zones)
         if len(self.NU_SIGF) != self.num_zones:
-            raise ValueError(f"NU_SIGF debe tener {self.num_zones} elementos")
+            raise ValueError(f"NU_SIGF must have {self.num_zones} elements")
         if np.any(self.NU_SIGF < 0.0):
-            raise ValueError("NU_SIGF debe ser >= 0 en todas las zonas.")
+            raise ValueError("NU_SIGF must be >= 0 in all zones.")
 
         if self.SIGMA_F is not None:
             if len(self.SIGMA_F) != self.num_zones:
-                raise ValueError(f"SIGMA_F debe tener {self.num_zones} elementos")
+                raise ValueError(f"SIGMA_F must have {self.num_zones} elements")
             if np.any(self.SIGMA_F < 0.0):
-                raise ValueError("SIGMA_F debe ser >= 0 en todas las zonas.")
+                raise ValueError("SIGMA_F must be >= 0 in all zones.")
             if np.any(self.SIGMA_F > self.SCT):
-                raise ValueError("SIGMA_F no puede ser mayor que SCT.")
+                raise ValueError("SIGMA_F cannot exceed SCT.")
 
         if self.K_EFF is not None:
             self.K_EFF = float(self.K_EFF)
             if self.K_EFF <= 0.0:
-                raise ValueError("K_EFF debe ser > 0.")
+                raise ValueError("K_EFF must be > 0.")
         if self.K0 is not None:
             self.K0 = float(self.K0)
             if self.K0 <= 0.0:
-                raise ValueError("K0 debe ser > 0.")
+                raise ValueError("K0 must be > 0.")
         if self.TOL_K <= 0.0:
-            raise ValueError("TOL_K debe ser > 0.")
+            raise ValueError("TOL_K must be > 0.")
         if self.MAX_OUTER <= 0:
-            raise ValueError("MAX_OUTER debe ser >= 1.")
+            raise ValueError("MAX_OUTER must be >= 1.")
 
         has_fission = bool(np.any(self.NU_SIGF > 0.0))
 
         if self.POWER_KW is not None:
             self.POWER_KW = float(self.POWER_KW)
             if self.POWER_KW <= 0.0:
-                raise ValueError("POWER_KW debe ser > 0.")
+                raise ValueError("POWER_KW must be > 0.")
             if not has_fission:
-                raise ValueError("POWER_KW requiere NU_SIGF > 0.")
+                raise ValueError("POWER_KW requires NU_SIGF > 0.")
             if self.E_F_MEV <= 0.0:
-                raise ValueError("E_F_MEV debe ser > 0.")
+                raise ValueError("E_F_MEV must be > 0.")
             if self.AREA_CM2 <= 0.0:
-                raise ValueError("AREA_CM2 debe ser > 0.")
+                raise ValueError("AREA_CM2 must be > 0.")
             if self.NU is not None:
                 self.NU = float(self.NU)
                 if self.NU <= 0.0:
-                    raise ValueError("NU debe ser > 0.")
+                    raise ValueError("NU must be > 0.")
             if self.SIGMA_F is None and self.NU is None:
                 raise ValueError(
-                    "POWER_KW requiere SIGMA_F por zona o NU (nu_bar) "
+                    "POWER_KW requires SIGMA_F per zone or NU (nu_bar) "
                     "para convertir NU_SIGF en Sigma_f."
                 )
 
@@ -349,7 +349,7 @@ class Config:
         allowed = {"fixed_source", "fixed_k", "eigenvalue", "driven"}
         if self.MODE not in allowed:
             raise ValueError(
-                f"MODE inválido: {self.MODE!r}. Opciones: {sorted(allowed)}"
+                f"Invalid MODE: {self.MODE!r}. Options: {sorted(allowed)}"
             )
 
         left_external = bool(
@@ -373,11 +373,11 @@ class Config:
                     "Usa MODE='eigenvalue' o MODE='fixed_k'."
                 )
             if self.K_EFF is not None:
-                raise ValueError("MODE='fixed_source' no usa K_EFF.")
+                raise ValueError("MODE='fixed_source' does not use K_EFF.")
 
         elif self.MODE == "eigenvalue":
             if not has_fission:
-                raise ValueError("MODE='eigenvalue' exige NU_SIGF > 0.")
+                raise ValueError("MODE='eigenvalue' requires NU_SIGF > 0.")
             if self.K_EFF is not None:
                 raise ValueError(
                     "MODE='eigenvalue' calcula k_eff; no impongas K_EFF. "
@@ -385,26 +385,26 @@ class Config:
                 )
             if external_source:
                 raise ValueError(
-                    "MODE='eigenvalue' resuelve el problema homogéneo "
-                    "(Q=0 y flujo entrante nulo). Con fuente usa "
+                    "MODE='eigenvalue' solves the homogeneous problem "
+                    "(Q=0 and zero incoming flux). With a source use "
                     "MODE='fixed_k' o MODE='driven'."
                 )
 
         elif self.MODE == "fixed_k":
             if not has_fission:
-                raise ValueError("MODE='fixed_k' exige NU_SIGF > 0.")
+                raise ValueError("MODE='fixed_k' requires NU_SIGF > 0.")
             if self.K_EFF is None:
-                raise ValueError("MODE='fixed_k' exige K_EFF > 0.")
+                raise ValueError("MODE='fixed_k' requires K_EFF > 0.")
 
         elif self.MODE == "driven":
             if not has_fission:
-                raise ValueError("MODE='driven' exige NU_SIGF > 0.")
+                raise ValueError("MODE='driven' requires NU_SIGF > 0.")
             if self.K_EFF is None:
                 self.K_EFF = 1.0
             elif abs(self.K_EFF - 1.0) > 1e-12:
                 raise ValueError(
-                    "MODE='driven' usa el k físico = 1. "
-                    "Para escalar la fisión usa MODE='fixed_k'."
+                    "MODE='driven' uses the physical k = 1. "
+                    "To scale fission use MODE='fixed_k'."
                 )
             # En modo manual las fronteras aún pueden ser None (el Runner
             # preguntará el flujo entrante); en ese caso la comprobación
@@ -414,17 +414,17 @@ class Config:
             )
             if not external_source and bounds_known:
                 raise ValueError(
-                    "MODE='driven' exige Q != 0 o flujo entrante distinto de cero."
+                    "MODE='driven' requires Q != 0 or non-zero incoming flux."
                 )
 
     def manual_input(self):
         """Carga interactiva paso a paso (incluye medios multiplicativos)."""
-        print("\n--- CONFIGURACIÓN ESPACIAL ---")
+        print("\n--- SPATIAL CONFIGURATION ---")
         self.NC = np.array(
             [
                 self._prompt_number(
-                    f"Celdas en Región {i + 1} "
-                    f"(entero o placeholder, e.g. cc): ",
+                    f"Cells in Region {i + 1} "
+                    f"(integer or placeholder, e.g. cc): ",
                     integer=True,
                     allow_placeholder=True,
                 )
@@ -435,8 +435,8 @@ class Config:
         self.HR = np.array(
             [
                 self._prompt_number(
-                    f"Espesor total [cm] Región {i + 1} "
-                    f"(número o placeholder, e.g. hh): "
+                    f"Total thickness [cm] Region {i + 1} "
+                    f"(number or placeholder, e.g. hh): "
                 )
                 for i in range(self.num_regions)
             ],
@@ -445,7 +445,7 @@ class Config:
         self.IZL = np.array(
             [
                 self._prompt_number(
-                    f"ID Zona Material Región {i + 1} (entero, 1-based): ",
+                    f"Material Zone ID Region {i + 1} (integer, 1-based): ",
                     integer=True,
                     allow_placeholder=False,
                 )
@@ -454,10 +454,10 @@ class Config:
             dtype=object,
         )
 
-        print("\n--- CONFIGURACIÓN MATERIALES ---")
+        print("\n--- MATERIAL CONFIGURATION ---")
         self.SCT = np.array(
             [
-                self._prompt_number(f"Sigma_Total Zona {i + 1}: ")
+                self._prompt_number(f"Sigma_Total Zone {i + 1}: ")
                 for i in range(self.num_zones)
             ],
             dtype=object,
@@ -465,23 +465,23 @@ class Config:
         self.SCS = np.array(
             [
                 self._prompt_number(
-                    f"Sigma_Scattering Zona {i + 1} "
-                    f"(número o placeholder, e.g. kk): "
+                    f"Sigma_Scattering Zone {i + 1} "
+                    f"(number or placeholder, e.g. kk): "
                 )
                 for i in range(self.num_zones)
             ],
             dtype=object,
         )
 
-        print("\n--- CONFIGURACIÓN CUADRATURA ---")
+        print("\n--- QUADRATURE CONFIGURATION ---")
         self.N = self._prompt_number(
-            "Orden de cuadratura (2, 4, 6, 8) [8]: ",
+            "Quadrature order (2, 4, 6, 8) [8]: ",
             default=8,
             integer=True,
             allow_placeholder=False,
         )
         if self.N % 2 != 0:
-            raise ValueError("El orden de cuadratura debe ser par.")
+            raise ValueError("Quadrature order must be even.")
         self.N_HALF = self.N // 2
         self.weights_directions()
 
@@ -491,13 +491,13 @@ class Config:
         # Fuente externa: se pregunta después de conocer el modo
         if self.MODE == "eigenvalue":
             self.Q = np.zeros(self.num_regions)
-            print("\nModo eigenvalue: Q = 0 (problema homogéneo).")
+            print("\nEigenvalue mode: Q = 0 (homogeneous problem).")
         else:
             print("\n--- FUENTE EXTERNA ---")
             self.Q = np.array(
                 [
                     self._prompt_number(
-                        f"Fuente (Q) Región {i + 1} [0]: ",
+                        f"Source (Q) Region {i + 1} [0]: ",
                         default=0.0,
                     )
                     for i in range(self.num_regions)
@@ -508,10 +508,10 @@ class Config:
         # Fronteras
         print("\n--- CONDICIONES DE FRONTERA ---")
         self.reflex_izq = (
-            input("¿Reflexiva izquierda? (s/n) [n]: ").strip().lower() == "s"
+            input("Reflective left? (y/n) [n]: ").strip().lower() in {"y", "s"}
         )
         self.reflex_der = (
-            input("¿Reflexiva derecha? (s/n) [n]: ").strip().lower() == "s"
+            input("Reflective right? (y/n) [n]: ").strip().lower() in {"y", "s"}
         )
         self.bound_left = self._manual_boundary_values(
             "izquierda", self.reflex_izq
@@ -524,7 +524,7 @@ class Config:
             print(
                 "\nPlaceholders detectados: "
                 + ", ".join(sorted(self.placeholder_names))
-                + ". La validación numérica se hará al expandir."
+                + ". Numeric validation will run on expansion."
             )
         else:
             # Validar la combinación de modo/fuente también en modo manual
@@ -533,20 +533,20 @@ class Config:
             # Cálculos preliminares
             self.prelim_calculations()
 
-        logger.info(f"Configuración completa.\n{self}")
+        logger.info(f"Configuration complete.\n{self}")
 
     def _manual_boundary_values(self, side: str, reflective: bool):
-        """Pide el flujo entrante de una frontera (N/2 valores)."""
+        """Prompt for the incoming flux at a boundary (N/2 values)."""
         if reflective:
-            print(f"Frontera {side}: reflexiva; flujo entrante = 0.")
+            print(f"Boundary {side}: reflective; incoming flux = 0.")
             return np.zeros(self.N_HALF)
         if self.MODE == "eigenvalue":
-            print(f"Frontera {side}: eigenvalue; flujo entrante = 0.")
+            print(f"Boundary {side}: eigenvalue; incoming flux = 0.")
             return np.zeros(self.N_HALF)
 
         default = " ".join(["0"] * self.N_HALF)
         text = input(
-            f"Flujo entrante {side} ({self.N_HALF} valores) [{default}]: "
+            f"Incoming flux {side} ({self.N_HALF} values) [{default}]: "
         ).strip()
         if not text:
             return np.zeros(self.N_HALF)
@@ -554,7 +554,7 @@ class Config:
         tokens = text.replace(",", " ").split()
         if len(tokens) != self.N_HALF:
             raise ValueError(
-                f"Se esperaban {self.N_HALF} valores para la frontera {side}."
+                f"Expected {self.N_HALF} values for boundary {side}."
             )
         values = [
             self._parse_number(token, allow_placeholder=True) for token in tokens
@@ -564,7 +564,7 @@ class Config:
         return np.array(values, dtype=float)
 
     def _fission_input(self):
-        """Preguntas para medios multiplicativos en modo manual."""
+        """Prompts for multiplicative media in manual mode."""
         self.NU_SIGF = np.array([0.0] * self.num_zones, dtype=object)
         self.SIGMA_F = None
         self.MODE = "fixed_source"
@@ -578,32 +578,32 @@ class Config:
         self.AREA_CM2 = 1.0
 
         resp = (
-            input("¿Medio multiplicativo (fisión)? (s/n) [n]: ").strip().lower()
+            input("Multiplicative medium (fission)? (y/n) [n]: ").strip().lower()
         )
-        if resp != "s":
-            print("Modo fixed_source (sin fisión).")
+        if resp not in {"y", "s"}:
+            print("fixed_source mode (no fission).")
             return
 
         for i in range(self.num_zones):
             self.NU_SIGF[i] = self._prompt_number(
-                f"nu*Sigma_f Zona {i + 1} [cm^-1] (número o placeholder, e.g. mm): "
+                f"nu*Sigma_f Zone {i + 1} [cm^-1] (number or placeholder, e.g. mm): "
             )
 
         mode = (
-            input("Modo (eigenvalue / fixed_k / driven) [eigenvalue]: ")
+            input("Mode (eigenvalue / fixed_k / driven) [eigenvalue]: ")
             .strip()
             .lower()
             or "eigenvalue"
         )
         if mode not in {"eigenvalue", "fixed_k", "driven"}:
-            raise ValueError(f"Modo inválido: {mode}")
+            raise ValueError(f"Invalid mode: {mode}")
         self.MODE = mode
 
         if mode == "fixed_k":
             self.K_EFF = self._prompt_number("k_eff impuesto: ")
         elif mode == "driven":
             self.K_EFF = 1.0
-            print("Modo driven: k = 1 (fisión física) y se pedirá fuente/flujo.")
+            print("driven mode: k = 1 (physical fission); source/flux will be requested.")
         else:
             self.K_EFF = None
 
@@ -614,39 +614,39 @@ class Config:
             integer=True,
             allow_placeholder=False,
         )
-        k0_text = input("K0 (vacío = automático): ").strip()
+        k0_text = input("K0 (empty = automatic): ").strip()
         self.K0 = self._parse_number(k0_text) if k0_text else None
 
         if (
-            input("¿Normalizar a una potencia? (s/n) [n]: ").strip().lower()
-            == "s"
+            input("Normalize to a power? (y/n) [n]: ").strip().lower()
+            in {"y", "s"}
         ):
-            self.POWER_KW = self._prompt_number("Potencia [kW]: ")
+            self.POWER_KW = self._prompt_number("Power [kW]: ")
             self.E_F_MEV = self._prompt_number(
-                "E_f [MeV/fisión] [200]: ", default=200.0
+                "E_f [MeV/fission] [200]: ", default=200.0
             )
             self.AREA_CM2 = self._prompt_number(
-                "Área transversal [cm^2] [1]: ", default=1.0
+                "Cross-sectional area [cm^2] [1]: ", default=1.0
             )
 
             conv = (
-                input("Conversión de fisión: nu o sigma_f [nu]: ")
+                input("Fission conversion: nu or sigma_f [nu]: ")
                 .strip()
                 .lower()
                 or "nu"
             )
             if conv not in {"nu", "sigma_f"}:
-                raise ValueError("La conversión debe ser 'nu' o 'sigma_f'.")
+                raise ValueError("Conversion must be 'nu' or 'sigma_f'.")
             if conv == "nu":
                 self.NU = self._prompt_number(
-                    "nu (neutrones/fisión, p.ej. 2.4): "
+                    "nu (neutrons/fission, e.g. 2.4): "
                 )
             else:
                 self.SIGMA_F = np.array(
                     [
                         self._prompt_number(
-                            f"Sigma_f Zona {i + 1} [cm^-1] "
-                            f"(número o placeholder): "
+                            f"Sigma_f Zone {i + 1} [cm^-1] "
+                            f"(number or placeholder): "
                         )
                         for i in range(self.num_zones)
                     ],
@@ -692,7 +692,7 @@ class Config:
         if self.NU_SIGF is None:
             self.NU_SIGF = np.zeros(self.num_zones)
         if self.SIGMA_F is not None and len(self.SIGMA_F) != self.num_zones:
-            raise ValueError(f"SIGMA_F debe tener {self.num_zones} elementos")
+            raise ValueError(f"SIGMA_F must have {self.num_zones} elements")
 
         idx = 0
         for r in range(self.num_regions):
@@ -712,26 +712,26 @@ class Config:
 
     def __str__(self) -> str:
         return (
-            f"\nConfiguracion del programa: {self.num_regions} regiones, "
-            f"{self.num_zones} zonas."
-            f"\nDiscretizacion espacial: {self.NC}"
-            f"\nEspesores: {self.HR}"
-            f"\nDistribucion de zonas: {self.IZL}"
-            f"\nPropiedades materiales:"
+            f"\nProgram configuration: {self.num_regions} regions, "
+            f"{self.num_zones} zones."
+            f"\nSpatial discretization: {self.NC}"
+            f"\nThicknesses: {self.HR}"
+            f"\nZone distribution: {self.IZL}"
+            f"\nMaterial properties:"
             f"\nSigma_T: {self.SCT}"
             f"\nSigma_S: {self.SCS}"
             f"\nnu*Sigma_f: {self.NU_SIGF}"
-            f"\nFuentes: {self.Q}"
-            f"\nOrden de cuadratura: S{self.N} con {self.N_HALF} direcciones."
-            f"\nPesos: {self.omega_m}"
-            f"\nDirecciones: {self.miu_m}"
-            f"\nModo: {self.MODE} | K_EFF: {self.K_EFF}"
-            f"\nPotencia: {self.POWER_KW} kW "
+            f"\nSources: {self.Q}"
+            f"\nQuadrature order: S{self.N} with {self.N_HALF} directions."
+            f"\nWeights: {self.omega_m}"
+            f"\nDirections: {self.miu_m}"
+            f"\nMode: {self.MODE} | K_EFF: {self.K_EFF}"
+            f"\nPower: {self.POWER_KW} kW "
             f"(E_f={self.E_F_MEV} MeV, area={self.AREA_CM2} cm2)"
         )
 
     def as_dict(self) -> dict:
-        """Configuración efectiva serializable (JSON, datos.json)."""
+        """Serializable effective configuration (JSON, datos.json)."""
 
         def _as_list(value):
             if value is None:
@@ -840,16 +840,16 @@ class Runner:
         # Frontera Izquierda (x=0) incidiendo hacia la derecha
 
         if self.config.bound_left is not None:
-            print("Usando condiciones de frontera izquierda desde configuración.")
+            print("Using left boundary conditions from configuration.")
             vals_izq = self.config.bound_left
             logger.info(
-                f"Usando condiciones de frontera izquierda desde configuración: {vals_izq}"
+                f"Using left boundary conditions from configuration: {vals_izq}"
             )
             self.PSI_RIGHT[0, :] = vals_izq
         else:
-            print("Ingrese flujo incidente en IZQUIERDA (mu > 0):")
+            print("Enter incident flux on the LEFT (mu > 0):")
             vals_izq = [
-                float(input(f"  Dirección {i + 1}: "))
+                float(input(f"  Direction {i + 1}: "))
                 for i in range(self.config.N_HALF)
             ]
             self.PSI_RIGHT[0, :] = vals_izq
@@ -859,29 +859,29 @@ class Runner:
         # Frontera Derecha (x=L) incidiendo hacia la izquierda
 
         if self.config.bound_right is not None:
-            print("Usando condiciones de frontera Derecha desde configuración.")
+            print("Using right boundary conditions from configuration.")
             vals_der = self.config.bound_right
             logger.info(
-                f"Usando condiciones de frontera Derecha desde configuración: {vals_der}"
+                f"Using right boundary conditions from configuration: {vals_der}"
             )
             self.PSI_LEFT[-1, :] = vals_der
         else:
-            print("Ingrese flujo incidente en DERECHA (mu < 0):")
+            print("Enter incident flux on the RIGHT (mu < 0):")
             vals_der = [
-                float(input(f"  Dirección {i + 1}: "))
+                float(input(f"  Direction {i + 1}: "))
                 for i in range(self.config.N_HALF)
             ]
             self.PSI_LEFT[-1, :] = vals_der
 
     def update_reflective_boundaries_left(self):
-        """Espejo: Lo que sale por un lado entra por el mismo lado en dirección opuesta"""
+        """Mirror: what leaves one side enters the same side in the opposite direction"""
         # Izquierda (x=0): Lo que venía de la izquierda (PSI_LEFT) rebota hacia la derecha
         self.PSI_RIGHT[0, :] = self.PSI_LEFT[0, :]
         # Derecha (x=L): Lo que venía de la derecha (PSI_RIGHT) rebota hacia la izquierda
         # self.PSI_LEFT[-1, :] = self.PSI_RIGHT[-1, :]
 
     def update_reflective_boundaries_right(self):
-        """Espejo: Lo que sale por un lado entra por el mismo lado en dirección opuesta"""
+        """Mirror: what leaves one side enters the same side in the opposite direction"""
         # Izquierda (x=0): Lo que venía de la izquierda (PSI_LEFT) rebota hacia la derecha
         # self.PSI_RIGHT[0, :] = self.PSI_LEFT[0, :]
         # Derecha (x=L): Lo que venía de la derecha (PSI_RIGHT) rebota hacia la izquierda
@@ -939,7 +939,7 @@ class Runner:
                 self.PSI_LEFT[k, m] = psi_out
 
     def calculo_flujo(self):
-        """Calcula el flujo escalar integrando los flujos angulares"""
+        """Compute the scalar flux by integrating the angular fluxes."""
         old_flux = self.scalar_flux.copy()
 
         # Reiniciar flujo escalar
@@ -965,12 +965,12 @@ class Runner:
         return old_flux
 
     def calculo_fugas(self, frontera: int):
-        """Calcula las fugas en las fronteras del sistema\n
-        -> frontera=0 #Calcula fugas en la frontera Izquierda\n
-        -> frontera=1 #Calcula fugas en la frontera Derecha\n
-        -> frontera=2 #Calcula fugas en la frontera Izquierda y Derecha\n
+        """Compute boundary leakage.\n
+        -> boundary=0 #left boundary\n
+        -> boundary=1 #right boundary\n
+        -> boundary=2 #both boundaries\n
 
-        -> Otro valor sera tomado como False las condiciones
+        -> Any other value disables the checks.
 
         """
         fuga_izquierda = 0.0
@@ -1042,7 +1042,7 @@ class Runner:
         return 1.0
 
     def _scale_state(self, factor: float):
-        """Escala flujo escalar y angular de forma consistente."""
+        """Scale scalar and angular flux consistently."""
         self.scalar_flux *= factor
         self.PSI_RIGHT *= factor
         self.PSI_LEFT *= factor
@@ -1081,7 +1081,7 @@ class Runner:
         return production / denominator
 
     def _inner_solve(self) -> bool:
-        """Iteración de fuente (scattering) con fission_source congelada.
+        """Source iteration (scattering) with frozen fission_source.
 
         La tolerancia interna se ata a TOL_K para que el error de la
         iteración de scattering no sesgue k_eff.
@@ -1104,7 +1104,7 @@ class Runner:
         return self.converged
 
     def _fixed_source_iteration(self):
-        logger.info("Iniciando iteración de fuente (sin fisión)...")
+        logger.info("Starting source iteration (no fission)...")
         self.converged = False
         while self.iteration < self.config.max_iter:
             self.iteration += 1
@@ -1115,28 +1115,28 @@ class Runner:
             self.sweep()
             old_flux = self.calculo_flujo()
             if self.check_convergence(old_flux):
-                print(f"\nCONVERGENCIA ALCANZADA en iteración {self.iteration}.")
+                print(f"\nCONVERGENCE REACHED at iteration {self.iteration}.")
                 self.converged = True
                 break
 
         if not self.converged:
-            print("\nADVERTENCIA: Máximo de iteraciones alcanzado sin convergencia.")
+            print("\nWARNING: Maximum iterations reached without convergence.")
 
     def _fixed_k_iteration(self):
         cfg = self.config
         self.k_eff = cfg.K_EFF
         has_source = self._has_external_source()
         self.converged = False
-        print(f"\n--- MODO fixed_k (k_eff = {self.k_eff:.6f}) ---")
+        print(f"\n--- fixed_k MODE (k_eff = {self.k_eff:.6f}) ---")
         if self.mode == "driven" and not has_source:
             raise ValueError(
-                "MODE='driven' requiere Q != 0 o flujo entrante distinto de cero."
+                "MODE='driven' requires Q != 0 or non-zero incoming flux."
             )
         if not has_source:
             print(
-                "ADVERTENCIA: sin fuente externa ni flujo entrante. "
-                "El problema es homogéneo: la amplitud es arbitraria y solo "
-                "k = k* tendría solución estacionaria. Se normalizará el flujo."
+                "WARNING: no external source or incoming flux. "
+                "The problem is homogeneous: the amplitude is arbitrary and only "
+                "k = k* would have a stationary solution. The flux will be normalized."
             )
 
         while self.iteration < cfg.max_iter:
@@ -1155,12 +1155,12 @@ class Runner:
                 if scale > 0.0:
                     self._scale_state(1.0 / scale)
             if self.check_convergence(old_flux):
-                print(f"\nCONVERGENCIA ALCANZADA en iteración {self.iteration}.")
+                print(f"\nCONVERGENCE REACHED at iteration {self.iteration}.")
                 self.converged = True
                 break
 
         if not self.converged:
-            print("\nADVERTENCIA: Máximo de iteraciones alcanzado sin convergencia.")
+            print("\nWARNING: Maximum iterations reached without convergence.")
 
         self.k_converged = self.converged
         self.k_balance = self.balance_k()
@@ -1174,7 +1174,7 @@ class Runner:
         cfg = self.config
         self.k_eff = cfg.K0 if cfg.K0 is not None else self._estimate_k0()
         if self.k_eff <= 0.0:
-            raise ValueError("K0 debe ser > 0 para iniciar el power iteration.")
+            raise ValueError("K0 must be > 0 to start power iteration.")
 
         self.scalar_flux[:] = 1.0
         production_old = float(
@@ -1182,12 +1182,12 @@ class Runner:
         )
         if production_old <= 0.0:
             raise ValueError(
-                "NU_SIGF debe ser positivo en al menos una zona para el autovalor."
+                "NU_SIGF must be positive in at least one zone for the eigenvalue."
             )
 
         self.k_history = []
         self.k_converged = False
-        print(f"\n--- AUTOVALOR k_eff (guess inicial = {self.k_eff:.6f}) ---")
+        print(f"\n--- k_eff EIGENVALUE (initial guess = {self.k_eff:.6f}) ---")
 
         for outer in range(1, cfg.MAX_OUTER + 1):
             self.outer_iterations = outer
@@ -1201,7 +1201,7 @@ class Runner:
             )
             if production_new <= 0.0:
                 raise ValueError(
-                    "Producción de fisión nula durante el power iteration."
+                    "Zero fission production during power iteration."
                 )
 
             k_new = self.k_eff * production_new / production_old
@@ -1223,8 +1223,8 @@ class Runner:
 
             if not inner_ok:
                 print(
-                    "ADVERTENCIA: la iteración interna no convergió; "
-                    "se detiene el power iteration."
+                    "WARNING: inner iteration did not converge; "
+                    "stopping power iteration."
                 )
                 break
             if dk < cfg.TOL_K:
@@ -1237,20 +1237,20 @@ class Runner:
 
         if self.k_converged:
             print(
-                f"\nAUTOVALOR CONVERGIDO: k_eff = {self.k_eff:.10f} "
-                f"({self.outer_iterations} iteraciones exteriores, "
-                f"{self.total_inner_iterations} interiores)"
+                f"\nEIGENVALUE CONVERGED: k_eff = {self.k_eff:.10f} "
+                f"({self.outer_iterations} outer iterations, "
+                f"{self.total_inner_iterations} inner)"
             )
         else:
             print(
-                "\nADVERTENCIA: k_eff no convergió. "
-                f"Último valor = {self.k_eff:.10f}"
+                "\nWARNING: k_eff did not converge. "
+                f"Last value = {self.k_eff:.10f}"
             )
         if self.k_balance is not None:
             print(f"k_balance (P/(A+L)) = {self.k_balance:.10f}")
 
     def _apply_power_normalization(self):
-        """Escala el flujo para que la potencia integrada sea POWER_KW."""
+        """Scale the flux so that integrated power is POWER_KW."""
         cfg = self.config
         if cfg.POWER_KW is None:
             return
@@ -1261,7 +1261,7 @@ class Runner:
             sigma_f = cfg.nu_sigma_f_vec / cfg.NU
         else:
             raise ValueError(
-                "POWER_KW requiere SIGMA_F por zona o NU (nu_bar)."
+                "POWER_KW requires SIGMA_F per zone or NU (nu_bar)."
             )
 
         fission_integral = float(
@@ -1269,7 +1269,7 @@ class Runner:
         )
         if fission_integral <= 0.0:
             raise ValueError(
-                "No se puede normalizar la potencia: integral de fisión nula."
+                "Cannot normalize power: fission integral is zero."
             )
 
         # E_f [MeV/fisión] * 1.602176634e-13 [W/(MeV/s)]
@@ -1280,7 +1280,7 @@ class Runner:
             * fission_integral
         )
         if power_w <= 0.0:
-            raise ValueError("Potencia calculada no positiva.")
+            raise ValueError("Computed power is not positive.")
 
         target_w = cfg.POWER_KW * 1e3
         self.power_scale = target_w / power_w
@@ -1288,8 +1288,8 @@ class Runner:
         self.power_w = target_w
 
         print(
-            f"✓ Potencia normalizada a {cfg.POWER_KW:.6g} kW "
-            f"(factor de escala = {self.power_scale:.6e})"
+            f"✓ Power normalized to {cfg.POWER_KW:.6g} kW "
+            f"(scale factor = {self.power_scale:.6e})"
         )
 
     def _build_result(self):
@@ -1318,7 +1318,7 @@ class Runner:
         }
 
     def __call__(self):
-        print("\n--- INICIANDO CÁLCULO ---")
+        print("\n--- STARTING CALCULATION ---")
         start = time()
 
         if self.mode == "eigenvalue":
@@ -1329,16 +1329,16 @@ class Runner:
             self._fixed_source_iteration()
 
         self._apply_power_normalization()
-        logger.info(f"Tiempo demorado de los calculos: {time() - start}")
+        logger.info(f"Elapsed calculation time: {time() - start}")
         return self._build_result()
 
     def _crear_dataframe_salida(self):
-        """Crea un DataFrame con los resultados del cálculo"""
+        """Create a DataFrame with the results."""
         # Crear índices de celdas
         cell_indices = np.arange(self.config.NTC)
 
         # Crear diccionario con datos
-        data = {"celda_idx": cell_indices, "flujo_escalar": self.scalar_flux.copy()}
+        data = {"cell_idx": cell_indices, "scalar_flux": self.scalar_flux.copy()}
 
         # Crear DataFrame
         df = pd.DataFrame(data)
@@ -1348,32 +1348,32 @@ class Runner:
     def _guardar_excel(
         self,
         df,
-        filename=f"resultados_runner_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.xlsx",
+        filename=f"results_runner_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.xlsx",
     ):
-        """Guarda el DataFrame en un archivo Excel con información adicional"""
+        """Save the DataFrame to an Excel file with additional information."""
         try:
             with pd.ExcelWriter(filename, engine="openpyxl") as writer:
-                # Hoja 1: Resultados principales
-                df.to_excel(writer, sheet_name="Flujo_Escalar", index=False)
+                # Sheet 1: main results
+                df.to_excel(writer, sheet_name="Scalar_Flux", index=False)
 
-                # Hoja 2: Información de convergencia
+                # Sheet 2: convergence information
                 info_convergencia = pd.DataFrame(
                     {
-                        "Parámetro": [
-                            "Iteraciones",
-                            "Convergido",
+                        "Parameter": [
+                            "Iterations",
+                            "Converged",
                             "Epsilon",
                             "Max Iter",
-                            "Celdas Totales",
-                            "Nodos Totales",
-                            "Cuadratura",
-                            "Modo",
+                            "Total Cells",
+                            "Total Nodes",
+                            "Quadrature",
+                            "Mode",
                             "k_eff",
                             "k_balance",
                         ],
-                        "Valor": [
+                        "Value": [
                             self.iteration,
-                            "converge" if self.converged else "no converge",
+                            "converged" if self.converged else "not converged",
                             self.config.epsilon,
                             self.config.max_iter,
                             self.config.NTC,
@@ -1386,45 +1386,45 @@ class Runner:
                     }
                 )
                 info_convergencia.to_excel(
-                    writer, sheet_name="Info_Convergencia", index=False
+                    writer, sheet_name="Convergence_Info", index=False
                 )
 
-                # Hoja 3: Propiedades de materiales
+                # Sheet 3: material properties
                 propiedades = pd.DataFrame(
                     {
-                        "Zona": np.arange(1, self.config.num_zones + 1),
+                        "Zone": np.arange(1, self.config.num_zones + 1),
                         "Sigma_Total": self.config.SCT,
                         "Sigma_Scattering": self.config.SCS,
                         "nu_Sigma_f": self.config.NU_SIGF,
                     }
                 )
                 propiedades.to_excel(
-                    writer, sheet_name="Propiedades_Material", index=False
+                    writer, sheet_name="Material_Properties", index=False
                 )
 
                 regiones_df = pd.DataFrame(
                     {
                         "Region": np.arange(1, self.config.num_regions + 1),
-                        "NC (celdas por region)": list(self.config.NC),
-                        "HR (espesor [cm])": list(self.config.HR),
-                        "IZL (zona, 1-based)": list(self.config.IZL),
-                        "Q (fuente por region)": list(self.config.Q),
+                        "NC (cells per region)": list(self.config.NC),
+                        "HR (thickness [cm])": list(self.config.HR),
+                        "IZL (zone, 1-based)": list(self.config.IZL),
+                        "Q (source per region)": list(self.config.Q),
                     }
                 )
                 regiones_df.to_excel(
-                    writer, sheet_name="Regiones_Distribucion", index=False
+                    writer, sheet_name="Region_Distribution", index=False
                 )
 
                 resumen = pd.DataFrame(
                     {
-                        "Parámetro": [
-                            "Numero_Regiones",
-                            "Numero_Zonas",
-                            "Total_Celdas",
-                            "Total_Nodos",
-                            "Orden_Cuadratura",
+                        "Parameter": [
+                            "Number_of_Regions",
+                            "Number_of_Zones",
+                            "Total_Cells",
+                            "Total_Nodes",
+                            "Quadrature_Order",
                         ],
-                        "Valor": [
+                        "Value": [
                             self.config.num_regions,
                             self.config.num_zones,
                             self.config.NTC,
@@ -1433,11 +1433,11 @@ class Runner:
                         ],
                     }
                 )
-                resumen.to_excel(writer, sheet_name="Resumen", index=False)
+                resumen.to_excel(writer, sheet_name="Summary", index=False)
 
-            print(f"✓ Resultados guardados en: {filename}")
-            logger.info(f"Resultados guardados en: {filename}")
+            print(f"✓ Results saved to: {filename}")
+            logger.info(f"Results saved to: {filename}")
 
         except Exception as e:
-            print(f"✗ Error al guardar Excel: {e}")
-            logger.error(f"Error al guardar Excel: {e}")
+            print(f"✗ Error saving Excel: {e}")
+            logger.error(f"Error saving Excel: {e}")

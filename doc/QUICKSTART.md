@@ -220,7 +220,7 @@ Optional power normalization:
 "POWER_KW": 10.0, "E_F_MEV": 200.0, "NU": 2.4, "AREA_CM2": 1.0,
 ```
 
-Full reference: [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md).
+Full reference: [MULTIPLICATIVE_MEDIA_EN.md](MULTIPLICATIVE_MEDIA_EN.md).
 
 ## 📁 File Locations
 

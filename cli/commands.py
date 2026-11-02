@@ -590,7 +590,7 @@ def cmd_run_1d(args):
         try:
             conf = Config(manual=True)
         except (KeyboardInterrupt, EOFError):
-            console.print("\n[yellow]Cancelado.[/]")
+            console.print("\n[yellow]Cancelled.[/]")
             return 130
         except Exception as e:
             console.print(f"[bold red]✗ Error:[/] {str(e)}")
@@ -601,10 +601,10 @@ def cmd_run_1d(args):
         try:
             answer = input("\n¿Ejecutar? (s/n) [s]: ").strip().lower()
         except (KeyboardInterrupt, EOFError):
-            console.print("\n[yellow]Cancelado.[/]")
+            console.print("\n[yellow]Cancelled.[/]")
             return 130
         if answer == "n":
-            console.print("[yellow]Cancelado.[/]")
+            console.print("[yellow]Cancelled.[/]")
             return 0
         execute("manual", conf, conf.as_dict())
     else:

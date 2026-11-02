@@ -249,7 +249,7 @@ Commands:
   uv run nts-1d-plot -i datos.json --x k_eff        # modo legado
   uv run nts-test -v
 
-Full reference: MULTIPLICATIVE_MEDIA.md
+Full reference: MULTIPLICATIVE_MEDIA_EN.md
 
 
 ═══════════════════════════════════════════════════════════════════════════

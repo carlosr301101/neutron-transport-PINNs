@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-2.7.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.8.0-blue)](Changelog_EN.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -406,9 +406,10 @@ uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run 
   `angular_flux.png`, `k_history.png`.
 - Legacy `datos.json` mode: `uv run nts-1d-plot -i outputs/results/datos.json --x k_eff`.
 
-See [doc/MULTIPLICATIVE_MEDIA.md](doc/MULTIPLICATIVE_MEDIA.md) for the full
-reference, algorithm, validation and pitfalls. The 2D C solvers remain
-fixed-source only.
+See [doc/MULTIPLICATIVE_MEDIA_EN.md](doc/MULTIPLICATIVE_MEDIA_EN.md) for the
+full reference, algorithm, validation and pitfalls. The Spanish version is
+[doc/MULTIPLICATIVE_MEDIA.md](doc/MULTIPLICATIVE_MEDIA.md). The 2D C solvers
+remain fixed-source only.
 
 ## 📝 Configuration Format
 
@@ -509,7 +510,8 @@ neutron-transport-PINNs/
 ├── tests/                       # unittest suite (1D multiplicative media)
 ├── templates/                   # base_input.json (annotated 2D template)
 ├── doc/                         # Project documentation & notes
-│   └── MULTIPLICATIVE_MEDIA.md  # k_eff modes, benchmark and validation
+│   ├── MULTIPLICATIVE_MEDIA_EN.md  # k_eff modes, benchmark and validation (English)
+│   └── MULTIPLICATIVE_MEDIA.md     # Spanish version
 ├── outputs/                     # Generated artifacts (gitignored)
 │   ├── inputs/                  # input_###.txt, inputs.py, inputs_placeholder.py
 │   ├── results/                 # output_###.json, datos.json, plots/
@@ -596,19 +598,29 @@ uv run nts-test -p "test_plot_1d_flux.py"  # one file
 `nts-test` uses `unittest` and discovers `tests/test_*.py` from the
 repository root, so it works from any current directory.
 
+All generated figures, tables and CLI messages use English labels. The main
+documentation is available in English; the Spanish versions of the
+multiplicative-media guide and the changelog are kept alongside them.
+
 ## 📚 Additional Documentation
 
 | Document | Content |
 |----------|---------|
 | `doc/QUICKSTART.md` | One-page command cheatsheet |
 | `doc/NTS_DOCUMENTATION.md` | Master reference for the 5 C programs (input format, method selection, performance) |
-| `doc/MULTIPLICATIVE_MEDIA.md` | 1D fission/`k_eff` modes, benchmark, power normalization, validation |
+| `doc/MULTIPLICATIVE_MEDIA_EN.md` | 1D fission/`k_eff` modes, benchmark, power normalization, validation (English) |
+| `doc/MULTIPLICATIVE_MEDIA.md` | Spanish version of the same guide |
 | `doc/QUICK_REFERENCE.txt` | Compact printable reference for the C solvers |
-| `doc/desc.md` | Reference 1D problem definition (S2 benchmark dataset) |
+| `doc/desc_EN.md` | Reference 1D problem definition (English) |
+| `doc/desc.md` | Reference 1D problem definition (original) |
 | `solvers/doc_solvers/*_EXPLICACION.md` | Detailed per-method guides (Spanish): DD, LD, STEP, RM_CN, RM_LLN |
-| `doc/Notas.md`, `doc/Notas_2daReunion.md`, `extras/` | Working notes and meeting records |
-| `doc/IMPLEMENTATION_SUMMARY.md`, `doc/FIXES_APPLIED.md` | Historical implementation/correction log |
-| `CHANGELOG.md` | Version history |
+| `doc/Notas_EN.md`, `doc/Notas_2daReunion_EN.md` | Working notes and meeting records (English) |
+| `doc/Notas.md`, `doc/Notas_2daReunion.md`, `extras/` | Original Spanish notes |
+| `doc/IMPLEMENTATION_SUMMARY.md` | Historical implementation summary (English) |
+| `doc/FIXES_APPLIED_EN.md` | Applied fixes log (English) |
+| `doc/FIXES_APPLIED.md` | Original Spanish fixes log |
+| `Changelog_EN.md` | Version history (English) |
+| `CHANGELOG.md` | Version history (Spanish) |
 
 ## 🙌 Help
 

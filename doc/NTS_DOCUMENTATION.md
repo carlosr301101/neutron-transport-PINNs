@@ -18,7 +18,7 @@ Comprehensive documentation for 5 neutron transport simulation programs implemen
 > **fixed-source** 2D transport equation. The Python 1D solver
 > (`solvers/runners/NTS_DD_1D.py`) additionally supports **multiplicative
 > media and `k_eff`**; see
-> [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md). The 2D programs do
+> [MULTIPLICATIVE_MEDIA_EN.md](MULTIPLICATIVE_MEDIA_EN.md). The 2D programs do
 > not accept `NU_SIGF` or `k_eff`.
 
 ## Files Per Program
@@ -309,7 +309,7 @@ uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run 
 
 Expected S8 result: `k_eff ≈ 1.02668`; `k_inf = 1.1`.
 
-Full reference: [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md).
+Full reference: [MULTIPLICATIVE_MEDIA_EN.md](MULTIPLICATIVE_MEDIA_EN.md).
 
 ## References
 
@@ -319,7 +319,7 @@ Full reference: [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md).
 - Vacuum or specified boundary conditions
 - Arbitrary material heterogeneity
 - **Fixed-source only** in the 2D C programs; fission/`k_eff` is a 1D Python
-  feature (see [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md))
+  feature (see [MULTIPLICATIVE_MEDIA_EN.md](MULTIPLICATIVE_MEDIA_EN.md))
 
 ### Numerical Methods
 - **DD:** Alternating sweep method over spatial blocks

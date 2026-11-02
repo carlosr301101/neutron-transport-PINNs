@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Ejecuta un barrido en el problema 1D con SCS (kk) desde 0.20 hasta 0.80 en pasos de 0.10, mantén N=8 como cuadratura, y al final dime cuántas configs corrieron y si todas convergieron. Guarda los datos por orden como se hace siempre antes de sobreescribir.",
+      "prompt": "Run a 1D sweep with SCS (kk) from 0.20 to 0.80 in steps of 0.10, keep N=8, and report how many configs ran and whether all converged. Back up the per-order data as usual before overwriting.",
       "expected_output": "Uses the 5-step sweep recipe: backs up existing datos.json/scs_flux.png with per-order names, edits inputs_placeholder.py (keeps N=8, bound_left/right length 4), runs nts-generate --place-holder kk 0.2 0.8 0.1 (7 configs), runs nts-1d-run, verifies 7/7 converged with 0 failures, then nts-1d-data + nts-1d-plot, and reports proper artifact naming per the backup convention.",
       "files": [],
       "expectations": [
@@ -15,7 +15,7 @@
     },
     {
       "id": 2,
-      "prompt": "Corre el barrido kk 0.1..0.95 con cuadratura S10.",
+      "prompt": "Run the kk 0.1..0.95 sweep with S10 quadrature.",
       "expected_output": "Recognizes N=10 has no tabulated quadrature in cuadraturas.py (would silently fall back to S2 with a warning); surfaces this instead of reporting S2 results as S10; adds Gauss-Legendre S10 rows (positive half, m=1 largest mu, half-weights summing to 1.0, verified programmatically) and resizes bound_left/bound_right to 5 entries before running.",
       "files": [],
       "expectations": [
@@ -27,7 +27,7 @@
     },
     {
       "id": 3,
-      "prompt": "Preparame las tablas comparativas de KPIs de las tres cuadraturas que corrimos en una sola salida markdown para la reunion.",
+      "prompt": "Prepare the comparative KPI tables for the three quadratures we ran as a single markdown output for the meeting.",
       "expected_output": "Uses scripts/sweep_kpis.py with the three output_1d_N*.json files rather than hand-rolling joins; produces validated-runs line, iterations table, flux tables at pos 0 and 100, and max Δ(S4/S6 vs S8) convergence KPI.",
       "files": [],
       "expectations": [
@@ -39,7 +39,7 @@
     },
     {
       "id": 4,
-      "prompt": "Resuelve la placa homogénea de 20 cm con vacío en ambas caras, sigma_t=1.0, sigma_s0=0.9 y nu*Sigma_f=0.11 con S8. Necesito el factor efectivo de multiplicación y, si se puede, el flujo normalizado a 10 kW.",
+      "prompt": "Solve the homogeneous 20 cm slab with vacuum on both sides, sigma_t=1.0, sigma_s0=0.9 and nu*Sigma_f=0.11 with S8. I need the effective multiplication factor and, if possible, the flux normalized to 10 kW.",
       "expected_output": "Identifies MODE='eigenvalue' (Q=0, vacuum, NU_SIGF=0.11), uses NC=100/N=8, runs nts-1d-run, reports k_eff ~= 1.02668 with k_balance consistent, and explains that 10 kW normalization needs E_F_MEV, NU (or SIGMA_F) and AREA_CM2. Does not multiply NU_SIGF by 4*pi and does not add a source to eigenvalue mode.",
       "files": [],
       "expectations": [
@@ -51,8 +51,8 @@
     },
     {
       "id": 5,
-      "prompt": "Quiero resolver la placa multiplicativa de 20 cm entrando los datos a mano desde la consola, sin editar inputs.py. ¿Cómo lo hago y qué me va a preguntar?",
-      "expected_output": "Uses nts-1d-run --manual (or nts run-1d --manual) and describes the step-by-step prompts: geometry, materials, N, fission/NU_SIGF/MODE/K_EFF, TOL_K/MAX_OUTER/K0, optional power, Q (skipped for eigenvalue), boundaries, summary and ¿Ejecutar?. Reports k_eff ~1.02668. Mentions --json as the non-interactive alternative and that -c still works.",
+      "prompt": "I want to solve the 20 cm multiplicative slab by entering the data manually from the console, without editing inputs.py. How do I do it and what will it ask me?",
+      "expected_output": "Uses nts-1d-run --manual (or nts run-1d --manual) and describes the step-by-step prompts: geometry, materials, N, fission/NU_SIGF/MODE/K_EFF, TOL_K/MAX_OUTER/K0, optional power, Q (skipped for eigenvalue), boundaries, summary and run confirmation. Reports k_eff ~1.02668. Mentions --json as the non-interactive alternative and that -c still works.",
       "files": [],
       "expectations": [
         "Uses --manual (or nts run-1d --manual) instead of editing inputs.py",
@@ -63,7 +63,7 @@
     },
     {
       "id": 6,
-      "prompt": "Tengo outputs/results/output_1d_016.json con un solo run. Quiero graficar el flujo escalar vs x, el flujo angular por cada dirección y la historia de k_eff. ¿Qué comandos uso?",
+      "prompt": "I have outputs/results/output_1d_016.json with a single run. I want to plot scalar flux vs x, angular flux per direction and the k_eff history. What commands do I use?",
       "expected_output": "Uses nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar/angular/k-history. For angular, explains one colored line per direction on the same axes with a legend. Mentions --list-runs/--run for files with several runs, and that k-history only exists for MODE=eigenvalue. Gives the default output paths.",
       "files": [],
       "expectations": [
@@ -75,7 +75,7 @@
     },
     {
       "id": 7,
-      "prompt": "Quiero generar una configuración 1D interactiva donde SCS sea kk y nu*Sigma_f sea mm, y luego expandirla con nts-generate para barrer kk 0.1..0.5 y mm 0.05..0.15. ¿Qué comandos uso?",
+      "prompt": "I want to generate an interactive 1D configuration with SCS as kk and nu*Sigma_f as mm, then expand it with nts-generate to sweep kk 0.1..0.5 and mm 0.05..0.15. What commands do I use?",
       "expected_output": "Uses nts-1d-config -o config_1d_001.json, types kk/mm in the SCS and nu*Sigma_f prompts, then nts-generate --json config_1d_001.json --place-holder kk 0.1 0.5 0.2 --place-holder mm 0.05 0.15 0.05 -o inputs_1d.json, and nts-1d-run --json inputs_1d.json. Notes N/IZL/MAX_OUTER cannot be placeholders; NC/HR can, but NC must expand to positive integers.",
       "files": [],
       "expectations": [
@@ -87,8 +87,8 @@
     },
     {
       "id": 8,
-      "prompt": "Quiero que las celdas y el espesor de la región 1 también sean placeholders cc y hh, y expandir cc 20..40 paso 20 y hh 10..20 paso 10. ¿Qué hago?",
-      "expected_output": "Uses nts-1d-config, types cc in Celdas Región 1 and hh in Espesor Región 1, then nts-generate --json config_1d_001.json --place-holder cc 20 40 20 --place-holder hh 10 20 10 -o inputs_1d.json, and nts-1d-run --json inputs_1d.json. Notes NC must expand to positive integers; N/IZL/MAX_OUTER stay numeric.",
+      "prompt": "I want region 1 cells and thickness to be placeholders cc and hh, and expand cc 20..40 step 20 and hh 10..20 step 10. What do I do?",
+      "expected_output": "Uses nts-1d-config, types cc in Cells Region 1 and hh in Thickness Region 1, then nts-generate --json config_1d_001.json --place-holder cc 20 40 20 --place-holder hh 10 20 10 -o inputs_1d.json, and nts-1d-run --json inputs_1d.json. Notes NC must expand to positive integers; N/IZL/MAX_OUTER stay numeric.",
       "files": [],
       "expectations": [
         "Uses cc for NC and hh for HR in the spatial prompts",

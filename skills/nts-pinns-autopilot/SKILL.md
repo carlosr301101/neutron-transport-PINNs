@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v2.7.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v2.8.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -34,6 +34,14 @@ solver method selection. This file is the short, operational path.
 - The 2D solvers are compiled binaries in `solvers/runners/` (checked with
   `uv run nts status`, which lists all five: NTS_DD, NTS_LD, NTS_STEP,
   NTS_RM_CN, NTS_RM_LLN).
+
+## Language
+
+- Generated figures, reports, CLI prompts and solver messages are in
+  **English**.
+- Main documentation is in English. Spanish versions of
+  `MULTIPLICATIVE_MEDIA.md` and `CHANGELOG.md` are kept beside the English
+  versions.
 
 ## Running tests
 

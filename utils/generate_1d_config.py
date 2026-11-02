@@ -71,22 +71,22 @@ def main(argv: list[str] | None = None) -> int:
     try:
         conf = Config(manual=True, allow_placeholders=True)
     except (KeyboardInterrupt, EOFError):
-        print("\nCancelado.")
+        print("\nCancelled.")
         return 130
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
-    print("\n--- RESUMEN DE LA CONFIGURACIÓN ---")
+    print("\n--- CONFIGURATION SUMMARY ---")
     print(conf)
 
     try:
-        answer = input("\n¿Guardar configuración? (s/n) [s]: ").strip().lower()
+        answer = input("\nSave configuration? (y/n) [y]: ").strip().lower()
     except (KeyboardInterrupt, EOFError):
-        print("\nCancelado.")
+        print("\nCancelled.")
         return 130
     if answer == "n":
-        print("Cancelado.")
+        print("Cancelled.")
         return 0
 
     output = args.output or next_config_path()
@@ -96,20 +96,20 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(conf.as_dict(), indent=2, ensure_ascii=False) + "\n"
         )
     except OSError as exc:
-        print(f"Error al escribir {output}: {exc}", file=sys.stderr)
+        print(f"Error writing {output}: {exc}", file=sys.stderr)
         return 1
 
-    print(f"✓ Configuración guardada: {output}")
+    print(f"✓ Configuration saved: {output}")
 
     if conf.has_placeholders:
         print(
-            "Placeholders detectados: "
+            "Placeholders detected: "
             + ", ".join(sorted(conf.placeholder_names))
         )
-        print("Expande con:")
+        print("Expand with:")
         print(f"  {_expansion_hint(conf, output)}")
     else:
-        print(f"Ejecuta: uv run nts-1d-run --json {output}")
+        print(f"Run: uv run nts-1d-run --json {output}")
 
     return 0
 

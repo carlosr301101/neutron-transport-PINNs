@@ -171,7 +171,7 @@ uv run nts-1d-run
 Salida esperada (S8, 100 celdas):
 
 ```text
-AUTOVALOR CONVERGIDO: k_eff = 1.026676...
+EIGENVALUE CONVERGED: k_eff = 1.026676...
 k_balance (P/(A+L)) = 1.026677...
 ```
 
@@ -250,8 +250,8 @@ ejecutar. En los campos físicos de tipo float puedes escribir un número o
 un placeholder:
 
 ```text
-Sigma_Scattering Zona 1 (número o placeholder, e.g. kk): kk
-nu*Sigma_f Zona 1 [cm^-1] (número o placeholder, e.g. mm): mm
+Sigma_Scattering Zone 1 (number or placeholder, e.g. kk): kk
+nu*Sigma_f Zone 1 [cm^-1] (number or placeholder, e.g. mm): mm
 ```
 
 El JSON resultante contiene:

@@ -2,6 +2,22 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.8.0] - 2026-11-02 - Salidas en inglés y documentación bilingüe
+
+### Changed
+- Todas las figuras, reportes y mensajes/prompts del CLI se generan en
+  inglés.
+- Traducidos `plot_1d_flux`, `sweep_kpis`, la consola del solver, el
+  generador de configs y los mensajes de `nts-1d-data`.
+- La documentación principal tiene versión en inglés; las versiones en
+  español se mantienen.
+
+### Added
+- `doc/MULTIPLICATIVE_MEDIA_EN.md` (versión inglesa).
+- `doc/desc_EN.md` (versión inglesa).
+- `Changelog_EN.md` actualizado con las entradas 2.x.
+- Versión del proyecto a 2.8.0.
+
 ## [2.7.0] - 2026-11-02 - Placeholders en geometría 1D
 
 ### Added

@@ -114,8 +114,8 @@ class TestPlot1DFlux(unittest.TestCase):
                 ax = fig.axes[0]
                 self.assertEqual(len(ax.lines), 2)
                 labels = [line.get_label() for line in ax.lines]
-                self.assertIn("dirección 0", labels)
-                self.assertIn("dirección 1", labels)
+                self.assertIn("direction 0", labels)
+                self.assertIn("direction 1", labels)
                 self.assertNotEqual(
                     ax.lines[0].get_color(), ax.lines[1].get_color()
                 )

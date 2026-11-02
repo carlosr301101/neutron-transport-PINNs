@@ -75,7 +75,7 @@ def select_runs(
 
     if selector == ["all"]:
         if kind == "angular":
-            raise ValueError("--run all no es válido para --kind angular.")
+            raise ValueError("--run all is not valid for --kind angular.")
         return runs
 
     selected = []
@@ -83,16 +83,16 @@ def select_runs(
         if item.isdigit():
             index = int(item)
             if index < 0 or index >= len(runs):
-                raise ValueError(f"Índice de run fuera de rango: {index}")
+                raise ValueError(f"Run index out of range: {index}")
             selected.append(runs[index])
         else:
             matches = [r for r in runs if r.get("config_name") == item]
             if not matches:
-                raise ValueError(f"No existe el run {item!r}.")
+                raise ValueError(f"Run does not exist: {item!r}.")
             selected.append(matches[0])
 
     if kind == "angular" and len(selected) != 1:
-        raise ValueError("--kind angular requiere exactamente un run.")
+        raise ValueError("--kind angular requires exactly one run.")
     return selected
 
 
@@ -101,11 +101,11 @@ def cell_centers(config: dict) -> np.ndarray:
     nc = config.get("NC")
     hr = config.get("HR")
     if not isinstance(nc, list) or not isinstance(hr, list):
-        raise ValueError("configuration.NC/HR no están disponibles.")
+        raise ValueError("configuration.NC/HR are not available.")
     nc = np.asarray(nc, dtype=int)
     hr = np.asarray(hr, dtype=float)
     if len(nc) != len(hr):
-        raise ValueError("configuration.NC y HR tienen longitudes distintas.")
+        raise ValueError("configuration.NC and HR have different lengths.")
     dx = np.concatenate([np.full(n, h / n) for n, h in zip(nc, hr)])
     return np.cumsum(dx) - 0.5 * dx
 
@@ -141,8 +141,8 @@ def plot_scalar(runs: list[dict], output: Path, show: bool = False) -> None:
         x = cell_centers(run.get("configuration", {}))
         if len(x) != len(phi):
             raise ValueError(
-                f"{_run_label(run, i)}: scalar_flux ({len(phi)}) no coincide "
-                f"con NC ({len(x)})"
+                f"{_run_label(run, i)}: scalar_flux ({len(phi)}) does not "
+                f"match NC ({len(x)})"
             )
         label = _run_label(run, i)
         ktext = _k_text(run)
@@ -151,15 +151,15 @@ def plot_scalar(runs: list[dict], output: Path, show: bool = False) -> None:
         ax.plot(x, phi, "o-", ms=3, label=label)
 
     ax.set_xlabel("x [cm]")
-    ax.set_ylabel("Flujo escalar")
+    ax.set_ylabel("Scalar flux")
     if len(runs) == 1:
         run = runs[0]
-        title = f"Flujo escalar — {_run_label(run)}"
+        title = f"Scalar flux — {_run_label(run)}"
         if _k_text(run):
             title += f" ({_k_text(run)})"
         ax.set_title(title)
     else:
-        ax.set_title("Flujo escalar vs x")
+        ax.set_title("Scalar flux vs x")
         ax.legend()
     ax.grid(alpha=0.3)
     _save(fig, output, show)
@@ -182,7 +182,7 @@ def plot_angular(
         angular = angular[: len(x), :]
     if angular.shape[0] != len(x):
         raise ValueError(
-            f"angular_flux ({angular.shape[0]}) no coincide con NC ({len(x)})"
+            f"angular_flux ({angular.shape[0]}) does not match NC ({len(x)})"
         )
 
     n_half = angular.shape[1]
@@ -191,7 +191,7 @@ def plot_angular(
     bad = [m for m in directions if m < 0 or m >= n_half]
     if bad:
         raise ValueError(
-            f"Direcciones fuera de rango {bad}; hay {n_half} direcciones "
+            f"Directions out of range {bad}; there are {n_half} directions "
             f"(0..{n_half - 1})."
         )
 
@@ -209,16 +209,16 @@ def plot_angular(
             "o-",
             ms=3,
             color=color,
-            label=f"dirección {m}",
+            label=f"direction {m}",
         )
 
     ax.set_xlabel("x [cm]")
-    ax.set_ylabel("Flujo angular  ω_m(ψ⁺ + ψ⁻)")
-    title = f"Flujo angular — {_run_label(run)}"
+    ax.set_ylabel("Angular flux  ω_m(ψ⁺ + ψ⁻)")
+    title = f"Angular flux — {_run_label(run)}"
     if _k_text(run):
         title += f" ({_k_text(run)})"
     ax.set_title(title)
-    ax.legend(title="Dirección", ncol=1)
+    ax.legend(title="Direction", ncol=1)
     ax.grid(alpha=0.3)
     _save(fig, output, show)
 
@@ -234,8 +234,8 @@ def plot_k_history(
             usable.append((run, np.asarray(history, dtype=float)))
     if not usable:
         raise ValueError(
-            "No hay k_history en los runs seleccionados. "
-            "Solo MODE=eigenvalue genera historial."
+            "No k_history in the selected runs. "
+            "Only MODE=eigenvalue stores history."
         )
 
     fig, ax = plt.subplots(figsize=(7.5, 4.2), dpi=150)
@@ -253,9 +253,9 @@ def plot_k_history(
                 label=f"{label} final = {k_eff:.8f}",
             )
 
-    ax.set_xlabel("Iteración exterior")
+    ax.set_xlabel("Outer iteration")
     ax.set_ylabel("k_eff")
-    ax.set_title("Historia de k_eff")
+    ax.set_title("k_eff history")
     ax.legend()
     ax.grid(alpha=0.3)
     _save(fig, output, show)
@@ -437,7 +437,7 @@ def main(argv: list[str] | None = None) -> int:
             plot_scalar(selected, output, args.show)
         elif kind == "angular":
             if args.directions and len(selected) != 1:
-                raise ValueError("--directions requiere un solo run.")
+                raise ValueError("--directions requires exactly one run.")
             plot_angular(selected[0], args.directions, output, args.show)
         elif kind == "k-history":
             plot_k_history(selected, output, args.show)

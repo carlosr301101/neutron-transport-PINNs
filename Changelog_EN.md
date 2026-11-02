@@ -2,6 +2,80 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [2.8.0] - 2026-11-02 - English outputs and bilingual documentation
+
+### Changed
+- All generated figures, reports and CLI prompts/messages are in English.
+- Translated `plot_1d_flux`, `sweep_kpis`, solver console messages, the
+  config generator and `nts-1d-data` output.
+- Main documentation now has English versions; Spanish versions are kept.
+
+### Added
+- `doc/MULTIPLICATIVE_MEDIA_EN.md` (English version).
+- `doc/desc_EN.md` (English version).
+- `Changelog_EN.md` updated with the 2.x entries.
+- Project version 2.8.0.
+
+## [2.7.0] - 2026-11-02 - Spatial placeholders
+
+### Added
+- `nts-1d-config` accepts placeholders for `NC` and `HR`.
+- `Config.auto_input` validates positive integer `NC`/`IZL` and positive
+  finite `HR`.
+
+### Changed
+- `NC` placeholders must expand to positive integers; `N`, `IZL` and
+  `MAX_OUTER` remain numeric.
+
+## [2.6.0] - 2026-11-02 - `nts-1d-config` command
+
+### Changed
+- The 1D config generator entry point is now `nts-1d-config`.
+
+## [2.5.0] - 2026-11-02 - `nts-test` entry point
+
+### Added
+- `nts-test` runs the unittest suite with `-v`, `--failfast`, `-p` and
+  `--start-dir`.
+
+## [2.4.0] - 2026-11-02 - 1D config generator with placeholders
+
+### Added
+- Interactive config generator with `kk`/`mm` placeholders.
+- `nts-generate --json` expansion to `.json` or `.py`.
+- `Config.as_dict()` and embedded run configuration.
+
+### Fixed
+- Placeholder expansion no longer rounds `TOL_K` or other config floats.
+
+## [2.3.0] - 2026-11-01 - 1D flux plots
+
+### Added
+- `nts-1d-plot -r` for scalar flux, angular flux per direction and
+  `k_history`.
+- Run selection with `--run` / `--list-runs`.
+
+## [2.2.0] - 2026-11-01 - Manual and JSON 1D configuration
+
+### Added
+- `nts-1d-run --manual` interactive wizard.
+- `nts-1d-run --json` file loading.
+- Effective configuration embedded in the output.
+
+## [2.1.0] - 2026-11-01 - Multiplicative media and `k_eff`
+
+### Added
+- `NU_SIGF` and `MODE` (`fixed_source`, `eigenvalue`, `fixed_k`, `driven`).
+- Power iteration for `k_eff`, global balance and optional power
+  normalization.
+- `nts-1d-data` / `nts-1d-plot` support for the new fields.
+
+## [2.0.0] - 2026-09-14 - Documentation and consistency
+
+### Changed
+- README rewritten in English with the full command reference.
+- Version aligned to 2.0.0.
+
 ## [1.3.0] - 2026-05-26 - MFLUX Plotting and CLI Packaging
 
 ### Added

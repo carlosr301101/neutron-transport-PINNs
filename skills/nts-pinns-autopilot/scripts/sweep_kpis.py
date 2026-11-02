@@ -102,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         iters = [r["iters"] for r in rows]
         print(
             f"- **{label}** (`{sources[label]}`): {len(rows)} runs, "
-            f"{n_ok} converged | iteraciones {min(iters)} → {max(iters)}"
+            f"{n_ok} converged | iterations {min(iters)} → {max(iters)}"
         )
     print()
 

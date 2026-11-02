@@ -1,6 +1,6 @@
 [project]
 name = "neutron-transport-pinns"
-version = "2.7.0"
+version = "2.8.0"
 description = "Automated system for neutron transport simulations with parallel execution and TUI/CLI interfaces"
 readme = "README.md"
 requires-python = ">=3.14"
