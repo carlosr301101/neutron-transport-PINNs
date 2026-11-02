@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v2.2.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v2.3.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -57,7 +57,7 @@ Shortcuts (`pyproject.toml` scripts):
 | `nts-generate` | `nts generate` in placeholder mode |
 | `nts-1d-run` | `nts run-1d` (`-c`, `--json`, `--manual`) |
 | `nts-1d-data [--latest] [--positions 0 50 100]` | extract fluxes + embedded config → `datos.json` |
-| `nts-1d-plot [-i datos.json] [-o plot.png] [--x SCS\|NU_SIGF\|k_eff]` | flux vs the chosen x variable, one subplot per position |
+| `nts-1d-plot [-r output_1d.json \| -i datos.json] [--kind scalar\|angular\|k-history\|scs] [--run ...]` | scalar/angular flux, k_history, or legacy SCS plots |
 
 ## Parametric sweep recipe (1D workflow)
 
@@ -233,6 +233,31 @@ uv run nts-1d-run --json config.json
   `Q` or incoming flux; `fixed_k` without a source is a mode-shape
   calculation (read `k_balance`).
 
+## Plotting 1D results
+
+`nts-1d-plot` reads either a raw `output_1d_*.json` (`-r`) or the legacy
+`datos.json` (`-i`):
+
+```bash
+# Raw output
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --list-runs
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar --run manual
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual --directions 0 1
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run manual
+
+# Legacy datos.json
+uv run nts-1d-plot -i outputs/results/datos.json --x k_eff
+```
+
+- More than one run in `-r` requires `--run NAME|INDEX`; `--list-runs`
+  prints the options. `--run all` overlays runs for `scalar`/`k-history`;
+  `angular` requires exactly one run.
+- `angular_flux` is stored as `ω_m(ψ⁺+ψ⁻)`, not the raw `ψ_m`.
+- `--kind k-history` only works for `MODE=eigenvalue`.
+- Default outputs: `outputs/results/plots/scalar_flux.png`,
+  `angular_flux.png`, `k_history.png`.
+
 ## Adding a quadrature order (cuadraturas.py)
 
 `solvers/runners/cuadraturas.py` is a flat `DATA` dict with columns
@@ -346,3 +371,11 @@ vector); total samples = Σ orders × configs × NC.
   scalars is rejected. `--manual`, `--json` and `-c` are mutually exclusive.
 - Manual/JSON runs embed `configuration`, but older outputs do not. If
   `nts-1d-data` says a config is missing, pass the matching `--inputs`.
+- `nts-1d-plot -r` with several runs requires `--run`; use `--list-runs`
+  first. `--run all` is only for `scalar`/`k-history`.
+- `angular_flux` is the weighted field `ω_m(ψ⁺+ψ⁻)`; do not interpret the
+  Y axis as the raw `ψ_m`.
+- `--kind k-history` only produces a plot for `MODE=eigenvalue`; a
+  `fixed_k`/`driven`/`fixed_source` run has an empty `k_history`.
+- `-r` and `-i` are mutually exclusive; `-i` is the legacy `datos.json`
+  mode.

@@ -60,6 +60,18 @@
         "Skips Q for eigenvalue and forces zero incoming flux",
         "Reports k_eff ~1.02668 and mentions --json as the non-interactive option"
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "Tengo outputs/results/output_1d_016.json con un solo run. Quiero graficar el flujo escalar vs x, el flujo angular por cada dirección y la historia de k_eff. ¿Qué comandos uso?",
+      "expected_output": "Uses nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar/angular/k-history. For angular, explains one colored line per direction on the same axes with a legend. Mentions --list-runs/--run for files with several runs, and that k-history only exists for MODE=eigenvalue. Gives the default output paths.",
+      "files": [],
+      "expectations": [
+        "Uses -r and --kind scalar/angular/k-history",
+        "Angular plot: one axes, one colored line per direction, legend",
+        "Explains --list-runs/--run when the file has several runs",
+        "Notes k-history is only for eigenvalue and gives output paths"
+      ]
     }
   ]
 }

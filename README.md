@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-2.2.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.3.0-blue)](CHANGELOG.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -32,6 +32,7 @@ CLI automation system for **SN neutron transport simulations**:
 - **1D Python solver** (`NTS_DD_1D`) with Diamond Difference + SN quadrature, executed over all configs in one shot
 - **1D multiplicative media** (`MODE=eigenvalue|fixed_k|driven`) with `k_eff`, power iteration and optional power normalization
 - **1D manual or JSON configuration**: interactive `--manual` wizard or `--json` file, with the effective config embedded in the output
+- **1D result plots**: scalar flux vs `x`, angular flux per direction on one axes, `k_history`, and legacy SCS plots
 - **Post-processing**: scalar-flux extraction, SCS/NU_SIGF/k_eff-vs-flux plots, 2D MFLUX heatmaps
 - **Structured logging** per simulation plus a global rotating log
 - **5 solvers** with different numerical methods selectable from the CLI
@@ -69,6 +70,8 @@ Main entry point: `uv run nts <command>` (implemented in `main.py` → `cli/comm
 | `nts list inputs\|outputs` | List generated inputs / results |
 | `nts show <result.json>` | Show a result summary (STATUS, ITER, CPU) |
 | `nts plot [-r result.json] [-o out.png] [--show]` | Plot the `MFLUX` heatmap of a 2D result |
+| `nts-1d-plot -r output_1d.json [--kind scalar\|angular\|k-history] [--run ...]` | Plot 1D scalar/angular flux or `k_eff` history from a raw output |
+| `nts-1d-plot -i datos.json [--x SCS\|NU_SIGF\|k_eff]` | Legacy SCS/NU_SIGF/k_eff vs flux from `datos.json` |
 
 Extra shortcuts (independent entry points, see `pyproject.toml`):
 
@@ -77,7 +80,8 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 | `nts-generate` | Placeholder expansion (same flags as above) |
 | `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`) |
 | `nts-1d-data [--latest] [--positions 0 100] [--inputs inputs.py]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` (uses embedded config when available) |
-| `nts-1d-plot [-i datos.json] [-o plot.png] [--x SCS\|NU_SIGF\|k_eff]` | Plot flux vs SCS/NU_SIGF/k_eff, one subplot per position |
+| `nts-1d-plot -r output_1d.json [--kind scalar\|angular\|k-history] [--run ...]` | Scalar/angular flux or `k_history` from a raw output |
+| `nts-1d-plot -i datos.json [--x SCS\|NU_SIGF\|k_eff]` | Legacy SCS/NU_SIGF/k_eff vs flux, one subplot per position |
 
 ## 🌀 2D Workflow (binary solvers)
 
@@ -335,6 +339,35 @@ Each run in `output_1d_###.json` adds `mode`, `k_eff`, `k_balance`,
 `k_balance` to `datos.json`; `nts-1d-plot --x k_eff` (or
 `--x NU_SIGF`) plots against the new variables.
 
+### Plotting 1D results
+
+`nts-1d-plot` now reads a raw `output_1d_*.json` (with `runs[]`) and plots:
+
+```bash
+# List the runs available in the file
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --list-runs
+
+# Scalar flux vs x
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar --run manual
+
+# Angular flux vs x: one colored line per direction on the same axes
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual --directions 0 1
+
+# k_eff history (eigenvalue only)
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run manual
+```
+
+- If the file has more than one run, `--run NAME|INDEX` is required;
+  `--list-runs` shows the options. For `scalar`/`k-history`, `--run all`
+  overlays all runs. For `angular`, exactly one run is required.
+- `angular_flux` is stored as `ω_m(ψ⁺+ψ⁻)`; the y-axis label says so.
+- `--kind k-history` only works for `MODE=eigenvalue`; other modes have no
+  history.
+- Default outputs: `outputs/results/plots/scalar_flux.png`,
+  `angular_flux.png`, `k_history.png`.
+- Legacy `datos.json` mode: `uv run nts-1d-plot -i outputs/results/datos.json --x k_eff`.
+
 See [doc/MULTIPLICATIVE_MEDIA.md](doc/MULTIPLICATIVE_MEDIA.md) for the full
 reference, algorithm, validation and pitfalls. The 2D C solvers remain
 fixed-source only.
@@ -427,7 +460,8 @@ neutron-transport-PINNs/
 │   ├── paths.py                 # Directory constants + solver registry
 │   ├── logger.py                # Global + per-simulation loggers
 │   ├── extract_1d_flux.py       # nts-1d-data: flux extraction
-│   └── plot_scs_flux.py         # nts-1d-plot: SCS vs flux plots
+│   ├── plot_1d_flux.py          # nts-1d-plot: scalar/angular/k_history
+│   └── plot_scs_flux.py         # legacy SCS vs flux plots
 ├── solvers/
 │   ├── runners/                 # C binaries + sources + Python solver
 │   │   ├── NTS_DD_1D.py         # 1D DD solver (fission, k_eff, power norm)
@@ -504,6 +538,9 @@ Common issues:
 | `--manual` finishes without running | Answer `s` to the final “¿Ejecutar?” prompt; `n` cancels |
 | `--json` fails | The file must be a JSON object or a list of objects with the 1D keys |
 | `nts-1d-data` says config not found | Use a run with embedded `configuration`, or pass the matching `--inputs` |
+| `nts-1d-plot` says several runs | Use `--list-runs`, then `--run NAME` or `--run INDEX` |
+| `--kind k-history` fails | Only `MODE=eigenvalue` stores `k_history` |
+| `--kind angular` shape error | The output needs `configuration.NC`/`HR`; regenerate it with the current solver |
 
 ## 📚 Additional Documentation
 

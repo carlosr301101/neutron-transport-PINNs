@@ -238,7 +238,10 @@ Commands:
   uv run nts-1d-run --manual            # interactive step-by-step wizard
   uv run nts-1d-run --json config.json  # one object or a list of objects
   uv run nts-1d-data --latest --positions 0 50 100
-  uv run nts-1d-plot --x k_eff          # or --x NU_SIGF
+  uv run nts-1d-plot -r output_1d_016.json --kind scalar --run manual
+  uv run nts-1d-plot -r output_1d_016.json --kind angular --run manual
+  uv run nts-1d-plot -r output_1d_016.json --kind k-history --run manual
+  uv run nts-1d-plot -i datos.json --x k_eff        # modo legado
   uv run python -m unittest discover -s tests -v
 
 Full reference: MULTIPLICATIVE_MEDIA.md

@@ -372,6 +372,40 @@ Cada run de `output_1d_###.json` añade:
 `datos.json`. `nts-1d-plot --x k_eff` permite graficar flujo contra `k_eff`;
 `--x NU_SIGF` grafica contra νΣf.
 
+### 7.1 Gráficos desde `output_1d`
+
+`nts-1d-plot` lee el JSON crudo (`runs[]`), no solo `datos.json`:
+
+```bash
+# Ver los runs disponibles
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --list-runs
+
+# Φ(x)
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar --run manual
+
+# Flujo angular: una línea por dirección, misma gráfica, colores y leyenda
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual --directions 0 1
+
+# k_eff vs iteración exterior
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run manual
+
+# Modo legado (datos.json)
+uv run nts-1d-plot -i outputs/results/datos.json --x k_eff
+```
+
+Reglas:
+
+- Si el fichero tiene más de un run, `--run NOMBRE|INDICE` es obligatorio;
+  `--list-runs` muestra las opciones. `--run all` superpone todos los runs
+  para `scalar`/`k-history`; `angular` exige exactamente uno.
+- `angular_flux` se guarda como `ω_m(ψ⁺ + ψ⁻)`; la etiqueta del eje Y lo
+  indica.
+- `--kind k-history` solo funciona con `MODE=eigenvalue`; en los demás
+  modos el historial está vacío.
+- Salidas por defecto: `outputs/results/plots/scalar_flux.png`,
+  `angular_flux.png`, `k_history.png`.
+
 ## 8. Validación
 
 ```bash

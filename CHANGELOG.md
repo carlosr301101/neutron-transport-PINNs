@@ -2,6 +2,28 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.3.0] - 2026-11-01 - Gráficos de flujo 1D
+
+### Added
+- `utils/plot_1d_flux.py` y `nts-1d-plot` aceptan `-r output_1d_*.json`
+  con `--kind scalar|angular|k-history|scs`.
+- Flujo escalar vs `x`, flujo angular por dirección en un solo eje con
+  colores y leyendas diferenciadas, y `k_history` vs iteración exterior.
+- `--run`/`--list-runs` para seleccionar runs; `--run all` para
+  `scalar`/`k-history`; `--directions` para elegir direcciones angulares.
+- 13 tests nuevos (37 en total).
+- README, QUICKSTART, NTS_DOCUMENTATION, QUICK_REFERENCE,
+  MULTIPLICATIVE_MEDIA y la skill `nts-pinns-autopilot` actualizados.
+
+### Changed
+- `nts-1d-plot` apunta a `utils.plot_1d_flux:main`;
+  `utils/plot_scs_flux.py` queda como implementación legada.
+- Versión del proyecto a 2.3.0.
+
+### Fixed
+- Al graficar `angular_flux` se descarta la fila extra
+  `NTP = NTC + 1` que el solver guarda sin usar.
+
 ## [2.2.0] - 2026-11-01 - Configuración manual y JSON (1D)
 
 ### Added

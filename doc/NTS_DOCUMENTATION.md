@@ -298,6 +298,11 @@ Quick benchmark (20 cm homogeneous slab, vacuum, `σt=1.0`, `σs0=0.9`,
 uv run nts-1d-run                    # MODE="eigenvalue", NU_SIGF=[0.11]
 uv run nts-1d-run --manual           # interactive step-by-step wizard
 uv run nts-1d-run --json config.json # one object or a list of objects
+
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --list-runs
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar --run manual
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run manual
 ```
 
 Expected S8 result: `k_eff ≈ 1.02668`; `k_inf = 1.1`.

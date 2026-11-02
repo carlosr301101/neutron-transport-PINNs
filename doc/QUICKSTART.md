@@ -135,6 +135,29 @@ summary and asks “¿Ejecutar?” before running. `nts-1d-data` uses the
 `configuration` embedded in the output, so it also works for manual/JSON
 runs.
 
+### Plotting 1D results
+
+```bash
+# List the runs in a raw output
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --list-runs
+
+# Scalar flux vs x
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar --run manual
+
+# Angular flux: one colored line per direction, one legend
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual
+
+# k_eff history (eigenvalue only)
+uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run manual
+
+# Legacy datos.json mode
+uv run nts-1d-plot -i outputs/results/datos.json --x k_eff
+```
+
+If the file has more than one run, `--run NAME|INDEX` is required. Use
+`--run all` to overlay all runs for `scalar`/`k-history`; `angular` takes
+exactly one run.
+
 ## ⚛️ Multiplicative Media (1D, k_eff)
 
 The Python 1D solver supports fission and `k_eff` through `NU_SIGF` and

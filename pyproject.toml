@@ -1,6 +1,6 @@
 [project]
 name = "neutron-transport-pinns"
-version = "2.2.0"
+version = "2.3.0"
 description = "Automated system for neutron transport simulations with parallel execution and TUI/CLI interfaces"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -16,7 +16,7 @@ dependencies = [
 [project.scripts]
 nts = "main:main"
 nts-1d-data = "utils.extract_1d_flux:main"
-nts-1d-plot = "utils.plot_scs_flux:main"
+nts-1d-plot = "utils.plot_1d_flux:main"
 nts-1d-run = "cli.run_1d:cli"
 nts-generate = "cli.generate_placeholder:cli"
 
