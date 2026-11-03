@@ -1,3 +1,4 @@
+from enum import Enum
 import numpy as np
 import pandas as pd
 import logging
@@ -9,6 +10,12 @@ from datetime import datetime
 from .cuadraturas import DATA
 
 logger = logging.getLogger(__name__)
+
+
+class Method(Enum):
+    DD = 1
+    STEP = 2
+    STEP_CHARACTHERISTIC = 3
 
 
 # =================================================================
@@ -48,6 +55,9 @@ class Config:
         self.NU = None
         self.AREA_CM2 = 1.0
 
+        # ---- Method ----
+        self.method = Method.DD
+
         if manual:
             if self.num_regions == 0:
                 self.regiones_input()
@@ -81,7 +91,7 @@ class Config:
         """Convert a list to ints, rejecting non-integers/unexpanded names."""
         try:
             raw = np.asarray(values, dtype=float)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             raise ValueError(
                 f"{name} must contain integers; if there are placeholders, "
                 "expand them with nts-generate --json."
@@ -192,15 +202,13 @@ class Config:
         if self.num_zones <= 0:
             raise ValueError("num_zones must be >= 1.")
         if self.num_zones > self.num_regions:
-            raise ValueError(
-                "Number of zones cannot exceed the number of regions."
-            )
+            raise ValueError("Number of zones cannot exceed the number of regions.")
 
         # Convertir a numpy arrays
         self.NC = self._as_int_array(kwargs["NC"], "NC", positive=True)
         try:
             self.HR = np.array(kwargs["HR"], dtype=float)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             raise ValueError(
                 "HR must contain numbers; if there are placeholders, expand them "
                 "con nts-generate --json."
@@ -219,16 +227,14 @@ class Config:
         self.N = int(kwargs["N"])
         if self.N % 2 != 0:
             raise ValueError("Quadrature order must be an even number.")
-        self.N_HALF = self.N // 2
+        self.N_HALF: int = self.N // 2
 
         # Cargar direcciones y pesos
         self.weights_directions()
 
         # Fronteras: por defecto, flujo entrante nulo (vacío)
         default_bound = np.zeros(self.N_HALF)
-        self.bound_left = np.array(
-            kwargs.get("bound_left", default_bound), dtype=float
-        )
+        self.bound_left = np.array(kwargs.get("bound_left", default_bound), dtype=float)
         self.bound_right = np.array(
             kwargs.get("bound_right", default_bound), dtype=float
         )
@@ -348,9 +354,7 @@ class Config:
 
         allowed = {"fixed_source", "fixed_k", "eigenvalue", "driven"}
         if self.MODE not in allowed:
-            raise ValueError(
-                f"Invalid MODE: {self.MODE!r}. Options: {sorted(allowed)}"
-            )
+            raise ValueError(f"Invalid MODE: {self.MODE!r}. Options: {sorted(allowed)}")
 
         left_external = bool(
             not self.reflex_izq
@@ -362,9 +366,7 @@ class Config:
             and self.bound_right is not None
             and np.any(self.bound_right != 0.0)
         )
-        external_source = bool(
-            np.any(self.Q != 0.0) or left_external or right_external
-        )
+        external_source = bool(np.any(self.Q != 0.0) or left_external or right_external)
 
         if self.MODE == "fixed_source":
             if has_fission:
@@ -409,9 +411,7 @@ class Config:
             # En modo manual las fronteras aún pueden ser None (el Runner
             # preguntará el flujo entrante); en ese caso la comprobación
             # definitiva se hace en Runner._fixed_k_iteration.
-            bounds_known = (
-                self.bound_left is not None and self.bound_right is not None
-            )
+            bounds_known = self.bound_left is not None and self.bound_right is not None
             if not external_source and bounds_known:
                 raise ValueError(
                     "MODE='driven' requires Q != 0 or non-zero incoming flux."
@@ -423,8 +423,7 @@ class Config:
         self.NC = np.array(
             [
                 self._prompt_number(
-                    f"Cells in Region {i + 1} "
-                    f"(integer or placeholder, e.g. cc): ",
+                    f"Cells in Region {i + 1} (integer or placeholder, e.g. cc): ",
                     integer=True,
                     allow_placeholder=True,
                 )
@@ -465,8 +464,7 @@ class Config:
         self.SCS = np.array(
             [
                 self._prompt_number(
-                    f"Sigma_Scattering Zone {i + 1} "
-                    f"(number or placeholder, e.g. kk): "
+                    f"Sigma_Scattering Zone {i + 1} (number or placeholder, e.g. kk): "
                 )
                 for i in range(self.num_zones)
             ],
@@ -506,19 +504,17 @@ class Config:
             )
 
         # Fronteras
-        print("\n--- CONDICIONES DE FRONTERA ---")
-        self.reflex_izq = (
-            input("Reflective left? (y/n) [n]: ").strip().lower() in {"y", "s"}
-        )
-        self.reflex_der = (
-            input("Reflective right? (y/n) [n]: ").strip().lower() in {"y", "s"}
-        )
-        self.bound_left = self._manual_boundary_values(
-            "izquierda", self.reflex_izq
-        )
-        self.bound_right = self._manual_boundary_values(
-            "derecha", self.reflex_der
-        )
+        print("\n--- Boundary Conditions---")
+        self.reflex_izq = input("Reflective left? (y/n) [n]: ").strip().lower() in {
+            "y",
+            "s",
+        }
+        self.reflex_der = input("Reflective right? (y/n) [n]: ").strip().lower() in {
+            "y",
+            "s",
+        }
+        self.bound_left = self._manual_boundary_values("izquierda", self.reflex_izq)
+        self.bound_right = self._manual_boundary_values("derecha", self.reflex_der)
 
         if self.has_placeholders:
             print(
@@ -553,12 +549,8 @@ class Config:
 
         tokens = text.replace(",", " ").split()
         if len(tokens) != self.N_HALF:
-            raise ValueError(
-                f"Expected {self.N_HALF} values for boundary {side}."
-            )
-        values = [
-            self._parse_number(token, allow_placeholder=True) for token in tokens
-        ]
+            raise ValueError(f"Expected {self.N_HALF} values for boundary {side}.")
+        values = [self._parse_number(token, allow_placeholder=True) for token in tokens]
         if any(isinstance(value, str) for value in values):
             return np.array(values, dtype=object)
         return np.array(values, dtype=float)
@@ -577,9 +569,7 @@ class Config:
         self.NU = None
         self.AREA_CM2 = 1.0
 
-        resp = (
-            input("Multiplicative medium (fission)? (y/n) [n]: ").strip().lower()
-        )
+        resp = input("Multiplicative medium (fission)? (y/n) [n]: ").strip().lower()
         if resp not in {"y", "s"}:
             print("fixed_source mode (no fission).")
             return
@@ -590,9 +580,7 @@ class Config:
             )
 
         mode = (
-            input("Mode (eigenvalue / fixed_k / driven) [eigenvalue]: ")
-            .strip()
-            .lower()
+            input("Mode (eigenvalue / fixed_k / driven) [eigenvalue]: ").strip().lower()
             or "eigenvalue"
         )
         if mode not in {"eigenvalue", "fixed_k", "driven"}:
@@ -603,7 +591,9 @@ class Config:
             self.K_EFF = self._prompt_number("k_eff impuesto: ")
         elif mode == "driven":
             self.K_EFF = 1.0
-            print("driven mode: k = 1 (physical fission); source/flux will be requested.")
+            print(
+                "driven mode: k = 1 (physical fission); source/flux will be requested."
+            )
         else:
             self.K_EFF = None
 
@@ -617,10 +607,7 @@ class Config:
         k0_text = input("K0 (empty = automatic): ").strip()
         self.K0 = self._parse_number(k0_text) if k0_text else None
 
-        if (
-            input("Normalize to a power? (y/n) [n]: ").strip().lower()
-            in {"y", "s"}
-        ):
+        if input("Normalize to a power? (y/n) [n]: ").strip().lower() in {"y", "s"}:
             self.POWER_KW = self._prompt_number("Power [kW]: ")
             self.E_F_MEV = self._prompt_number(
                 "E_f [MeV/fission] [200]: ", default=200.0
@@ -630,23 +617,18 @@ class Config:
             )
 
             conv = (
-                input("Fission conversion: nu or sigma_f [nu]: ")
-                .strip()
-                .lower()
+                input("Fission conversion: nu or sigma_f [nu]: ").strip().lower()
                 or "nu"
             )
             if conv not in {"nu", "sigma_f"}:
                 raise ValueError("Conversion must be 'nu' or 'sigma_f'.")
             if conv == "nu":
-                self.NU = self._prompt_number(
-                    "nu (neutrons/fission, e.g. 2.4): "
-                )
+                self.NU = self._prompt_number("nu (neutrons/fission, e.g. 2.4): ")
             else:
                 self.SIGMA_F = np.array(
                     [
                         self._prompt_number(
-                            f"Sigma_f Zone {i + 1} [cm^-1] "
-                            f"(number or placeholder): "
+                            f"Sigma_f Zone {i + 1} [cm^-1] (number or placeholder): "
                         )
                         for i in range(self.num_zones)
                     ],
@@ -810,9 +792,7 @@ class Runner:
 
         # --- Estado del modo multiplicativo ---
         self.mode = config.MODE
-        self.k_eff = (
-            config.K_EFF if config.MODE in ("fixed_k", "driven") else None
-        )
+        self.k_eff = config.K_EFF if config.MODE in ("fixed_k", "driven") else None
         self.k_history = []
         self.k_converged = None
         self.k_balance = None
@@ -822,8 +802,7 @@ class Runner:
         # Un problema homogéneo (autovalor o fixed_k sin fuente) necesita
         # un flujo inicial no nulo; si no, la fuente de fisión es cero.
         needs_guess = config.MODE == "eigenvalue" or (
-            config.MODE in ("fixed_k", "driven")
-            and not self._has_external_source()
+            config.MODE in ("fixed_k", "driven") and not self._has_external_source()
         )
         if needs_guess:
             self.scalar_flux[:] = 1.0
@@ -1034,9 +1013,7 @@ class Runner:
     def _estimate_k0(self) -> float:
         cfg = self.config
         production = float(np.sum(cfg.nu_sigma_f_vec * cfg.dx_vec))
-        absorption = float(
-            np.sum((cfg.sigma_t_vec - cfg.sigma_s_vec) * cfg.dx_vec)
-        )
+        absorption = float(np.sum((cfg.sigma_t_vec - cfg.sigma_s_vec) * cfg.dx_vec))
         if production > 0.0 and absorption > 0.0:
             return production / absorption
         return 1.0
@@ -1064,15 +1041,9 @@ class Runner:
         cfg = self.config
         if not np.any(cfg.nu_sigma_f_vec > 0.0):
             return None
-        production = float(
-            np.sum(cfg.nu_sigma_f_vec * self.scalar_flux * cfg.dx_vec)
-        )
+        production = float(np.sum(cfg.nu_sigma_f_vec * self.scalar_flux * cfg.dx_vec))
         absorption = float(
-            np.sum(
-                (cfg.sigma_t_vec - cfg.sigma_s_vec)
-                * self.scalar_flux
-                * cfg.dx_vec
-            )
+            np.sum((cfg.sigma_t_vec - cfg.sigma_s_vec) * self.scalar_flux * cfg.dx_vec)
         )
         leakage = self._net_leakage()
         denominator = absorption + leakage
@@ -1129,9 +1100,7 @@ class Runner:
         self.converged = False
         print(f"\n--- fixed_k MODE (k_eff = {self.k_eff:.6f}) ---")
         if self.mode == "driven" and not has_source:
-            raise ValueError(
-                "MODE='driven' requires Q != 0 or non-zero incoming flux."
-            )
+            raise ValueError("MODE='driven' requires Q != 0 or non-zero incoming flux.")
         if not has_source:
             print(
                 "WARNING: no external source or incoming flux. "
@@ -1200,9 +1169,7 @@ class Runner:
                 np.sum(cfg.nu_sigma_f_vec * self.scalar_flux * cfg.dx_vec)
             )
             if production_new <= 0.0:
-                raise ValueError(
-                    "Zero fission production during power iteration."
-                )
+                raise ValueError("Zero fission production during power iteration.")
 
             k_new = self.k_eff * production_new / production_old
             scale = float(np.max(np.abs(self.scalar_flux)))
@@ -1217,9 +1184,7 @@ class Runner:
             self.k_eff = k_new
 
             if outer % max(1, cfg.MAX_OUTER // 20) == 0 or dk < cfg.TOL_K:
-                print(
-                    f"Outer {outer:4d}: k_eff={self.k_eff:.10f}  dk={dk:.2e}"
-                )
+                print(f"Outer {outer:4d}: k_eff={self.k_eff:.10f}  dk={dk:.2e}")
 
             if not inner_ok:
                 print(
@@ -1242,10 +1207,7 @@ class Runner:
                 f"{self.total_inner_iterations} inner)"
             )
         else:
-            print(
-                "\nWARNING: k_eff did not converge. "
-                f"Last value = {self.k_eff:.10f}"
-            )
+            print(f"\nWARNING: k_eff did not converge. Last value = {self.k_eff:.10f}")
         if self.k_balance is not None:
             print(f"k_balance (P/(A+L)) = {self.k_balance:.10f}")
 
@@ -1260,25 +1222,14 @@ class Runner:
         elif cfg.NU is not None and cfg.NU > 0.0:
             sigma_f = cfg.nu_sigma_f_vec / cfg.NU
         else:
-            raise ValueError(
-                "POWER_KW requires SIGMA_F per zone or NU (nu_bar)."
-            )
+            raise ValueError("POWER_KW requires SIGMA_F per zone or NU (nu_bar).")
 
-        fission_integral = float(
-            np.sum(sigma_f * self.scalar_flux * cfg.dx_vec)
-        )
+        fission_integral = float(np.sum(sigma_f * self.scalar_flux * cfg.dx_vec))
         if fission_integral <= 0.0:
-            raise ValueError(
-                "Cannot normalize power: fission integral is zero."
-            )
+            raise ValueError("Cannot normalize power: fission integral is zero.")
 
         # E_f [MeV/fisión] * 1.602176634e-13 [W/(MeV/s)]
-        power_w = (
-            cfg.AREA_CM2
-            * cfg.E_F_MEV
-            * 1.602176634e-13
-            * fission_integral
-        )
+        power_w = cfg.AREA_CM2 * cfg.E_F_MEV * 1.602176634e-13 * fission_integral
         if power_w <= 0.0:
             raise ValueError("Computed power is not positive.")
 
