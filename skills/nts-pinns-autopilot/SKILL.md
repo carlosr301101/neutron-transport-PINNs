@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v2.8.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v2.9.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -166,6 +166,7 @@ support fission.
 ```python
 "NU_SIGF": [0.11],   # nu*Sigma_f per zone [cm^-1]
 "MODE": "eigenvalue",
+"SPATIAL_SCHEME": "DD",  # DD (default) | STEP | SC
 # "K_EFF": 1.0,      # fixed_k only
 "TOL_K": 1e-6,
 "MAX_OUTER": 200,
@@ -175,6 +176,24 @@ support fission.
 # "NU": 2.4,         # or "SIGMA_F": [0.045833]
 # "AREA_CM2": 1.0,
 ```
+
+### Spatial schemes
+
+| `SPATIAL_SCHEME` | Order | Notes |
+|---|---|---|
+| `DD` | 2nd | Default; bit-for-bit backward compatible |
+| `STEP` | 1st | Implicit upwind (`psi_bar = psi_out`), positive, diffusive |
+| `SC` | 2nd | Step characteristics; closest to DD on coarse meshes |
+
+- The wizard and `nts-1d-config` ask
+  `Spatial scheme (DD / STEP / SC) [DD]:` after the quadrature order.
+- Only the cell kernel changes: source, quadrature, boundaries and iteration
+  are shared.
+- S8/100 cells benchmark: DD `1.026676`, SC `1.026054`, STEP `1.017843`.
+  STEP's ~0.9% gap is expected (first order), not a defect.
+- No clipping or positivity constraints. DD can give negative angular fluxes
+  in thick cells; report them, do not "fix" them.
+- Full reference: `doc/SPATIAL_SCHEMES_EN.md`.
 
 ### Benchmark (20 cm, vacuum, S8)
 
@@ -242,7 +261,8 @@ uv run nts-1d-run --json config.json
 - **`--manual`**: step-by-step wizard. Asks geometry, materials, `N`, then
   fission (`NU_SIGF`, `MODE`, `K_EFF`), `TOL_K`/`MAX_OUTER`/`K0`, optional
   power normalization, `Q` (skipped for `eigenvalue`), and boundaries. It
-  prints a summary and asks `¿Ejecutar?`; `n` cancels.
+  prints a summary and asks `Run? (y/n) [y]`; `n` cancels. Each run prints
+  `Source: <file> | run <name>` under the `STARTING CALCULATION` banner.
 - **`--json`**: a JSON object or a list of objects with the same keys as
   `inputs.py`. Names become `json_config_001`, etc.
 - `--manual`, `--json` and `-c` are mutually exclusive; `-o` works in all
@@ -416,8 +436,8 @@ vector); total samples = Σ orders × configs × NC.
 - `POWER_KW` needs a way to get `Sigma_f`: provide `SIGMA_F` per zone or
   `NU` (nu_bar). The normalization scales the flux but does not change
   `k_eff`.
-- `--manual` does not run until you answer `s` to `¿Ejecutar?`; answering
-  `n` cancels with rc 0 and writes no JSON.
+- `--manual` does not run until you confirm `Run? (y/n) [y]` (Enter or `y`
+  runs); answering `n` cancels with rc 0 and writes no JSON.
 - `--json` must be an object or a list of objects; a scalar or a list of
   scalars is rejected. `--manual`, `--json` and `-c` are mutually exclusive.
 - Manual/JSON runs embed `configuration`, but older outputs do not. If

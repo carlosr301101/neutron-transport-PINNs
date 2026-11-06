@@ -2,6 +2,39 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [2.9.0] - 2026-11-03 - DD / STEP / SC spatial schemes
+
+### Added
+- `SPATIAL_SCHEME` in the 1D configuration (`"DD"`, `"STEP"`, `"SC"`;
+  default `"DD"`).
+- Cell kernels `_cell_out_dd`, `_cell_out_step`, `_cell_out_sc`,
+  `cell_out()` and `cell_average()` in `NTS_DD_1D.py`.
+- `theta_step_characteristic()` with a series for `α < 1e-3` and rejection
+  of negative optical thickness.
+- `Config.theta_sc` precomputed once per run, shape `(NTC, N_HALF)`.
+- Scheme prompt in the manual wizard and in `nts-1d-config`.
+- `tests/test_spatial_schemes.py` (29 tests).
+- `doc/SPATIAL_SCHEMES_EN.md` and `doc/SPATIAL_SCHEMES.md`.
+
+### Changed
+- `Method` uses string values and `Config.method` is now a property derived
+  from `SPATIAL_SCHEME` (single source of truth).
+- `Runner.sweep()` resolves the kernel once and `calculo_flujo()`
+  reconstructs the cell averages with `cell_average()`.
+- Each run result includes `spatial_scheme`.
+- `nts-1d-run` prints the configuration source and run name under the
+  `--- STARTING CALCULATION ---` banner, e.g.
+  `Source: outputs/inputs/inputs.py | run config_dict_003`.
+- The manual-run summary and confirmation prompts are now in English
+  (`--- CONFIGURATION SUMMARY ---`, `Run? (y/n) [y]:`).
+
+### Notes
+- DD is bit-for-bit identical to the previous version.
+- STEP is first order; at 100 cells it sits ~0.9% below DD (expected
+  behaviour of the step approximation).
+- No clipping or positivity constraints: DD's negative fluxes in thick
+  cells are reported as-is.
+
 ## [2.8.0] - 2026-11-02 - English outputs and bilingual documentation
 
 ### Changed

@@ -31,7 +31,7 @@ class TestManualConfiguration(unittest.TestCase):
     def test_manual_eigenvalue(self):
         inputs = [
             "1", "1", "40", "20", "1", "1.0", "0.9",
-            "", "s", "0.11", "eigenvalue", "", "", "", "n", "n", "n",
+            "", "", "s", "0.11", "eigenvalue", "", "", "", "n", "n", "n",
         ]
         conf, result = run_manual(inputs)
         self.assertEqual(result["mode"], "eigenvalue")
@@ -43,7 +43,7 @@ class TestManualConfiguration(unittest.TestCase):
     def test_manual_eigenvalue_with_power(self):
         inputs = [
             "1", "1", "40", "20", "1", "1.0", "0.9",
-            "", "s", "0.11", "eigenvalue", "", "", "",
+            "", "", "s", "0.11", "eigenvalue", "", "", "",
             "s", "10", "", "", "", "2.4", "n", "n",
         ]
         conf, result = run_manual(inputs)
@@ -55,7 +55,7 @@ class TestManualConfiguration(unittest.TestCase):
     def test_manual_eigenvalue_with_sigma_f_power(self):
         inputs = [
             "1", "1", "20", "20", "1", "1.0", "0.5",
-            "", "s", "0.3", "eigenvalue", "", "", "",
+            "", "", "s", "0.3", "eigenvalue", "", "", "",
             "s", "10", "", "", "sigma_f", "0.3", "s", "s",
         ]
         conf, result = run_manual(inputs)
@@ -66,7 +66,7 @@ class TestManualConfiguration(unittest.TestCase):
     def test_manual_fixed_k_with_source(self):
         inputs = [
             "1", "1", "20", "20", "1", "1.0", "0.9",
-            "", "s", "0.05", "fixed_k", "1.0", "", "", "",
+            "", "", "s", "0.05", "fixed_k", "1.0", "", "", "",
             "n", "1.0", "s", "s",
         ]
         conf, result = run_manual(inputs)
@@ -78,7 +78,7 @@ class TestManualConfiguration(unittest.TestCase):
     def test_manual_driven(self):
         inputs = [
             "1", "1", "20", "20", "1", "1.0", "0.9",
-            "", "s", "0.05", "driven", "", "", "",
+            "", "", "s", "0.05", "driven", "", "", "",
             "n", "1.0", "n", "n", "0 0 0 0", "0 0 0 0",
         ]
         conf, result = run_manual(inputs)
@@ -90,7 +90,7 @@ class TestManualConfiguration(unittest.TestCase):
     def test_manual_driven_without_source_fails(self):
         inputs = [
             "1", "1", "20", "20", "1", "1.0", "0.9",
-            "", "s", "0.05", "driven", "", "", "",
+            "", "", "s", "0.05", "driven", "", "", "",
             "n", "0", "n", "n", "0 0 0 0", "0 0 0 0",
         ]
         with self.assertRaises(ValueError):
@@ -99,7 +99,7 @@ class TestManualConfiguration(unittest.TestCase):
     def test_manual_fixed_source(self):
         inputs = [
             "1", "1", "20", "20", "1", "1.0", "0.9",
-            "", "n", "1", "s", "s",
+            "", "", "n", "1", "s", "s",
         ]
         conf, result = run_manual(inputs)
         self.assertEqual(result["mode"], "fixed_source")
@@ -109,7 +109,7 @@ class TestManualConfiguration(unittest.TestCase):
     def test_manual_invalid_mode(self):
         inputs = [
             "1", "1", "20", "20", "1", "1.0", "0.9",
-            "", "s", "0.1", "foo",
+            "", "", "s", "0.1", "foo",
         ]
         with self.assertRaises(ValueError):
             run_manual(inputs)
@@ -117,7 +117,7 @@ class TestManualConfiguration(unittest.TestCase):
     def test_as_dict_is_json_serializable(self):
         inputs = [
             "1", "1", "20", "20", "1", "1.0", "0.9",
-            "", "s", "0.3", "eigenvalue", "", "", "", "n", "s", "s",
+            "", "", "s", "0.3", "eigenvalue", "", "", "", "n", "s", "s",
         ]
         conf, _ = run_manual(inputs)
         payload = conf.as_dict()
@@ -131,7 +131,7 @@ class TestManualConfiguration(unittest.TestCase):
 
         inputs = [
             "1", "1", "40", "20", "1", "1.0", "0.9",
-            "", "s", "0.11", "eigenvalue", "", "", "", "n", "n", "n",
+            "", "", "s", "0.11", "eigenvalue", "", "", "", "n", "n", "n",
             "s",  # confirm execution
         ]
         with tempfile.TemporaryDirectory() as tmp:

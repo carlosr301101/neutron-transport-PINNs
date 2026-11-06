@@ -9,6 +9,7 @@ config_dict = {
     "NU_SIGF": [0.0],       # nu*Sigma_f [cm^-1] por zona; 0 = sin fisión
     "Q": [0],
     "N": 8,
+    "SPATIAL_SCHEME": "DD",  # DD | STEP | SC
     "reflex_izq": False,
     "reflex_der": False,
     "bound_left": [1, 1, 1, 1],

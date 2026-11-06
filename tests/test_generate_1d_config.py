@@ -16,15 +16,15 @@ from utils import generate_1d_config as gen
 
 CONCRETE = [
     "1", "1", "40", "20", "1", "1.0", "0.9",
-    "", "s", "0.11", "eigenvalue", "", "", "", "n", "n", "n", "s",
+    "", "", "s", "0.11", "eigenvalue", "", "", "", "n", "n", "n", "s",
 ]
 PLACEHOLDER = [
     "1", "1", "40", "20", "1", "1.0", "kk",
-    "", "s", "mm", "eigenvalue", "", "", "", "n", "n", "n", "s",
+    "", "", "s", "mm", "eigenvalue", "", "", "", "n", "n", "n", "s",
 ]
 GEOM_PLACEHOLDER = [
     "1", "1", "cc", "hh", "1", "1.0", "0.9",
-    "", "s", "0.11", "eigenvalue", "", "", "", "n", "n", "n", "s",
+    "", "", "s", "0.11", "eigenvalue", "", "", "", "n", "n", "n", "s",
 ]
 
 

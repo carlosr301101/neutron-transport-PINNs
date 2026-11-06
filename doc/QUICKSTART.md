@@ -153,9 +153,16 @@ uv run nts-1d-run --json config.json
 ```
 
 `--manual`, `--json` and `-c` are mutually exclusive. The wizard prints a
-summary and asks “¿Ejecutar?” before running. `nts-1d-data` uses the
-`configuration` embedded in the output, so it also works for manual/JSON
-runs.
+configuration summary and asks `Run? (y/n) [y]:` before running. Each run
+prints where it came from:
+
+```text
+--- STARTING CALCULATION ---
+Source: outputs/inputs/inputs.py | run config_dict_003
+```
+
+`nts-1d-data` uses the `configuration` embedded in the output, so it also
+works for manual/JSON runs.
 
 ### Plotting 1D results
 
@@ -221,6 +228,29 @@ Optional power normalization:
 ```
 
 Full reference: [MULTIPLICATIVE_MEDIA_EN.md](MULTIPLICATIVE_MEDIA_EN.md).
+
+## 🧩 Spatial Schemes (1D)
+
+The 1D solver can use three interchangeable cell schemes:
+
+```python
+"SPATIAL_SCHEME": "DD",   # "DD" (default) | "STEP" | "SC"
+```
+
+| Scheme | Order | Notes |
+|---|---|---|
+| `DD` | 2nd | Historical scheme; bit-for-bit backward compatible |
+| `STEP` | 1st | Implicit upwind, unconditionally positive, diffusive |
+| `SC` | 2nd | Step characteristics; closest to DD on coarse meshes |
+
+The wizard (`nts-1d-run --manual`, `nts-1d-config`) asks
+`Spatial scheme (DD / STEP / SC) [DD]:` right after the quadrature order.
+
+S8, 100 cells, 20 cm benchmark: `k_eff = 1.026676` (DD), `1.026054` (SC),
+`1.017843` (STEP). The three schemes share source, quadrature, boundary
+conditions and iteration. No clipping or positivity constraints are applied.
+
+Full reference: [SPATIAL_SCHEMES_EN.md](SPATIAL_SCHEMES_EN.md).
 
 ## 📁 File Locations
 

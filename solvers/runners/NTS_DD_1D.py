@@ -1,4 +1,5 @@
 from enum import Enum
+import math
 import numpy as np
 import pandas as pd
 import logging
@@ -13,9 +14,142 @@ logger = logging.getLogger(__name__)
 
 
 class Method(Enum):
-    DD = 1
-    STEP = 2
-    STEP_CHARACTHERISTIC = 3
+    """Spatial discretization scheme used in the cell sweep."""
+
+    DD = "DD"
+    STEP = "STEP"
+    STEP_CHARACTERISTIC = "SC"
+
+
+def method_from_name(name) -> Method:
+    """Parse a scheme name into a Method, rejecting unknown values."""
+    if isinstance(name, Method):
+        return name
+    text = str(name).strip().upper()
+    aliases = {
+        "DD": Method.DD,
+        "STEP": Method.STEP,
+        "SC": Method.STEP_CHARACTERISTIC,
+        "STEP_CHARACTERISTIC": Method.STEP_CHARACTERISTIC,
+        "STEP-CHARACTERISTIC": Method.STEP_CHARACTERISTIC,
+    }
+    try:
+        return aliases[text]
+    except KeyError:
+        options = sorted(method.value for method in Method)
+        raise ValueError(
+            f"Invalid SPATIAL_SCHEME: {name!r}. Options: {options}"
+        ) from None
+
+
+def theta_step_characteristic(alpha: float) -> float:
+    """Characteristic weighting theta = coth(alpha/2) - 2/alpha.
+
+    ``alpha`` is the cell optical thickness Sigma_t*dx/|mu|.  The series
+    expansion avoids catastrophic cancellation as alpha -> 0.
+    """
+    alpha = float(alpha)
+    if alpha < 0.0:
+        raise ValueError(f"Optical thickness must be >= 0, got {alpha!r}.")
+    if not math.isfinite(alpha):
+        if math.isinf(alpha):
+            return 1.0
+        raise ValueError(f"Optical thickness must be finite, got {alpha!r}.")
+    if alpha == 0.0:
+        return 0.0
+    if alpha < 1.0e-3:
+        a2 = alpha * alpha
+        return alpha / 6.0 - alpha * a2 / 360.0 + alpha * a2 * a2 / 15120.0
+    return 1.0 / math.tanh(0.5 * alpha) - 2.0 / alpha
+
+
+def _cell_out_dd(psi_in, source, sigma_t, dx, mu, theta=None):
+    """Diamond Difference outgoing angular flux."""
+    a = mu / dx
+    return ((a - 0.5 * sigma_t) * psi_in + source) / (a + 0.5 * sigma_t)
+
+
+def _cell_out_step(psi_in, source, sigma_t, dx, mu, theta=None):
+    """Step (implicit upwind) outgoing angular flux."""
+    a = mu / dx
+    return (a * psi_in + source) / (a + sigma_t)
+
+
+def _cell_out_sc(psi_in, source, sigma_t, dx, mu, theta=None):
+    """Step Characteristic outgoing angular flux."""
+    if theta is None:
+        theta = theta_step_characteristic(sigma_t * dx / mu)
+    a = mu / dx
+    return ((a - 0.5 * sigma_t * (1.0 - theta)) * psi_in + source) / (
+        a + 0.5 * sigma_t * (1.0 + theta)
+    )
+
+
+_CELL_KERNELS = {
+    Method.DD: _cell_out_dd,
+    Method.STEP: _cell_out_step,
+    Method.STEP_CHARACTERISTIC: _cell_out_sc,
+}
+
+
+def cell_out(psi_in, source, sigma_t, dx, mu, method, theta=None):
+    """Outgoing angular flux of a cell for the selected scheme.
+
+    ``mu`` is the direction cosine magnitude; a negative value is
+    normalised to |mu|.  ``source`` is the full isotropic right-hand side
+    (it already includes the 1/2 factors of scattering, fission and Q).
+    """
+    mu = abs(float(mu))
+    if mu == 0.0:
+        raise ValueError("|mu| must be > 0 to sweep a cell.")
+    try:
+        kernel = _CELL_KERNELS[method_from_name(method)]
+    except KeyError:
+        raise ValueError(f"Unknown spatial method: {method!r}") from None
+    return kernel(psi_in, source, sigma_t, dx, mu, theta)
+
+
+def _cell_avg_dd(psi_in, psi_out, sigma_t, dx, mu, theta=None):
+    """DD cell average (arithmetic mean of the two interfaces)."""
+    return 0.5 * (psi_in + psi_out)
+
+
+def _cell_avg_step(psi_in, psi_out, sigma_t, dx, mu, theta=None):
+    """STEP cell average (downstream face value)."""
+    return psi_out
+
+
+def _cell_avg_sc(psi_in, psi_out, sigma_t, dx, mu, theta=None):
+    """SC cell average (characteristic-weighted interfaces)."""
+    if theta is None:
+        theta = theta_step_characteristic(sigma_t * dx / mu)
+    return 0.5 * (1.0 + theta) * psi_out + 0.5 * (1.0 - theta) * psi_in
+
+
+_CELL_AVERAGES = {
+    Method.DD: _cell_avg_dd,
+    Method.STEP: _cell_avg_step,
+    Method.STEP_CHARACTERISTIC: _cell_avg_sc,
+}
+
+
+def cell_average(psi_in, psi_out, sigma_t, dx, mu, method, theta=None):
+    """Cell-averaged angular flux psi_bar for the selected scheme.
+
+    ``psi_in``/``psi_out`` are the incoming/outgoing interface values in
+    the direction of travel, so ``psi_out`` is always the downstream face.
+    DD and STEP are explicit; SC uses the characteristic weight ``theta``
+    (computed from the optical thickness when omitted).
+    """
+    mu = abs(float(mu))
+    if mu == 0.0:
+        raise ValueError("|mu| must be > 0 to average a cell.")
+    method = method_from_name(method)
+    try:
+        average = _CELL_AVERAGES[method]
+    except KeyError:
+        raise ValueError(f"Unknown spatial method: {method!r}") from None
+    return average(psi_in, psi_out, sigma_t, dx, mu, theta)
 
 
 # =================================================================
@@ -55,8 +189,8 @@ class Config:
         self.NU = None
         self.AREA_CM2 = 1.0
 
-        # ---- Method ----
-        self.method = Method.DD
+        # ---- Spatial discretization scheme ----
+        self.SPATIAL_SCHEME = Method.DD.value
 
         if manual:
             if self.num_regions == 0:
@@ -74,6 +208,19 @@ class Config:
 
         if not self.has_placeholders:
             self.prelim_calculations()
+
+    @property
+    def method(self) -> Method:
+        """Spatial scheme as a Method, derived from SPATIAL_SCHEME.
+
+        Keeping a single source of truth means the string written to JSON
+        and the enum used by the solver cannot diverge silently.
+        """
+        return method_from_name(self.SPATIAL_SCHEME)
+
+    def set_spatial_scheme(self, name) -> None:
+        """Normalise and store the spatial scheme."""
+        self.SPATIAL_SCHEME = method_from_name(name).value
 
     def regiones_input(self):
         self.num_regions = int(input("\n Enter the number of Regions: "))
@@ -165,6 +312,7 @@ class Config:
             'reflex_der': bool (reflective or not)
             'bound_left': list (incoming flux per direction, length N/2)
             'bound_right': list (incoming flux per direction, length N/2)
+            'SPATIAL_SCHEME': 'DD' | 'STEP' | 'SC' (default 'DD'),
 
             # --- opcionales: medio multiplicativo ---
             'NU_SIGF': list (nu * Sigma_f por zona, cm^-1),
@@ -254,6 +402,9 @@ class Config:
         self.E_F_MEV = float(kwargs.get("E_F_MEV", 200.0))
         self.NU = kwargs.get("NU")
         self.AREA_CM2 = float(kwargs.get("AREA_CM2", 1.0))
+
+        # --- Esquema de discretización espacial ---
+        self.set_spatial_scheme(kwargs.get("SPATIAL_SCHEME", Method.DD.value))
 
         # Validaciones de dimensiones
         if len(self.NC) != self.num_regions:
@@ -483,6 +634,9 @@ class Config:
         self.N_HALF = self.N // 2
         self.weights_directions()
 
+        scheme_text = input("Spatial scheme (DD / STEP / SC) [DD]: ").strip()
+        self.set_spatial_scheme(scheme_text or Method.DD.value)
+
         # Medio multiplicativo (opcional)
         self._fission_input()
 
@@ -692,6 +846,18 @@ class Config:
 
             idx += n_cells
 
+        # --- Peso característico del esquema SC ---
+        # theta = coth(alpha/2) - 2/alpha con alpha = Sigma_t*dx/|mu|.
+        # Es constante durante toda la corrida: dimensiones (NTC, N_HALF) y
+        # las mismas direcciones (miu_m) que usan los dos barridos.
+        self.theta_sc = np.array(
+            [
+                [theta_step_characteristic(st * dx / mu) for mu in self.miu_m]
+                for st, dx in zip(self.sigma_t_vec, self.dx_vec)
+            ],
+            dtype=float,
+        ).reshape(self.NTC, self.N_HALF)
+
     def __str__(self) -> str:
         return (
             f"\nProgram configuration: {self.num_regions} regions, "
@@ -705,6 +871,7 @@ class Config:
             f"\nnu*Sigma_f: {self.NU_SIGF}"
             f"\nSources: {self.Q}"
             f"\nQuadrature order: S{self.N} with {self.N_HALF} directions."
+            f"\nSpatial scheme: {self.SPATIAL_SCHEME}"
             f"\nWeights: {self.omega_m}"
             f"\nDirections: {self.miu_m}"
             f"\nMode: {self.MODE} | K_EFF: {self.K_EFF}"
@@ -734,6 +901,7 @@ class Config:
             "SIGMA_F": _as_list(self.SIGMA_F),
             "Q": _as_list(self.Q),
             "N": self.N,
+            "SPATIAL_SCHEME": self.SPATIAL_SCHEME,
             "reflex_izq": self.reflex_izq,
             "reflex_der": self.reflex_der,
             "bound_left": _as_list(self.bound_left),
@@ -767,8 +935,13 @@ class Runner:
     Return: diccionario con flujos, iteraciones, convergencia y k_eff.
     """
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, source=None, run_name: str | None = None):
         self.config = config
+        # Origen de la configuración (archivo JSON, inputs.py o wizard) para
+        # poder mostrarlo en el banner de inicio. Opcional: el Runner también
+        # se usa directamente desde Python y desde los tests.
+        self.source = source
+        self.run_name = run_name
         self.converged = False
         self.reflex_izq = config.reflex_izq
         self.reflex_der = config.reflex_der
@@ -867,7 +1040,7 @@ class Runner:
         self.PSI_LEFT[-1, :] = self.PSI_RIGHT[-1, :]
 
     def sweep(self):
-        """Realiza el barrido de transporte usando Diamond Difference"""
+        """Realiza el barrido de transporte"""
         # Fuente total isotrópica:
         # S = 1/2 * (Q_ext + Sigma_S * Phi) + fission_source
         # fission_source ya incluye el factor 1/2.
@@ -875,6 +1048,10 @@ class Runner:
             0.5 * (self.config.q_ext_vec + self.config.sigma_s_vec * self.scalar_flux)
             + self.fission_source
         )
+
+        # Esquema espacial resuelto una sola vez (no por celda).
+        kernel = _CELL_KERNELS[self.config.method]
+        theta_sc = self.config.theta_sc
 
         # --- BARRIDO HACIA LA DERECHA (mu > 0) ---
         for k in range(self.config.NTC):
@@ -886,15 +1063,9 @@ class Runner:
                 mu = self.config.miu_m[m]
                 psi_in = self.PSI_RIGHT[k, m]  # Nodo k (entrada)
 
-                # Ecuación Diamond Difference
-                # psi_out = [ (mu/dx - st/2)*psi_in + S ] / (mu/dx + st/2)
-                alpha = mu / dx
-                num = (alpha - 0.5 * st) * psi_in + source
-                den = alpha + 0.5 * st
-
-                psi_out = num / den
-
-                self.PSI_RIGHT[k + 1, m] = psi_out  # Nodo k+1 (salida)
+                self.PSI_RIGHT[k + 1, m] = kernel(
+                    psi_in, source, st, dx, mu, theta_sc[k, m]
+                )
 
         # --- BARRIDO HACIA LA IZQUIERDA (mu < 0) ---
         # Iteramos k desde NTC-1 hasta 0
@@ -904,42 +1075,53 @@ class Runner:
             source = self.total_source[k]
 
             for m in range(self.config.N_HALF):
-                mu = abs(
-                    self.config.miu_m[m]
-                )  # Usamos valor positivo para la formula simétrica
+                mu = abs(self.config.miu_m[m])  # |mu| para la formula simétrica
                 psi_in = self.PSI_LEFT[k + 1, m]  # Nodo k+1 (entrada desde la derecha)
 
-                alpha = mu / dx
-                num = (alpha - 0.5 * st) * psi_in + source
-                den = alpha + 0.5 * st
-
-                psi_out = num / den
-
-                self.PSI_LEFT[k, m] = psi_out
+                self.PSI_LEFT[k, m] = kernel(
+                    psi_in, source, st, dx, mu, theta_sc[k, m]
+                )
 
     def calculo_flujo(self):
-        """Compute the scalar flux by integrating the angular fluxes."""
+        """Compute the scalar flux from the cell averages of the scheme."""
         old_flux = self.scalar_flux.copy()
 
         # Reiniciar flujo escalar
         self.scalar_flux[:] = 0.0
         self.angular_flux[:] = 0.0
 
-        for k in range(self.config.NTC):
+        cfg = self.config
+        average = _CELL_AVERAGES[cfg.method]
+        theta_sc = cfg.theta_sc
+        omega = cfg.omega_m
+        miu = cfg.miu_m
+        right = self.PSI_RIGHT
+        left = self.PSI_LEFT
+        angular = self.angular_flux
+        scalar = self.scalar_flux
+        dx_vec = cfg.dx_vec
+        st_vec = cfg.sigma_t_vec
+
+        for k in range(cfg.NTC):
             suma = 0.0
-            for m in range(self.config.N_HALF):
-                w = self.config.omega_m[m]
+            dx = dx_vec[k]
+            st = st_vec[k]
 
-                # Promedio en el centro de la celda (Diamond Difference Average)
-                # psi_avg = 0.5 * (psi_in + psi_out)
-                psi_avg_der = 0.5 * (self.PSI_RIGHT[k, m] + self.PSI_RIGHT[k + 1, m])
-                psi_avg_izq = 0.5 * (self.PSI_LEFT[k, m] + self.PSI_LEFT[k + 1, m])
+            for m in range(cfg.N_HALF):
+                mu = abs(miu[m])
+                theta = theta_sc[k, m]
 
-                # Sumamos ambas direcciones
-                suma += w * (psi_avg_der + psi_avg_izq)
-                self.angular_flux[k, m] = w * (psi_avg_der + psi_avg_izq)
+                # Promedio en la celda para la dirección positiva (izq -> der)
+                psi_avg_der = average(right[k, m], right[k + 1, m], st, dx, mu, theta)
 
-            self.scalar_flux[k] = suma
+                # Promedio en la celda para la dirección negativa (der -> izq)
+                psi_avg_izq = average(left[k + 1, m], left[k, m], st, dx, mu, theta)
+
+                angular_contribution = omega[m] * (psi_avg_der + psi_avg_izq)
+                suma += angular_contribution
+                angular[k, m] = angular_contribution
+
+            scalar[k] = suma
 
         return old_flux
 
@@ -1259,6 +1441,7 @@ class Runner:
             "converged": self.converged,
             "dataframe": df_output,
             "mode": self.mode,
+            "spatial_scheme": self.config.SPATIAL_SCHEME,
             "k_eff": self.k_eff,
             "k_balance": self.k_balance,
             "k_history": self.k_history,
@@ -1268,8 +1451,20 @@ class Runner:
             "power_scale": self.power_scale,
         }
 
+    def _source_line(self) -> str | None:
+        """Human-readable origin of the configuration, or None."""
+        parts = []
+        if self.source is not None:
+            parts.append(str(self.source))
+        if self.run_name:
+            parts.append(f"run {self.run_name}")
+        return " | ".join(parts) if parts else None
+
     def __call__(self):
         print("\n--- STARTING CALCULATION ---")
+        source_line = self._source_line()
+        if source_line is not None:
+            print(f"Source: {source_line}")
         start = time()
 
         if self.mode == "eigenvalue":

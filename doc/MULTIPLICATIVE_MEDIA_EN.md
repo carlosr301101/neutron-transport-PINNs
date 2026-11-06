@@ -172,9 +172,16 @@ uv run nts-1d-run
 Expected output (S8, 100 cells):
 
 ```text
+--- STARTING CALCULATION ---
+Source: outputs/inputs/inputs.py | run config_dict
 EIGENVALUE CONVERGED: k_eff = 1.026676...
 k_balance (P/(A+L)) = 1.026677...
 ```
+
+The `Source:` line shows the file the configuration came from and the run
+name (`interactive wizard | run manual` for `--manual`, `<file>.json | run
+json_config_001` for `--json`). It is omitted when the `Runner` is used
+directly from Python.
 
 ### 3.1 Interactive manual configuration
 

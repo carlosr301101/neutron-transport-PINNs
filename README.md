@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-2.8.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-2.9.0-blue)](Changelog_EN.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -323,6 +323,29 @@ with $\Phi=\sum_{m>0}w_m(\Psi_m^+ + \Psi_m^-)$.
 `k_eff` and `k_balance` obey the global balance
 `k = P/(A+L)`, with `P=∫νΣfΦdx`, `A=∫(Σt−Σs)Φdx` and `L` the net leakage.
 
+### Spatial discretization schemes
+
+The 1D solver supports three interchangeable cell schemes, selected with
+`SPATIAL_SCHEME` (default `"DD"`, so existing configs are unchanged):
+
+| Scheme | Outgoing flux | Cell average | Order |
+|---|---|---|---|
+| `DD` | `[(a−Σt/2)ψ_in + S]/(a+Σt/2)` | `(ψ_in+ψ_out)/2` | 2nd |
+| `STEP` | `(a·ψ_in + S)/(a+Σt)` | `ψ_out` | 1st |
+| `SC` | `[(a−Σt(1−θ)/2)ψ_in + S]/(a+Σt(1+θ)/2)` | `(1+θ)/2·ψ_out + (1−θ)/2·ψ_in` | 2nd |
+
+with `a=|μ|/Δx`, `α=ΣtΔx/|μ|` and `θ=coth(α/2)−2/α`. The three schemes
+share the source, quadrature, boundary conditions and iteration loops; only
+the cell kernel changes. `ψ̄` is reconstructed from the interface values, so
+no extra state is stored.
+
+The 20 cm benchmark (S8, 100 cells) gives `k_eff = 1.026676` (DD),
+`1.026054` (SC) and `1.017843` (STEP). STEP is first order: it needs a finer
+mesh to approach DD, which is expected and not a defect.
+
+Full reference: [doc/SPATIAL_SCHEMES_EN.md](doc/SPATIAL_SCHEMES_EN.md)
+(Spanish: [doc/SPATIAL_SCHEMES.md](doc/SPATIAL_SCHEMES.md)).
+
 ### Example: 20 cm benchmark
 
 Homogeneous 20 cm slab, vacuum on both sides, `σt=1.0`, `σs0=0.9`,
@@ -442,6 +465,7 @@ See `templates/base_input.json` (2D, with `_comment` keys) and `example_config.j
 | `SIGMA_F` | Optional Σf per zone [cm⁻¹] (power normalization) |
 | `Q` | Source per region |
 | `N` | Quadrature order (2, 4, 6 or 8 have tabulated quadratures) |
+| `SPATIAL_SCHEME` | `DD` (default), `STEP` or `SC` |
 | `reflex_izq`, `reflex_der` | Reflective boundary on left/right |
 | `bound_left`, `bound_right` | Incoming flux per quadrature direction at each boundary (vectors of length N/2) |
 | `MODE` | `fixed_source` (default), `eigenvalue`, `fixed_k` or `driven` |
@@ -576,7 +600,7 @@ Common issues:
 | `MODE='fixed_k'` complains about `K_EFF` | Set `K_EFF > 0`, or use `MODE='eigenvalue'` to compute it |
 | `k_eff` does not converge | Increase `MAX_OUTER`, tighten `TOL_K`, refine the mesh |
 | `POWER_KW` fails | Provide `SIGMA_F` per zone or `NU`; the solver needs Σf |
-| `--manual` finishes without running | Answer `s` to the final “¿Ejecutar?” prompt; `n` cancels |
+| `--manual` finishes without running | Confirm the final `Run? (y/n) [y]` prompt (Enter or `y` runs); `n` cancels |
 | `--json` fails | The file must be a JSON object or a list of objects with the 1D keys |
 | `nts-1d-data` says config not found | Use a run with embedded `configuration`, or pass the matching `--inputs` |
 | `nts-1d-plot` says several runs | Use `--list-runs`, then `--run NAME` or `--run INDEX` |
@@ -609,6 +633,8 @@ multiplicative-media guide and the changelog are kept alongside them.
 | `doc/QUICKSTART.md` | One-page command cheatsheet |
 | `doc/NTS_DOCUMENTATION.md` | Master reference for the 5 C programs (input format, method selection, performance) |
 | `doc/MULTIPLICATIVE_MEDIA_EN.md` | 1D fission/`k_eff` modes, benchmark, power normalization, validation (English) |
+| `doc/SPATIAL_SCHEMES_EN.md` | DD / STEP / SC spatial schemes: formulation, selection, results (English) |
+| `doc/SPATIAL_SCHEMES.md` | Spanish version of the spatial-schemes guide |
 | `doc/MULTIPLICATIVE_MEDIA.md` | Spanish version of the same guide |
 | `doc/QUICK_REFERENCE.txt` | Compact printable reference for the C solvers |
 | `doc/desc_EN.md` | Reference 1D problem definition (English) |

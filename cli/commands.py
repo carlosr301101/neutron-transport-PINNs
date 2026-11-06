@@ -531,6 +531,7 @@ def _serialize_1d_run(name: str, cfg_dict: dict, result: dict) -> dict:
         "iteration": int(result["iteration"]),
         "converged": bool(result["converged"]),
         "mode": result.get("mode"),
+        "spatial_scheme": result.get("spatial_scheme"),
         "k_eff": result.get("k_eff"),
         "k_balance": result.get("k_balance"),
         "k_history": result.get("k_history"),
@@ -567,10 +568,10 @@ def cmd_run_1d(args):
     results = []
     failures = 0
 
-    def execute(name: str, conf, cfg_dict: dict):
+    def execute(name: str, conf, cfg_dict: dict, source=None):
         nonlocal failures
         try:
-            result = Runner(conf)()
+            result = Runner(conf, source=source, run_name=name)()
             results.append(_serialize_1d_run(name, cfg_dict, result))
         except Exception as e:
             failures += 1
@@ -596,17 +597,17 @@ def cmd_run_1d(args):
             console.print(f"[bold red]✗ Error:[/] {str(e)}")
             return 1
 
-        print("\n--- RESUMEN DE LA CONFIGURACIÓN ---")
+        print("\n--- CONFIGURATION SUMMARY ---")
         print(conf)
         try:
-            answer = input("\n¿Ejecutar? (s/n) [s]: ").strip().lower()
+            answer = input("\nRun? (y/n) [y]: ").strip().lower()
         except (KeyboardInterrupt, EOFError):
             console.print("\n[yellow]Cancelled.[/]")
             return 130
         if answer == "n":
             console.print("[yellow]Cancelled.[/]")
             return 0
-        execute("manual", conf, conf.as_dict())
+        execute("manual", conf, conf.as_dict(), source="interactive wizard")
     else:
         if json_path is not None:
             try:
@@ -628,6 +629,7 @@ def cmd_run_1d(args):
             console.print("[bold red]✗ No config dictionaries found in input[/]")
             return 1
 
+        source = json_path if json_path is not None else config_path
         for name, cfg in configs:
             try:
                 conf = Config(manual=False, **cfg)
@@ -642,7 +644,7 @@ def cmd_run_1d(args):
                     }
                 )
                 continue
-            execute(name, conf, cfg)
+            execute(name, conf, cfg, source=source)
 
     if args.output:
         output_path = Path(args.output)

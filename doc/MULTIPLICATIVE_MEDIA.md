@@ -171,9 +171,16 @@ uv run nts-1d-run
 Salida esperada (S8, 100 celdas):
 
 ```text
+--- STARTING CALCULATION ---
+Source: outputs/inputs/inputs.py | run config_dict
 EIGENVALUE CONVERGED: k_eff = 1.026676...
 k_balance (P/(A+L)) = 1.026677...
 ```
+
+La línea `Source:` muestra el archivo del que salió la configuración y el
+nombre del run (`interactive wizard | run manual` para `--manual`,
+`<archivo>.json | run json_config_001` para `--json`). Se omite cuando el
+`Runner` se usa directamente desde Python.
 
 ### 3.1 Configuración manual por consola
 
@@ -194,7 +201,7 @@ El asistente pregunta, paso a paso:
 5. `Q` por región (se omite en `eigenvalue`, donde vale 0);
 6. fronteras reflexivas/vacío y flujo entrante por dirección (se fuerza a 0
    en `eigenvalue`);
-7. resumen de la configuración y confirmación “¿Ejecutar?”.
+7. resumen de la configuración y confirmación `Run? (y/n) [y]`.
 
 Validaciones del asistente:
 

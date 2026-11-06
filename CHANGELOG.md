@@ -2,6 +2,40 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.9.0] - 2026-11-03 - Esquemas espaciales DD / STEP / SC
+
+### Added
+- `SPATIAL_SCHEME` en la configuración 1D (`"DD"`, `"STEP"`, `"SC"`;
+  por defecto `"DD"`).
+- Kernels de celda `_cell_out_dd`, `_cell_out_step`, `_cell_out_sc`,
+  `cell_out()` y `cell_average()` en `NTS_DD_1D.py`.
+- `theta_step_characteristic()` con serie para `α < 1e-3` y rechazo de
+  espesores ópticos negativos.
+- `Config.theta_sc` precalculado una vez por corrida, con forma
+  `(NTC, N_HALF)`.
+- Prompt del esquema en el asistente manual y en `nts-1d-config`.
+- `tests/test_spatial_schemes.py` (29 tests).
+- `doc/SPATIAL_SCHEMES_EN.md` y `doc/SPATIAL_SCHEMES.md`.
+
+### Changed
+- `Method` usa valores string y `Config.method` pasa a ser una propiedad
+  derivada de `SPATIAL_SCHEME` (una sola fuente de verdad).
+- `Runner.sweep()` resuelve el kernel una vez y `calculo_flujo()` reconstruye
+  las medias de celda con `cell_average()`.
+- El resultado de cada corrida incluye `spatial_scheme`.
+- `nts-1d-run` muestra el origen de la configuración y el nombre del run bajo
+  el banner `--- STARTING CALCULATION ---`, p. ej.
+  `Source: outputs/inputs/inputs.py | run config_dict_003`.
+- El resumen y la confirmación del modo manual pasan a inglés
+  (`--- CONFIGURATION SUMMARY ---`, `Run? (y/n) [y]:`).
+
+### Notes
+- DD es bit a bit idéntico a la versión anterior.
+- STEP es de primer orden; en la malla de 100 celdas queda ~0.9% por debajo
+  de DD (comportamiento esperado del esquema).
+- Sin recorte ni restricciones de positividad: los flujos negativos de DD en
+  celdas gruesas se reportan tal cual.
+
 ## [2.8.0] - 2026-11-02 - Salidas en inglés y documentación bilingüe
 
 ### Changed
