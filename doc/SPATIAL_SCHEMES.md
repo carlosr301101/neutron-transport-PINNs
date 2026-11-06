@@ -121,6 +121,19 @@ Spatial scheme (DD / STEP / SC) [DD]:
 propiedad de solo lectura que lo parsea, de modo que el string que se escribe
 en el JSON y el enum que usa el solver no pueden divergir.
 
+### Entrypoints por esquema
+
+```bash
+uv run nts-1d-run-dd   --json config.json   # fuerza Diamond Difference
+uv run nts-1d-run-step --json config.json   # fuerza Step
+uv run nts-1d-run-sc   --json config.json   # fuerza Step Characteristic
+```
+
+Aceptan las mismas flags que `nts-1d-run`. El entrypoint manda sobre el
+archivo (`SPATIAL_SCHEME=DD overridden by this entry point (using SC)`) y
+el valor efectivo queda en la salida como `runs[].spatial_scheme` y a
+nivel de archivo como `spatial_schemes`.
+
 ## 7. Flujo escalar
 
 El flujo escalar usa las medias de celda del esquema seleccionado:

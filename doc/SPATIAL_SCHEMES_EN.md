@@ -121,6 +121,19 @@ Spatial scheme (DD / STEP / SC) [DD]:
 is a read-only property that parses it, so the string written to JSON and
 the enum used by the solver cannot diverge.
 
+### Per-scheme entry points
+
+```bash
+uv run nts-1d-run-dd   --json config.json   # force Diamond Difference
+uv run nts-1d-run-step --json config.json   # force Step
+uv run nts-1d-run-sc   --json config.json   # force Step Characteristic
+```
+
+They accept the same flags as `nts-1d-run`. The entry point wins over the
+file (`SPATIAL_SCHEME=DD overridden by this entry point (using SC)`) and
+the effective value is recorded in the output as `runs[].spatial_scheme`
+and at file level as `spatial_schemes`.
+
 ## 7. Scalar flux
 
 The scalar flux uses the cell averages of the selected scheme:

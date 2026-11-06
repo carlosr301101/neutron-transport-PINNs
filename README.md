@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-2.9.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-2.10.0-blue)](Changelog_EN.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -82,7 +82,8 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 |----------|---------|
 | `nts-generate` | Placeholder expansion (`--place-holder`, `--json`, `-o`) |
 | `nts-1d-config` | Interactive 1D config JSON generator (`-o` optional) |
-| `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`) |
+| `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |
+| `nts-1d-run-dd` / `-step` / `-sc` | Same flags, but forces the spatial scheme |
 | `nts-test` | Run the unittest suite (`-v`, `--failfast`, `-p PATTERN`) |
 | `nts-1d-data [--latest] [--positions 0 100] [--inputs inputs.py]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` (uses embedded config when available) |
 | `nts-1d-plot -r output_1d.json [--kind scalar\|angular\|k-history] [--run ...]` | Scalar/angular flux or `k_history` from a raw output |
@@ -528,7 +529,12 @@ neutron-transport-PINNs/
 │   └── plot_scs_flux.py         # legacy SCS vs flux plots
 ├── solvers/
 │   ├── runners/                 # C binaries + sources + Python solver
-│   │   ├── NTS_DD_1D.py         # 1D DD solver (fission, k_eff, power norm)
+│   │   │   ├── NTS_DD_1D.py         # 1D DD solver (+ compatibility facade)
+│   │   ├── NTS_STEP_1D.py       # 1D Step solver
+│   │   ├── NTS_SC_1D.py         # 1D Step Characteristic solver
+│   │   ├── scheme.py            # Method enum, Scheme protocol, dispatch
+│   │   ├── config.py            # Config (scheme agnostic)
+│   │   ├── runner.py            # Transport engine (sweep, k_eff, power)
 │   │   └── cuadraturas.py       # SN quadrature tables (N=2,4,6,8)
 │   └── doc_solvers/             # Method-by-method EXPLICACION.md guides
 ├── tests/                       # unittest suite (1D multiplicative media)

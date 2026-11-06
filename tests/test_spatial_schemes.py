@@ -20,6 +20,7 @@ from solvers.runners.NTS_DD_1D import (
     Runner,
     cell_average,
     cell_out,
+    get_scheme,
     method_from_name,
     theta_step_characteristic,
 )
@@ -107,14 +108,17 @@ class TestMethodSelection(unittest.TestCase):
         self.assertIs(restored.method, Method.STEP_CHARACTERISTIC)
         self.assertEqual(restored.SPATIAL_SCHEME, "SC")
 
-    def test_theta_sc_shape_matches_sweep_directions(self):
-        conf = build_config()
-        self.assertEqual(conf.theta_sc.shape, (conf.NTC, conf.N_HALF))
+    def test_theta_prepare_shape_matches_sweep_directions(self):
+        conf = build_config(SPATIAL_SCHEME="SC")
+        scheme = get_scheme(Method.STEP_CHARACTERISTIC)
+        theta = scheme.prepare(conf)
+        self.assertIsNotNone(theta)
+        self.assertEqual(theta.shape, (conf.NTC, conf.N_HALF))
         for k in (0, conf.NTC // 2, conf.NTC - 1):
             for m in range(conf.N_HALF):
                 alpha = conf.sigma_t_vec[k] * conf.dx_vec[k] / conf.miu_m[m]
                 self.assertAlmostEqual(
-                    conf.theta_sc[k, m],
+                    theta[k, m],
                     theta_step_characteristic(alpha),
                     delta=1e-15,
                 )
@@ -291,6 +295,30 @@ class TestCellKernels(unittest.TestCase):
         self.assertLess(dd_out, 0.0)
         self.assertGreater(step_out, 0.0)
         self.assertTrue(np.isfinite(sc_out))
+
+
+class TestSchemeRegistry(unittest.TestCase):
+    def test_registry_matches_methods(self):
+        for method in Method:
+            scheme = get_scheme(method)
+            self.assertIs(scheme.method, method)
+            self.assertIs(get_scheme(method.value), scheme)
+
+    def test_prepare_is_scheme_specific(self):
+        conf = build_config()
+        self.assertIsNone(get_scheme(Method.DD).prepare(conf))
+        self.assertIsNone(get_scheme(Method.STEP).prepare(conf))
+        theta = get_scheme(Method.STEP_CHARACTERISTIC).prepare(conf)
+        self.assertEqual(theta.shape, (conf.NTC, conf.N_HALF))
+
+    def test_injected_scheme_wins(self):
+        conf = build_config(SPATIAL_SCHEME="DD")
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = Runner(
+                conf, scheme=get_scheme(Method.STEP_CHARACTERISTIC)
+            )()
+        self.assertEqual(result["spatial_scheme"], "SC")
+        self.assertAlmostEqual(result["k_eff"], 1.026054, delta=1e-5)
 
 
 class TestSolverIntegration(unittest.TestCase):

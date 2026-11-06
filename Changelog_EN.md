@@ -2,6 +2,29 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [2.10.0] - 2026-11-06 - Solver split and per-scheme entry points
+
+### Added
+- `nts-1d-run-dd`, `nts-1d-run-step` and `nts-1d-run-sc` entry points that
+  force their spatial scheme (same flags as `nts-1d-run`).
+- `spatial_schemes` at file level in `output_1d_###.json` and `datos.json`;
+  each run row keeps `spatial_scheme`.
+- `solvers/runners/scheme.py` (Method, `Scheme` protocol, dispatch),
+  `config.py`, `runner.py`, `NTS_STEP_1D.py` and `NTS_SC_1D.py`.
+  `NTS_DD_1D.py` now holds the DD scheme plus a compatibility facade.
+
+### Changed
+- `Config` is scheme agnostic; the characteristic weights moved to
+  `StepCharacteristic.prepare()`.
+- The transport engine is shared and receives the scheme through the
+  `Scheme` protocol; `Runner(conf, scheme=...)` allows injection.
+- `main.py` moved to `cli.main`; `solvers` is now packaged, so the CLI and
+  the solver modules work outside the repository root.
+
+### Fixed
+- `nts` crashed with `ModuleNotFoundError: No module named 'main'`.
+- `import solvers...` failed when running from another directory.
+
 ## [2.9.0] - 2026-11-03 - DD / STEP / SC spatial schemes
 
 ### Added
@@ -27,6 +50,9 @@ Record of all notable changes in the NTS Automation System project.
   `Source: outputs/inputs/inputs.py | run config_dict_003`.
 - The manual-run summary and confirmation prompts are now in English
   (`--- CONFIGURATION SUMMARY ---`, `Run? (y/n) [y]:`).
+- `nts-1d-plot`: the last two Spanish console messages are now in English, and
+  `tests/test_plot_1d_flux.py` asserts the rendered axes, titles and legends
+  are English.
 
 ### Notes
 - DD is bit-for-bit identical to the previous version.

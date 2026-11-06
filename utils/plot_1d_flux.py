@@ -69,8 +69,8 @@ def select_runs(
         if len(runs) == 1:
             return runs
         raise ValueError(
-            "El fichero tiene varios runs; usa --run NOMBRE|INDICE "
-            "(o --run all para scalar/k-history) o --list-runs."
+            "The file has multiple runs; use --run NAME|INDEX "
+            "(or --run all for scalar/k-history) or --list-runs."
         )
 
     if selector == ["all"]:
@@ -426,7 +426,7 @@ def main(argv: list[str] | None = None) -> int:
         selected = select_runs(runs, args.run, kind)
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
-        print("Runs disponibles:", file=sys.stderr)
+        print("Available runs:", file=sys.stderr)
         list_runs(runs)
         return 2
 

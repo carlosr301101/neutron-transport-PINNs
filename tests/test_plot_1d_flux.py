@@ -208,5 +208,113 @@ class TestPlot1DFlux(unittest.TestCase):
             )
 
 
+class TestEnglishLabelsAndMessages(unittest.TestCase):
+    """nts-1d-plot must render English axes, titles and legends."""
+
+    def _capture_figure(self, fn, *args):
+        with patch.object(plot, "_save") as save:
+            fn(*args)
+            return save.call_args.args[0]
+
+    def test_scalar_single_run_labels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_test.json"
+            make_output(result, n_runs=2)
+            runs = plot.load_output(result)
+            fig = self._capture_figure(
+                plot.plot_scalar, [runs[0]], Path(tmp) / "scalar.png"
+            )
+            ax = fig.axes[0]
+            self.assertEqual(ax.get_xlabel(), "x [cm]")
+            self.assertEqual(ax.get_ylabel(), "Scalar flux")
+            self.assertTrue(ax.get_title().startswith("Scalar flux — run_0"))
+            plt.close(fig)
+
+    def test_scalar_overlay_labels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_test.json"
+            make_output(result, n_runs=2)
+            runs = plot.load_output(result)
+            fig = self._capture_figure(
+                plot.plot_scalar, runs, Path(tmp) / "scalar_all.png"
+            )
+            ax = fig.axes[0]
+            self.assertEqual(ax.get_title(), "Scalar flux vs x")
+            labels = [line.get_label() for line in ax.lines]
+            self.assertTrue(any(label.startswith("run_0") for label in labels))
+            self.assertTrue(any(label.startswith("run_1") for label in labels))
+            plt.close(fig)
+
+    def test_angular_labels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_test.json"
+            make_output(result, n_runs=2)
+            run = plot.load_output(result)[0]
+            fig = self._capture_figure(
+                plot.plot_angular, run, None, Path(tmp) / "angular.png"
+            )
+            ax = fig.axes[0]
+            self.assertEqual(ax.get_xlabel(), "x [cm]")
+            self.assertEqual(ax.get_ylabel(), "Angular flux  ω_m(ψ⁺ + ψ⁻)")
+            self.assertTrue(ax.get_title().startswith("Angular flux — run_0"))
+            self.assertEqual(ax.get_legend().get_title().get_text(), "Direction")
+            labels = [line.get_label() for line in ax.lines]
+            self.assertIn("direction 0", labels)
+            self.assertIn("direction 1", labels)
+            plt.close(fig)
+
+    def test_k_history_labels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_test.json"
+            make_output(result, n_runs=2)
+            runs = plot.load_output(result)
+            fig = self._capture_figure(
+                plot.plot_k_history, [runs[0]], Path(tmp) / "khistory.png"
+            )
+            ax = fig.axes[0]
+            self.assertEqual(ax.get_xlabel(), "Outer iteration")
+            self.assertEqual(ax.get_ylabel(), "k_eff")
+            self.assertEqual(ax.get_title(), "k_eff history")
+            labels = [line.get_label() for line in ax.lines]
+            self.assertIn("run_0", labels)
+            self.assertTrue(any(label.startswith("run_0 final = ") for label in labels))
+            plt.close(fig)
+
+    def test_scs_labels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            datos = Path(tmp) / "datos.json"
+            make_datos(datos)
+            fig = self._capture_figure(
+                plot.plot_datos, datos, Path(tmp) / "scs.png", "SCS"
+            )
+            first = fig.axes[0]
+            self.assertEqual(first.get_title(), "Scalar Flux vs SCS (Position 0)")
+            self.assertEqual(first.get_ylabel(), "Scalar Flux")
+            legend_labels = [t.get_text() for t in first.get_legend().get_texts()]
+            self.assertEqual(legend_labels, ["Flux at position 0"])
+            self.assertEqual(fig.axes[-1].get_xlabel(), "SCS")
+            plt.close(fig)
+
+    def test_module_has_no_spanish_text(self):
+        """Static guard: no Spanish words or accents in any string literal."""
+        import ast
+        import re
+
+        spanish = re.compile(
+            r"\b(flujo|escalar|posici[oó]n|iteraci[oó]n|historial|leyenda|"
+            r"disponibles|fichero|direcci[oó]n|impuesto|advertencia)\b",
+            re.IGNORECASE,
+        )
+        accented = re.compile(r"[áéíóúüñÁÉÍÓÚÜÑ¿¡]")
+        source = Path(plot.__file__).read_text()
+        offenders = []
+        for node in ast.walk(ast.parse(source)):
+            if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
+                continue
+            if accented.search(node.value) or spanish.search(node.value):
+                offenders.append((node.lineno, node.value))
+        self.assertEqual(offenders, [], f"Spanish text in plot module: {offenders}")
+
+
 if __name__ == "__main__":
     unittest.main()

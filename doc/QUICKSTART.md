@@ -246,6 +246,15 @@ The 1D solver can use three interchangeable cell schemes:
 The wizard (`nts-1d-run --manual`, `nts-1d-config`) asks
 `Spatial scheme (DD / STEP / SC) [DD]:` right after the quadrature order.
 
+Per-scheme entry points (same flags as `nts-1d-run`, but they force the
+scheme and print a warning if the config says otherwise):
+
+```bash
+uv run nts-1d-run-dd   --json config.json
+uv run nts-1d-run-step --json config.json
+uv run nts-1d-run-sc   --json config.json
+```
+
 S8, 100 cells, 20 cm benchmark: `k_eff = 1.026676` (DD), `1.026054` (SC),
 `1.017843` (STEP). The three schemes share source, quadrature, boundary
 conditions and iteration. No clipping or positivity constraints are applied.

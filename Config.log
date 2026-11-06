@@ -1,0 +1,25 @@
+INFO:solvers.runners.config:Configuration loaded from dictionary.
+
+Program configuration: 1 regions, 1 zones.
+Spatial discretization: [40]
+Thicknesses: [20.]
+Zone distribution: [1]
+Material properties:
+Sigma_T: [1.]
+Sigma_S: [0.9]
+nu*Sigma_f: [0.11]
+Sources: [0.2]
+Quadrature order: S8 with 4 directions.
+Spatial scheme: SC
+Weights: [0.10122854 0.22238103 0.31370665 0.36268378]
+Directions: [0.96028986 0.79666648 0.52553241 0.18343464]
+Mode: fixed_k | K_EFF: 1.4
+Power: None kW (E_f=200.0 MeV, area=1.0 cm2)
+INFO:solvers.runners.runner:Using right boundary conditions from configuration: [0. 0. 0. 0.]
+INFO:solvers.runners.runner:Using left boundary conditions from configuration: [0. 0. 0. 0.]
+INFO:solvers.runners.runner:Iter 100: Error Max = 1.86e-03
+INFO:solvers.runners.runner:Iter 200: Error Max = 9.52e-05
+INFO:solvers.runners.runner:Iter 300: Error Max = 5.13e-06
+INFO:solvers.runners.runner:Iter 400: Error Max = 2.78e-07
+INFO:solvers.runners.runner:Iter 500: Error Max = 1.50e-08
+INFO:solvers.runners.runner:Elapsed calculation time: 0.31206297874450684

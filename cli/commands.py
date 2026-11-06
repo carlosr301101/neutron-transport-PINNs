@@ -563,7 +563,7 @@ def cmd_run_1d(args):
     logger = get_logger()
     ensure_directories()
 
-    from solvers.runners.NTS_DD_1D import Config, Runner
+    from solvers.runners.NTS_DD_1D import Config, Runner, method_from_name
 
     results = []
     failures = 0
@@ -586,10 +586,11 @@ def cmd_run_1d(args):
 
     manual = bool(getattr(args, "manual", False))
     json_path = getattr(args, "json", None)
+    forced = getattr(args, "forced_scheme", None)
 
     if manual:
         try:
-            conf = Config(manual=True)
+            conf = Config(manual=True, forced_scheme=forced)
         except (KeyboardInterrupt, EOFError):
             console.print("\n[yellow]Cancelled.[/]")
             return 130
@@ -631,8 +632,19 @@ def cmd_run_1d(args):
 
         source = json_path if json_path is not None else config_path
         for name, cfg in configs:
+            if forced:
+                requested = cfg.get("SPATIAL_SCHEME", "DD")
+                try:
+                    requested_value = method_from_name(requested).value
+                except ValueError:
+                    requested_value = str(requested)
+                if requested_value != forced:
+                    console.print(
+                        f"[yellow]SPATIAL_SCHEME={requested_value} overridden by "
+                        f"this entry point (using {forced})[/]"
+                    )
             try:
-                conf = Config(manual=False, **cfg)
+                conf = Config(manual=False, forced_scheme=forced, **cfg)
             except Exception as e:
                 failures += 1
                 logger.exception("NTS_DD_1D configuration failed")
@@ -660,8 +672,12 @@ def cmd_run_1d(args):
             index = 1
         output_path = RESULTS_DIR / f"output_1d_{index:03d}.json"
 
+    schemes = sorted(
+        {run["spatial_scheme"] for run in results if run.get("spatial_scheme")}
+    )
     payload = {
         "solver": "NTS_DD_1D",
+        "spatial_schemes": schemes,
         "runs": results,
         "total": len(results),
         "failures": failures,

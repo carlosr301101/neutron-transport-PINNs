@@ -105,6 +105,9 @@ def extract_flux(
             }
             if isinstance(nu_sigf_list, list) and nu_sigf_list:
                 row["NU_SIGF"] = nu_sigf_list[0]
+            scheme = run.get("spatial_scheme") or cfg.get("SPATIAL_SCHEME")
+            if scheme is not None:
+                row["spatial_scheme"] = scheme
             for key in ("mode", "k_eff", "k_balance"):
                 value = run.get(key)
                 if value is not None:
@@ -114,6 +117,9 @@ def extract_flux(
     payload = {
         "source": str(source_path),
         "positions": positions,
+        "spatial_schemes": sorted(
+            {row["spatial_scheme"] for row in results if row.get("spatial_scheme")}
+        ),
         "data": results,
     }
     if errors:

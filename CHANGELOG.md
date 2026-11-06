@@ -2,6 +2,29 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [2.10.0] - 2026-11-06 - Separación del solver y entrypoints por esquema
+
+### Added
+- Entrypoints `nts-1d-run-dd`, `nts-1d-run-step` y `nts-1d-run-sc` que fuerzan
+  su esquema espacial (mismas flags que `nts-1d-run`).
+- `spatial_schemes` a nivel de archivo en `output_1d_###.json` y `datos.json`;
+  cada run mantiene su `spatial_scheme`.
+- `solvers/runners/scheme.py` (Method, protocolo `Scheme`, dispatch),
+  `config.py`, `runner.py`, `NTS_STEP_1D.py` y `NTS_SC_1D.py`.
+  `NTS_DD_1D.py` queda con el esquema DD y la fachada de compatibilidad.
+
+### Changed
+- `Config` es agnóstico del esquema; los pesos característicos pasan a
+  `StepCharacteristic.prepare()`.
+- El motor de transporte es único y recibe el esquema por el protocolo
+  `Scheme`; `Runner(conf, scheme=...)` permite inyectarlo.
+- `main.py` pasa a `cli.main`; `solvers` queda empaquetado, así que el CLI y
+  los módulos del solver funcionan fuera de la raíz del repo.
+
+### Fixed
+- `nts` fallaba con `ModuleNotFoundError: No module named 'main'`.
+- `import solvers...` fallaba al ejecutar desde otro directorio.
+
 ## [2.9.0] - 2026-11-03 - Esquemas espaciales DD / STEP / SC
 
 ### Added
@@ -28,6 +51,9 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
   `Source: outputs/inputs/inputs.py | run config_dict_003`.
 - El resumen y la confirmación del modo manual pasan a inglés
   (`--- CONFIGURATION SUMMARY ---`, `Run? (y/n) [y]:`).
+- `nts-1d-plot`: los dos últimos mensajes de consola pasan a inglés, y
+  `tests/test_plot_1d_flux.py` verifica que ejes, títulos y leyendas se
+  rendericen en inglés.
 
 ### Notes
 - DD es bit a bit idéntico a la versión anterior.

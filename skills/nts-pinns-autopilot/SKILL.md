@@ -187,6 +187,8 @@ support fission.
 
 - The wizard and `nts-1d-config` ask
   `Spatial scheme (DD / STEP / SC) [DD]:` after the quadrature order.
+- `nts-1d-run-dd`, `nts-1d-run-step` and `nts-1d-run-sc` force their scheme
+  (same flags as `nts-1d-run`) and warn when the config says otherwise.
 - Only the cell kernel changes: source, quadrature, boundaries and iteration
   are shared.
 - S8/100 cells benchmark: DD `1.026676`, SC `1.026054`, STEP `1.017843`.
