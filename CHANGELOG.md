@@ -10,8 +10,8 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
   reacción (balance y potencia) usan `2*phi`; `k_eff` y la forma del flujo no
   cambian.
 - `angular_flux` es `(NTC, N)`: `psi` media por celda y dirección, columnas
-  por `mu` creciente. La suma ponderada anterior pasa a
-  `scalar_flux_contribution` `(NTC, N/2)`.
+  por `mu` creciente. El campo de suma ponderada ya no se exporta (era
+  redundante con `scalar_flux`).
 - Cada run exporta además `miu` y `omega` (N ordenadas y pesos).
 - `nts-1d-plot --kind angular` dibuja una línea por dirección con etiquetas
   `mu` y lee `miu` del run; los archivos viejos mantienen la etiqueta anterior.

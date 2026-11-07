@@ -527,7 +527,6 @@ def _serialize_1d_run(name: str, cfg_dict: dict, result: dict) -> dict:
         "config_name": name,
         "configuration": cfg_dict,
         "scalar_flux": result["scalar_flux"].tolist(),
-        "scalar_flux_contribution": result["scalar_flux_contribution"].tolist(),
         "angular_flux": result["angular_flux"].tolist(),
         "miu": result["miu"].tolist(),
         "omega": result["omega"].tolist(),

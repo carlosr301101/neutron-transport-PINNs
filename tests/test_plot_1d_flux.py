@@ -31,7 +31,6 @@ def make_output(path: Path, n_runs: int = 2) -> None:
                     [0.3, 0.4],
                     [0.1, 0.2],
                 ],
-                "scalar_flux_contribution": [[0.15], [0.35], [0.35], [0.15]],
                 "miu": [-0.57735, 0.57735],
                 "omega": [1.0, 1.0],
                 "k_history": [1.1, 1.05, 1.02] if i == 0 else [],

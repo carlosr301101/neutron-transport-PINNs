@@ -344,8 +344,7 @@ uv run nts-1d-plot -i outputs/results/datos.json --x k_eff
   `angular` requires exactly one run.
 - `angular_flux` is `(NTC, N)`: cell-averaged `ψ` per direction (columns by
   increasing `μ`), with `miu`/`omega` in the run. The scalar flux is the
-  angular average `φ = 1/2 Σ ω ψ`; `scalar_flux_contribution` holds
-  `1/2 ω_m(ψ̄⁺+ψ̄⁻)` and sums to `scalar_flux`.
+  angular average `φ = 1/2 Σ ω ψ`.
 - `--kind k-history` only works for `MODE=eigenvalue`.
 - Default outputs: `outputs/results/plots/scalar_flux.png`,
   `angular_flux.png`, `k_history.png`.

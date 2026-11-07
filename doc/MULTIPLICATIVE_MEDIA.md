@@ -415,7 +415,6 @@ Cada run de `output_1d_###.json` añade:
 ```json
 {
   "scalar_flux": [...],
-  "scalar_flux_contribution": [[...], ...],
   "angular_flux": [[...], ...],
   "miu": [-0.96, ..., 0.96],
   "omega": [0.047, ..., 0.047],
@@ -463,9 +462,7 @@ Reglas:
   para `scalar`/`k-history`; `angular` exige exactamente uno.
 - `angular_flux` es `(NTC, N)`: `ψ` media por celda y dirección, columnas
   por `μ` creciente; `miu`/`omega` dan ordenadas y pesos. El flujo escalar
-  es la media angular `φ = 1/2 Σ ω ψ`, y
-  `scalar_flux_contribution[k, m] = 1/2 ω_m(ψ̄⁺+ψ̄⁻)`. (La etiqueta vieja del eje Y lo
-  indica.
+  es la media angular `φ = 1/2 Σ ω ψ`.
 - `--kind k-history` solo funciona con `MODE=eigenvalue`; en los demás
   modos el historial está vacío.
 - Salidas por defecto: `outputs/results/plots/scalar_flux.png`,

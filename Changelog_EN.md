@@ -9,8 +9,8 @@ Record of all notable changes in the NTS Automation System project.
   quadrature weights sum to 2), matching `doc/desc.md`. Reaction rates
   (balance and power) use `2*phi`; `k_eff` and the flux shape are unchanged.
 - `angular_flux` is `(NTC, N)`: cell-averaged `psi` per cell and direction,
-  columns ordered by increasing `mu`. The old weighted sum is now
-  `scalar_flux_contribution` `(NTC, N/2)`.
+  columns ordered by increasing `mu`. The old weighted-sum field is no
+  longer exported (it was redundant with `scalar_flux`).
 - Each run also exports `miu` and `omega` (N ordinates and weights).
 - `nts-1d-plot --kind angular` draws one line per direction with `mu` labels
   and reads `miu` from the run; legacy files keep the old weighted-sum label.

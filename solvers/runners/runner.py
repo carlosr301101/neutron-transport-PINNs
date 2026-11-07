@@ -65,8 +65,6 @@ class Runner:
         # ordenadas por mu ascendente.  PSI_RIGHT/PSI_LEFT son valores de
         # interfaz; estas son las medias de celda que se reportan.
         self.angular_flux = np.zeros((config.NTC, config.N))
-        # Contribucion de cada ordenada al flujo escalar: 1/2 w_m (psi+ + psi-)
-        self.scalar_flux_contribution = np.zeros((config.NTC, config.N_HALF))
         # mu y omega completos (N direcciones, ordenados por mu ascendente).
         # Los pesos de la mitad positiva suman 1; los N pesos suman 2, por eso
         # el flujo escalar lleva el factor 1/2 (media angular).
@@ -219,7 +217,6 @@ class Runner:
 
         # Reiniciar flujo escalar y flujos angulares
         self.scalar_flux[:] = 0.0
-        self.scalar_flux_contribution[:] = 0.0
         self.angular_flux[:] = 0.0
 
         cfg = self.config
@@ -230,7 +227,6 @@ class Runner:
         right = self.PSI_RIGHT
         left = self.PSI_LEFT
         angular = self.angular_flux
-        contribution = self.scalar_flux_contribution
         scalar = self.scalar_flux
         dx_vec = cfg.dx_vec
         st_vec = cfg.sigma_t_vec
@@ -261,7 +257,6 @@ class Runner:
                     0.5 * omega[m] * (psi_avg_der + psi_avg_izq)
                 )
                 suma += angular_contribution
-                contribution[k, m] = angular_contribution
 
             scalar[k] = suma
 
@@ -345,7 +340,6 @@ class Runner:
     def _scale_state(self, factor: float):
         """Scale scalar and angular flux consistently."""
         self.scalar_flux *= factor
-        self.scalar_flux_contribution *= factor
         self.PSI_RIGHT *= factor
         self.PSI_LEFT *= factor
         self.angular_flux *= factor
@@ -583,7 +577,6 @@ class Runner:
 
         return {
             "scalar_flux": self.scalar_flux,
-            "scalar_flux_contribution": self.scalar_flux_contribution,
             "angular_flux": self.angular_flux,
             "miu": self.miu,
             "omega": self.omega,

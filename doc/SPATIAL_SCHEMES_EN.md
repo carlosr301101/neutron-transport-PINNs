@@ -152,8 +152,7 @@ $$
 
 `ψ̄` is reconstructed from the two interface values after each sweep. The
 output stores `angular_flux` as `(NTC, N)` (per cell and direction, columns
-ordered by `μ`), plus `miu`, `omega` and
-`scalar_flux_contribution = 1/2 ω_m(ψ̄⁺+ψ̄⁻)`. `nts-1d-plot --kind angular`
+ordered by `μ`), plus `miu` and `omega`. `nts-1d-plot --kind angular`
 draws one line per direction.
 
 ## 8. Reference results

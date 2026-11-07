@@ -186,7 +186,6 @@ Produces `outputs/results/output_1d_###.json`:
       "config_name": "config_dict_001",
       "configuration": {"SCS": [0.9], "NU_SIGF": [0.11], "MODE": "eigenvalue"},
       "scalar_flux": [...],
-      "scalar_flux_contribution": [[...], ...],
       "angular_flux": [[...], ...],
       "miu": [-0.96, ..., 0.96],
       "omega": [0.047, ..., 0.047],
@@ -430,8 +429,7 @@ uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run 
   overlays all runs. For `angular`, exactly one run is required.
 - `angular_flux` is `(NTC, N)`: the cell-averaged `ψ` per direction, columns
   ordered by increasing `μ`. `miu` and `omega` carry the N ordinates and
-  weights. The scalar flux is `φ = 1/2 Σ ω ψ` (angular average), and
-  `scalar_flux_contribution` holds `1/2 ω_m(ψ̄⁺+ψ̄⁻)` per ordinate pair.
+  weights. The scalar flux is `φ = 1/2 Σ ω ψ` (angular average).
 - `--kind k-history` only works for `MODE=eigenvalue`; other modes have no
   history.
 - Default outputs: `outputs/results/plots/scalar_flux.png`,

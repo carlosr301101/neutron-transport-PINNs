@@ -415,7 +415,6 @@ Each run in `output_1d_###.json` adds:
 ```json
 {
   "scalar_flux": [...],
-  "scalar_flux_contribution": [[...], ...],
   "angular_flux": [[...], ...],
   "miu": [-0.96, ..., 0.96],
   "omega": [0.047, ..., 0.047],
@@ -463,8 +462,7 @@ Rules:
   `scalar`/`k-history`; `angular` requires exactly one.
 - `angular_flux` is `(NTC, N)`: cell-averaged `ψ` per direction, columns by
   increasing `μ`; `miu`/`omega` give the ordinates and weights. The scalar
-  flux is the angular average `φ = 1/2 Σ ω ψ`, and
-  `scalar_flux_contribution[k, m] = 1/2 ω_m(ψ̄⁺+ψ̄⁻)`.
+  flux is the angular average `φ = 1/2 Σ ω ψ`.
 - `--kind k-history` only works with `MODE=eigenvalue`; other modes have an
   empty history.
 - Default outputs: `outputs/results/plots/scalar_flux.png`,

@@ -152,8 +152,7 @@ $$
 
 `ψ̄` se reconstruye a partir de los dos valores de interfaz después de cada
 barrido. La salida guarda `angular_flux` como `(NTC, N)` (por celda y
-dirección, columnas por `μ`), más `miu`, `omega` y
-`scalar_flux_contribution = 1/2 ω_m(ψ̄⁺+ψ̄⁻)`. `nts-1d-plot --kind angular`
+dirección, columnas por `μ`), más `miu` y `omega`. `nts-1d-plot --kind angular`
 dibuja una línea por dirección.
 
 ## 8. Resultados de referencia

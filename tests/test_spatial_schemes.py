@@ -337,17 +337,13 @@ class TestSolverIntegration(unittest.TestCase):
             result = Runner(conf)()
         phi = np.asarray(result["scalar_flux"])
         angular = np.asarray(result["angular_flux"])
-        contribution = np.asarray(result["scalar_flux_contribution"])
         miu = np.asarray(result["miu"])
         omega = np.asarray(result["omega"])
 
         self.assertEqual(angular.shape, (conf.NTC, conf.N))
-        self.assertEqual(contribution.shape, (conf.NTC, conf.N_HALF))
         self.assertEqual(miu.shape, (conf.N,))
         self.assertAlmostEqual(float(omega.sum()), 2.0, delta=1e-12)
 
-        # phi = sum_m contribution_m
-        np.testing.assert_allclose(contribution.sum(axis=1), phi, atol=1e-14)
         # phi = 1/2 sum_j omega_j psi_j
         np.testing.assert_allclose(
             0.5 * (omega * angular).sum(axis=1), phi, atol=1e-14
