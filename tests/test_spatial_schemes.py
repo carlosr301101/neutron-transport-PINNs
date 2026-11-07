@@ -322,6 +322,41 @@ class TestSchemeRegistry(unittest.TestCase):
 
 
 class TestSolverIntegration(unittest.TestCase):
+    def test_scalar_flux_is_angular_average(self):
+        conf = build_config(
+            N=2,
+            NC=[10],
+            SCS=[0.5],
+            NU_SIGF=[0.0],
+            Q=[1.0],
+            MODE="fixed_source",
+            bound_left=[1.0],
+            bound_right=[0.0],
+        )
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = Runner(conf)()
+        phi = np.asarray(result["scalar_flux"])
+        angular = np.asarray(result["angular_flux"])
+        contribution = np.asarray(result["scalar_flux_contribution"])
+        miu = np.asarray(result["miu"])
+        omega = np.asarray(result["omega"])
+
+        self.assertEqual(angular.shape, (conf.NTC, conf.N))
+        self.assertEqual(contribution.shape, (conf.NTC, conf.N_HALF))
+        self.assertEqual(miu.shape, (conf.N,))
+        self.assertAlmostEqual(float(omega.sum()), 2.0, delta=1e-12)
+
+        # phi = sum_m contribution_m
+        np.testing.assert_allclose(contribution.sum(axis=1), phi, atol=1e-14)
+        # phi = 1/2 sum_j omega_j psi_j
+        np.testing.assert_allclose(
+            0.5 * (omega * angular).sum(axis=1), phi, atol=1e-14
+        )
+        # S2: phi = 1/2 (psi_1 + psi_2)
+        self.assertAlmostEqual(
+            float(phi[0]), 0.5 * float(angular[0].sum()), delta=1e-12
+        )
+
     def test_dd_regression_benchmark(self):
         """DD must reproduce the pre-refactor results (1.0266764379)."""
         result = run_config()
@@ -396,8 +431,9 @@ class TestSolverIntegration(unittest.TestCase):
 
             phi = np.asarray(result["scalar_flux"])
             source = (
-                0.5 * (conf.q_ext_vec + conf.sigma_s_vec * phi)
-                + 0.5 * conf.nu_sigma_f_vec * phi / result["k_eff"]
+                conf.sigma_s_vec * phi
+                + 0.5 * conf.q_ext_vec
+                + conf.nu_sigma_f_vec * phi / result["k_eff"]
             )
             right = np.asarray(result["PSI_RIGHT"])
             left = np.asarray(result["PSI_LEFT"])

@@ -24,14 +24,16 @@ def make_output(path: Path, n_runs: int = 2) -> None:
                 "config_name": f"run_{i}",
                 "configuration": config,
                 "scalar_flux": [1.0, 2.0, 2.0, 1.0],
-                # NTP = NTC + 1: the last row is the unused node
+                # (NTC, N): one column per direction, ordered by mu
                 "angular_flux": [
                     [0.1, 0.2],
                     [0.3, 0.4],
                     [0.3, 0.4],
                     [0.1, 0.2],
-                    [0.0, 0.0],
                 ],
+                "scalar_flux_contribution": [[0.15], [0.35], [0.35], [0.15]],
+                "miu": [-0.57735, 0.57735],
+                "omega": [1.0, 1.0],
                 "k_history": [1.1, 1.05, 1.02] if i == 0 else [],
                 "mode": "eigenvalue" if i == 0 else "fixed_k",
                 "k_eff": 1.02 if i == 0 else 1.0,
@@ -120,8 +122,8 @@ class TestPlot1DFlux(unittest.TestCase):
                 ax = fig.axes[0]
                 self.assertEqual(len(ax.lines), 2)
                 labels = [line.get_label() for line in ax.lines]
-                self.assertIn("direction 0", labels)
-                self.assertIn("direction 1", labels)
+                self.assertIn("μ=-0.577350", labels)
+                self.assertIn("μ=+0.577350", labels)
                 self.assertNotEqual(
                     ax.lines[0].get_color(), ax.lines[1].get_color()
                 )
@@ -261,12 +263,12 @@ class TestEnglishLabelsAndMessages(unittest.TestCase):
             )
             ax = fig.axes[0]
             self.assertEqual(ax.get_xlabel(), "x [cm]")
-            self.assertEqual(ax.get_ylabel(), "Angular flux  ω_m(ψ⁺ + ψ⁻)")
+            self.assertEqual(ax.get_ylabel(), "Angular flux ψ(x,μ)")
             self.assertTrue(ax.get_title().startswith("Angular flux — run_0"))
-            self.assertEqual(ax.get_legend().get_title().get_text(), "Direction")
+            self.assertEqual(ax.get_legend().get_title().get_text(), "Direction μ")
             labels = [line.get_label() for line in ax.lines]
-            self.assertIn("direction 0", labels)
-            self.assertIn("direction 1", labels)
+            self.assertIn("μ=-0.577350", labels)
+            self.assertIn("μ=+0.577350", labels)
             plt.close(fig)
 
     def test_k_history_labels(self):
@@ -299,6 +301,29 @@ class TestEnglishLabelsAndMessages(unittest.TestCase):
             legend_labels = [t.get_text() for t in first.get_legend().get_texts()]
             self.assertEqual(legend_labels, ["Flux at position 0"])
             self.assertEqual(fig.axes[-1].get_xlabel(), "SCS")
+            plt.close(fig)
+
+    def test_angular_legacy_schema(self):
+        """Old files (NTP, N/2) still plot with the weighted-sum label."""
+        run = {
+            "config_name": "old",
+            "configuration": {"NC": [4], "HR": [4.0], "N": 2},
+            "angular_flux": [
+                [0.1, 0.2],
+                [0.3, 0.4],
+                [0.3, 0.4],
+                [0.1, 0.2],
+                [0.0, 0.0],
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            fig = self._capture_figure(
+                plot.plot_angular, run, None, Path(tmp) / "legacy.png"
+            )
+            ax = fig.axes[0]
+            self.assertEqual(ax.get_ylabel(), "Angular flux  ω_m(ψ⁺ + ψ⁻)")
+            labels = [line.get_label() for line in ax.lines]
+            self.assertEqual(labels, ["direction 0", "direction 1"])
             plt.close(fig)
 
     def test_module_has_no_spanish_text(self):

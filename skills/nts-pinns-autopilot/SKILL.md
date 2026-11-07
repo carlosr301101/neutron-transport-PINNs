@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v2.10.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v3.0.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -342,7 +342,10 @@ uv run nts-1d-plot -i outputs/results/datos.json --x k_eff
 - More than one run in `-r` requires `--run NAME|INDEX`; `--list-runs`
   prints the options. `--run all` overlays runs for `scalar`/`k-history`;
   `angular` requires exactly one run.
-- `angular_flux` is stored as `ω_m(ψ⁺+ψ⁻)`, not the raw `ψ_m`.
+- `angular_flux` is `(NTC, N)`: cell-averaged `ψ` per direction (columns by
+  increasing `μ`), with `miu`/`omega` in the run. The scalar flux is the
+  angular average `φ = 1/2 Σ ω ψ`; `scalar_flux_contribution` holds
+  `1/2 ω_m(ψ̄⁺+ψ̄⁻)` and sums to `scalar_flux`.
 - `--kind k-history` only works for `MODE=eigenvalue`.
 - Default outputs: `outputs/results/plots/scalar_flux.png`,
   `angular_flux.png`, `k_history.png`.
@@ -462,8 +465,9 @@ vector); total samples = Σ orders × configs × NC.
   `nts-1d-data` says a config is missing, pass the matching `--inputs`.
 - `nts-1d-plot -r` with several runs requires `--run`; use `--list-runs`
   first. `--run all` is only for `scalar`/`k-history`.
-- `angular_flux` is the weighted field `ω_m(ψ⁺+ψ⁻)`; do not interpret the
-  Y axis as the raw `ψ_m`.
+- `angular_flux` is the directional field `(NTC, N)`, not the weighted sum.
+  `scalar_flux` is the angular average `φ = 1/2 Σ ω ψ`; reaction rates use
+  `2 φ` (balance and power already include that factor).
 - `--kind k-history` only produces a plot for `MODE=eigenvalue`; a
   `fixed_k`/`driven`/`fixed_source` run has an empty `k_history`.
 - `-r` and `-i` are mutually exclusive; `-i` is the legacy `datos.json`

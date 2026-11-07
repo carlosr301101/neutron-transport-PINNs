@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-2.10.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue)](Changelog_EN.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -186,7 +186,10 @@ Produces `outputs/results/output_1d_###.json`:
       "config_name": "config_dict_001",
       "configuration": {"SCS": [0.9], "NU_SIGF": [0.11], "MODE": "eigenvalue"},
       "scalar_flux": [...],
-      "angular_flux": [...],
+      "scalar_flux_contribution": [[...], ...],
+      "angular_flux": [[...], ...],
+      "miu": [-0.96, ..., 0.96],
+      "omega": [0.047, ..., 0.047],
       "iteration": 13,
       "converged": true,
       "mode": "eigenvalue",
@@ -290,14 +293,16 @@ isotropic fission and an optional external source:
 
 $$
 \mu_m \frac{d\Psi_m}{dx} + \Sigma_t\Psi_m
-= \frac12\left[\Sigma_s + \frac{\nu\Sigma_f}{k}\right]\Phi
+= \left[\Sigma_s + \frac{\nu\Sigma_f}{k}\right]\Phi
 + \frac12 Q,
 \qquad m=1,\dots,N
 $$
 
-with $\Phi=\sum_{m>0}w_m(\Psi_m^+ + \Psi_m^-)$.
+with $\Phi=\tfrac12\sum_{m>0}w_m(\Psi_m^+ + \Psi_m^-)$ (angular average;
+the $N$ quadrature weights sum to 2).
 
-`NU_SIGF` is **νΣf** in cm⁻¹. The `1/2` is already in the sweep, so do
+`NU_SIGF` is **νΣf** in cm⁻¹. `Φ` is the angular average, so scattering
+and fission enter without an extra `1/2` (only `Q` keeps its `1/2`). Do
 **not** apply the `4π` convention used by the spectral tooling.
 
 ### Modes
@@ -423,7 +428,10 @@ uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run 
 - If the file has more than one run, `--run NAME|INDEX` is required;
   `--list-runs` shows the options. For `scalar`/`k-history`, `--run all`
   overlays all runs. For `angular`, exactly one run is required.
-- `angular_flux` is stored as `ω_m(ψ⁺+ψ⁻)`; the y-axis label says so.
+- `angular_flux` is `(NTC, N)`: the cell-averaged `ψ` per direction, columns
+  ordered by increasing `μ`. `miu` and `omega` carry the N ordinates and
+  weights. The scalar flux is `φ = 1/2 Σ ω ψ` (angular average), and
+  `scalar_flux_contribution` holds `1/2 ω_m(ψ̄⁺+ψ̄⁻)` per ordinate pair.
 - `--kind k-history` only works for `MODE=eigenvalue`; other modes have no
   history.
 - Default outputs: `outputs/results/plots/scalar_flux.png`,

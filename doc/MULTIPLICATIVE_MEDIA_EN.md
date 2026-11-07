@@ -16,7 +16,7 @@ For one energy group, isotropic scattering and isotropic fission:
 
 $$
 \mu_m \frac{d\Psi_m(x)}{dx} + \Sigma_t(x)\Psi_m(x)
-= \frac12\left[\Sigma_s(x) + \frac{\nu\Sigma_f(x)}{k}\right]\Phi(x)
+= \left[\Sigma_s(x) + \frac{\nu\Sigma_f(x)}{k}\right]\Phi(x)
 + \frac12 Q(x),
 \qquad m = 1,\dots,N
 $$
@@ -24,13 +24,14 @@ $$
 with
 
 $$
-\Phi(x) = \sum_{m>0} w_m \left[\Psi_m^+(x) + \Psi_m^-(x)\right].
+\Phi(x) = \frac12 \sum_{m>0} w_m \left[\Psi_m^+(x) + \Psi_m^-(x)\right].
 $$
 
 Code conventions:
 
-- `NU_SIGF` is **νΣf** (cm⁻¹), not `4π·νΣf`. The `1/2` of the isotropic
-  source is already in the equation and in the sweep.
+- `NU_SIGF` is **νΣf** (cm⁻¹), not `4π·νΣf`. `Φ` is the angular average
+  `1/2 Σ ω ψ`, so scattering and fission enter without an extra `1/2`;
+  only the external source keeps its `1/2 Q`.
 - `SIGMA_F` is **Σf** (cm⁻¹). It is optional and only used for power
   normalization.
 - If `NU_SIGF` is given but `SIGMA_F` is not, power normalization uses
@@ -58,7 +59,7 @@ Solves the **homogeneous** problem:
 
 $$
 \mu_m \frac{d\Psi_m}{dx} + \Sigma_t\Psi_m
-= \frac12\left[\Sigma_s + \frac{\nu\Sigma_f}{k}\right]\Phi,
+= \left[\Sigma_s + \frac{\nu\Sigma_f}{k}\right]\Phi,
 \qquad Q = 0,
 $$
 
@@ -77,7 +78,7 @@ Solves the equation with an imposed `k`:
 
 $$
 \mu_m \frac{d\Psi_m}{dx} + \Sigma_t\Psi_m
-= \frac12\left[\Sigma_s + \frac{\nu\Sigma_f}{k_{\text{imposed}}}\right]\Phi
+= \left[\Sigma_s + \frac{\nu\Sigma_f}{k_{\text{imposed}}}\right]\Phi
 + \frac12 Q.
 $$
 
@@ -98,7 +99,7 @@ divided by `k`) and requires `Q ≠ 0` or incoming flux:
 
 $$
 \mu_m \frac{d\Psi_m}{dx} + \Sigma_t\Psi_m
-= \frac12\left[\Sigma_s + \nu\Sigma_f\right]\Phi + \frac12 Q.
+= \left[\Sigma_s + \nu\Sigma_f\right]\Phi + \frac12 Q.
 $$
 
 If the system is subcritical (`k_eff < 1`), the solution is finite and
@@ -333,8 +334,8 @@ normalize: the source sets the amplitude.
 With the converged flux:
 
 $$
-P = \int \nu\Sigma_f \Phi\,dx,\qquad
-A = \int (\Sigma_t-\Sigma_s)\Phi\,dx,\qquad
+P = 2\int \nu\Sigma_f \Phi\,dx,\qquad
+A = 2\int (\Sigma_t-\Sigma_s)\Phi\,dx,\qquad
 L = \text{net leakage},
 $$
 
@@ -352,7 +353,7 @@ eigenvalue, `k_eff ≈ k_balance` must hold.
 
 $$
 P = A\,E_f\,(1.602176634\times10^{-13})
-\int_0^L \Sigma_f \Phi\,dx,
+\,2\int_0^L \Sigma_f \Phi\,dx,
 $$
 
 with `P` in W, `A` in cm², `E_f` in MeV/fission and `Σf` in cm⁻¹. If
@@ -413,6 +414,11 @@ Each run in `output_1d_###.json` adds:
 
 ```json
 {
+  "scalar_flux": [...],
+  "scalar_flux_contribution": [[...], ...],
+  "angular_flux": [[...], ...],
+  "miu": [-0.96, ..., 0.96],
+  "omega": [0.047, ..., 0.047],
   "mode": "eigenvalue",
   "k_eff": 1.0266764379,
   "k_balance": 1.0266775219,
@@ -455,7 +461,10 @@ Rules:
 - If the file has more than one run, `--run NAME|INDEX` is required;
   `--list-runs` shows the options. `--run all` overlays all runs for
   `scalar`/`k-history`; `angular` requires exactly one.
-- `angular_flux` is stored as `ω_m(ψ⁺ + ψ⁻)`; the Y-axis label says so.
+- `angular_flux` is `(NTC, N)`: cell-averaged `ψ` per direction, columns by
+  increasing `μ`; `miu`/`omega` give the ordinates and weights. The scalar
+  flux is the angular average `φ = 1/2 Σ ω ψ`, and
+  `scalar_flux_contribution[k, m] = 1/2 ω_m(ψ̄⁺+ψ̄⁻)`.
 - `--kind k-history` only works with `MODE=eigenvalue`; other modes have an
   empty history.
 - Default outputs: `outputs/results/plots/scalar_flux.png`,

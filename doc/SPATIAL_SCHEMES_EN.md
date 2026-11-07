@@ -146,13 +146,15 @@ and at file level as `spatial_schemes`.
 The scalar flux uses the cell averages of the selected scheme:
 
 $$
-\phi_i = \sum_{m>0} w_m\left(\bar{\psi}^{+}_{m,i}
+\phi_i = \frac12 \sum_{m>0} w_m\left(\bar{\psi}^{+}_{m,i}
 + \bar{\psi}^{-}_{m,i}\right).
 $$
 
-`ψ̄` is reconstructed from the two interface values after each sweep, so
-no cell-average arrays are stored. `angular_flux[k, m]` keeps its historical
-meaning `ω_m(ψ̄⁺ + ψ̄⁻)`, which is what `nts-1d-plot --kind angular` shows.
+`ψ̄` is reconstructed from the two interface values after each sweep. The
+output stores `angular_flux` as `(NTC, N)` (per cell and direction, columns
+ordered by `μ`), plus `miu`, `omega` and
+`scalar_flux_contribution = 1/2 ω_m(ψ̄⁺+ψ̄⁻)`. `nts-1d-plot --kind angular`
+draws one line per direction.
 
 ## 8. Reference results
 

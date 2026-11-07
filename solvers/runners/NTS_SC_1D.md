@@ -100,6 +100,13 @@ def solve(config, **kwargs):
 `SPATIAL_SCHEME=... overridden by this entry point (using SC)`. The wizard
 accepts `SC` at the `Spatial scheme` prompt.
 
+## Reported values
+
+`scalar_flux` is the angular average `φ = 1/2 Σ ω ψ` (the N weights sum
+to 2). `angular_flux` is `(NTC, N)`, one cell-averaged value per cell and
+direction; `scalar_flux_contribution[k, m] = 1/2 ω_m(ψ̄⁺+ψ̄⁻)` sums to
+`φ`. `miu` and `omega` are exported with each run.
+
 ## Tests
 
 `tests/test_spatial_schemes.py` covers `theta` (limits, series/closed-form

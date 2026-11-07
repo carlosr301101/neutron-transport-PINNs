@@ -2,6 +2,19 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [3.0.0] - 2026-11-07 - Scalar-flux convention and directional angular flux
+
+### Changed (breaking output schema)
+- `scalar_flux` is now the angular average `phi = 1/2 sum(omega * psi)` (the N
+  quadrature weights sum to 2), matching `doc/desc.md`. Reaction rates
+  (balance and power) use `2*phi`; `k_eff` and the flux shape are unchanged.
+- `angular_flux` is `(NTC, N)`: cell-averaged `psi` per cell and direction,
+  columns ordered by increasing `mu`. The old weighted sum is now
+  `scalar_flux_contribution` `(NTC, N/2)`.
+- Each run also exports `miu` and `omega` (N ordinates and weights).
+- `nts-1d-plot --kind angular` draws one line per direction with `mu` labels
+  and reads `miu` from the run; legacy files keep the old weighted-sum label.
+
 ## [2.10.0] - 2026-11-06 - Solver split and per-scheme entry points
 
 ### Added

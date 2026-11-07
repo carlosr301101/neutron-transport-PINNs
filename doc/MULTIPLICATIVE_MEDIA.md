@@ -15,7 +15,7 @@ Para un grupo de energía, scattering isotrópico y fisión isotrópica:
 
 $$
 \mu_m \frac{d\Psi_m(x)}{dx} + \Sigma_t(x)\Psi_m(x)
-= \frac12\left[\Sigma_s(x) + \frac{\nu\Sigma_f(x)}{k}\right]\Phi(x)
+= \left[\Sigma_s(x) + \frac{\nu\Sigma_f(x)}{k}\right]\Phi(x)
 + \frac12 Q(x),
 \qquad m = 1,\dots,N
 $$
@@ -23,13 +23,14 @@ $$
 con
 
 $$
-\Phi(x) = \sum_{m>0} w_m \left[\Psi_m^+(x) + \Psi_m^-(x)\right].
+\Phi(x) = \frac12 \sum_{m>0} w_m \left[\Psi_m^+(x) + \Psi_m^-(x)\right].
 $$
 
 Convenciones del código:
 
-- `NU_SIGF` es **νΣf** (cm⁻¹), no `4π·νΣf`. El factor `1/2` de la fuente
-  isotrópica ya está incluido en la ecuación y en el barrido.
+- `NU_SIGF` es **νΣf** (cm⁻¹), no `4π·νΣf`. `Φ` es la media angular
+  `1/2 Σ ω ψ`, así que scattering y fisión entran sin un `1/2` extra;
+  solo la fuente externa conserva su `1/2 Q`.
 - `SIGMA_F` es **Σf** (cm⁻¹). Es opcional y solo se usa para normalizar la
   potencia.
 - Si se da `NU_SIGF` pero no `SIGMA_F`, la normalización de potencia usa
@@ -57,7 +58,7 @@ Resuelve el problema **homogéneo**:
 
 $$
 \mu_m \frac{d\Psi_m}{dx} + \Sigma_t\Psi_m
-= \frac12\left[\Sigma_s + \frac{\nu\Sigma_f}{k}\right]\Phi,
+= \left[\Sigma_s + \frac{\nu\Sigma_f}{k}\right]\Phi,
 \qquad Q = 0,
 $$
 
@@ -75,7 +76,7 @@ Resuelve la ecuación con un `k` impuesto:
 
 $$
 \mu_m \frac{d\Psi_m}{dx} + \Sigma_t\Psi_m
-= \frac12\left[\Sigma_s + \frac{\nu\Sigma_f}{k_{\text{impuesto}}}\right]\Phi
+= \left[\Sigma_s + \frac{\nu\Sigma_f}{k_{\text{impuesto}}}\right]\Phi
 + \frac12 Q.
 $$
 
@@ -97,7 +98,7 @@ por `k`) y exige `Q ≠ 0` o flujo entrante:
 
 $$
 \mu_m \frac{d\Psi_m}{dx} + \Sigma_t\Psi_m
-= \frac12\left[\Sigma_s + \nu\Sigma_f\right]\Phi + \frac12 Q.
+= \left[\Sigma_s + \nu\Sigma_f\right]\Phi + \frac12 Q.
 $$
 
 Si el sistema es subcrítico (`k_eff < 1`), la solución es finita y única.
@@ -334,8 +335,8 @@ fuente fija la amplitud.
 Con el flujo convergido:
 
 $$
-P = \int \nu\Sigma_f \Phi\,dx,\qquad
-A = \int (\Sigma_t-\Sigma_s)\Phi\,dx,\qquad
+P = 2\int \nu\Sigma_f \Phi\,dx,\qquad
+A = 2\int (\Sigma_t-\Sigma_s)\Phi\,dx,\qquad
 L = \text{fuga neta},
 $$
 
@@ -353,7 +354,7 @@ autovalor debe cumplirse `k_eff ≈ k_balance`.
 
 $$
 P = A\,E_f\,(1.602176634\times10^{-13})
-\int_0^L \Sigma_f \Phi\,dx,
+\,2\int_0^L \Sigma_f \Phi\,dx,
 $$
 
 con `P` en W, `A` en cm², `E_f` en MeV/fisión y `Σf` en cm⁻¹. Si no se da
@@ -413,6 +414,11 @@ Cada run de `output_1d_###.json` añade:
 
 ```json
 {
+  "scalar_flux": [...],
+  "scalar_flux_contribution": [[...], ...],
+  "angular_flux": [[...], ...],
+  "miu": [-0.96, ..., 0.96],
+  "omega": [0.047, ..., 0.047],
   "mode": "eigenvalue",
   "k_eff": 1.0266764379,
   "k_balance": 1.0266775219,
@@ -455,7 +461,10 @@ Reglas:
 - Si el fichero tiene más de un run, `--run NOMBRE|INDICE` es obligatorio;
   `--list-runs` muestra las opciones. `--run all` superpone todos los runs
   para `scalar`/`k-history`; `angular` exige exactamente uno.
-- `angular_flux` se guarda como `ω_m(ψ⁺ + ψ⁻)`; la etiqueta del eje Y lo
+- `angular_flux` es `(NTC, N)`: `ψ` media por celda y dirección, columnas
+  por `μ` creciente; `miu`/`omega` dan ordenadas y pesos. El flujo escalar
+  es la media angular `φ = 1/2 Σ ω ψ`, y
+  `scalar_flux_contribution[k, m] = 1/2 ω_m(ψ̄⁺+ψ̄⁻)`. (La etiqueta vieja del eje Y lo
   indica.
 - `--kind k-history` solo funciona con `MODE=eigenvalue`; en los demás
   modos el historial está vacío.

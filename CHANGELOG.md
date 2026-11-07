@@ -2,6 +2,20 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [3.0.0] - 2026-11-07 - Convención de flujo escalar y flujo angular direccional
+
+### Changed (rompe el esquema de salida)
+- `scalar_flux` es ahora la media angular `phi = 1/2 sum(omega * psi)` (los N
+  pesos de la cuadratura suman 2), como en `doc/desc.md`. Las tasas de
+  reacción (balance y potencia) usan `2*phi`; `k_eff` y la forma del flujo no
+  cambian.
+- `angular_flux` es `(NTC, N)`: `psi` media por celda y dirección, columnas
+  por `mu` creciente. La suma ponderada anterior pasa a
+  `scalar_flux_contribution` `(NTC, N/2)`.
+- Cada run exporta además `miu` y `omega` (N ordenadas y pesos).
+- `nts-1d-plot --kind angular` dibuja una línea por dirección con etiquetas
+  `mu` y lee `miu` del run; los archivos viejos mantienen la etiqueta anterior.
+
 ## [2.10.0] - 2026-11-06 - Separación del solver y entrypoints por esquema
 
 ### Added

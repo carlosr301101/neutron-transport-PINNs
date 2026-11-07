@@ -89,6 +89,13 @@ This module is also the **compatibility facade**: it re-exports `Config`,
 `Spatial scheme (DD / STEP / SC) [DD]:`; `nts-1d-run-dd` forces it and
 overrides the file with a warning.
 
+## Reported values
+
+`scalar_flux` is the angular average `φ = 1/2 Σ ω ψ` (the N weights sum
+to 2). `angular_flux` is `(NTC, N)`, one cell-averaged value per cell and
+direction; `scalar_flux_contribution[k, m] = 1/2 ω_m(ψ̄⁺+ψ̄⁻)` sums to
+`φ`. `miu` and `omega` are exported with each run.
+
 ## Tests
 
 `tests/test_spatial_schemes.py` covers the cell balance, the DD regression

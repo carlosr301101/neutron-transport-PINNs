@@ -176,23 +176,38 @@ def plot_angular(
     if angular.ndim == 1:
         angular = angular.reshape(-1, 1)
     x = cell_centers(run.get("configuration", {}))
-    # NTS_DD_1D stores angular_flux on NTP = NTC + 1 nodes; only the first
-    # NTC rows are cell values. Drop the unused last node if present.
-    if angular.shape[0] == len(x) + 1:
-        angular = angular[: len(x), :]
-    if angular.shape[0] != len(x):
-        raise ValueError(
-            f"angular_flux ({angular.shape[0]}) does not match NC ({len(x)})"
-        )
+    miu = run.get("miu")
 
-    n_half = angular.shape[1]
+    if miu is None:
+        # Legacy files: (NTP, N/2) weighted sum w_m(psi+ + psi-), not raw psi.
+        if angular.shape[0] == len(x) + 1:
+            angular = angular[: len(x), :]
+        if angular.shape[0] != len(x):
+            raise ValueError(
+                f"angular_flux ({angular.shape[0]}) does not match NC ({len(x)})"
+            )
+        labels = [f"direction {m}" for m in range(angular.shape[1])]
+        ylabel = "Angular flux  ω_m(ψ⁺ + ψ⁻)"
+        legend_title = "Direction"
+    else:
+        miu = np.asarray(miu, dtype=float)
+        if angular.shape[0] != len(x) or angular.shape[1] != len(miu):
+            raise ValueError(
+                f"angular_flux {angular.shape} does not match "
+                f"({len(x)} cells, {len(miu)} directions)"
+            )
+        labels = [f"μ={value:+.6f}" for value in miu]
+        ylabel = "Angular flux ψ(x,μ)"
+        legend_title = "Direction μ"
+
+    n_directions = angular.shape[1]
     if directions is None:
-        directions = list(range(n_half))
-    bad = [m for m in directions if m < 0 or m >= n_half]
+        directions = list(range(n_directions))
+    bad = [m for m in directions if m < 0 or m >= n_directions]
     if bad:
         raise ValueError(
-            f"Directions out of range {bad}; there are {n_half} directions "
-            f"(0..{n_half - 1})."
+            f"Directions out of range {bad}; there are {n_directions} directions "
+            f"(0..{n_directions - 1})."
         )
 
     cmap = plt.get_cmap("viridis")
@@ -209,16 +224,16 @@ def plot_angular(
             "o-",
             ms=3,
             color=color,
-            label=f"direction {m}",
+            label=labels[m],
         )
 
     ax.set_xlabel("x [cm]")
-    ax.set_ylabel("Angular flux  ω_m(ψ⁺ + ψ⁻)")
+    ax.set_ylabel(ylabel)
     title = f"Angular flux — {_run_label(run)}"
     if _k_text(run):
         title += f" ({_k_text(run)})"
     ax.set_title(title)
-    ax.legend(title="Direction", ncol=1)
+    ax.legend(title=legend_title, ncol=1)
     ax.grid(alpha=0.3)
     _save(fig, output, show)
 

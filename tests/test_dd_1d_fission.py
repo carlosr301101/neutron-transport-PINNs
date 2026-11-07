@@ -102,7 +102,8 @@ class TestMultiplicativeMedia(unittest.TestCase):
         sigma_f = 0.11 / 2.4
         dx = 20.0 / 100
         power_w = (
-            1.0
+            2.0
+            * 1.0
             * 200.0
             * 1.602176634e-13
             * float(np.sum(sigma_f * result["scalar_flux"] * dx))

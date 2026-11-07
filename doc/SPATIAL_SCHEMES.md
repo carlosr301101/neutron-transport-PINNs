@@ -146,14 +146,15 @@ nivel de archivo como `spatial_schemes`.
 El flujo escalar usa las medias de celda del esquema seleccionado:
 
 $$
-\phi_i = \sum_{m>0} w_m\left(\bar{\psi}^{+}_{m,i}
+\phi_i = \frac12 \sum_{m>0} w_m\left(\bar{\psi}^{+}_{m,i}
 + \bar{\psi}^{-}_{m,i}\right).
 $$
 
 `ψ̄` se reconstruye a partir de los dos valores de interfaz después de cada
-barrido, así que no se almacenan arreglos de medias. `angular_flux[k, m]`
-conserva su significado histórico `ω_m(ψ̄⁺ + ψ̄⁻)`, que es lo que muestra
-`nts-1d-plot --kind angular`.
+barrido. La salida guarda `angular_flux` como `(NTC, N)` (por celda y
+dirección, columnas por `μ`), más `miu`, `omega` y
+`scalar_flux_contribution = 1/2 ω_m(ψ̄⁺+ψ̄⁻)`. `nts-1d-plot --kind angular`
+dibuja una línea por dirección.
 
 ## 8. Resultados de referencia
 

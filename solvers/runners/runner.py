@@ -61,7 +61,31 @@ class Runner:
         # PSI_LEFT:  neutrones viajando hacia x- (mu < 0)
         self.PSI_RIGHT = np.zeros((config.NTP, config.N_HALF))
         self.PSI_LEFT = np.zeros((config.NTP, config.N_HALF))
-        self.angular_flux = np.zeros((config.NTP, config.N_HALF))  # Suma de ambos
+        # Flujo angular por celda y por direccion: (NTC, N), columnas
+        # ordenadas por mu ascendente.  PSI_RIGHT/PSI_LEFT son valores de
+        # interfaz; estas son las medias de celda que se reportan.
+        self.angular_flux = np.zeros((config.NTC, config.N))
+        # Contribucion de cada ordenada al flujo escalar: 1/2 w_m (psi+ + psi-)
+        self.scalar_flux_contribution = np.zeros((config.NTC, config.N_HALF))
+        # mu y omega completos (N direcciones, ordenados por mu ascendente).
+        # Los pesos de la mitad positiva suman 1; los N pesos suman 2, por eso
+        # el flujo escalar lleva el factor 1/2 (media angular).
+        order = np.argsort(np.asarray(config.miu_m, dtype=float))
+        self.miu = np.concatenate(
+            (
+                -np.asarray(config.miu_m, dtype=float)[order][::-1],
+                np.asarray(config.miu_m, dtype=float)[order],
+            )
+        )
+        self.omega = np.concatenate(
+            (
+                np.asarray(config.omega_m, dtype=float)[order][::-1],
+                np.asarray(config.omega_m, dtype=float)[order],
+            )
+        )
+        rank = np.argsort(order)
+        self._right_col = config.N_HALF + rank
+        self._left_col = config.N_HALF - 1 - rank
         # Flujo Escalar [Celdas]
         self.scalar_flux = np.zeros(config.NTC)
 
@@ -147,11 +171,12 @@ class Runner:
 
     def sweep(self):
         """Realiza el barrido de transporte"""
-        # Fuente total isotrópica:
-        # S = 1/2 * (Q_ext + Sigma_S * Phi) + fission_source
-        # fission_source ya incluye el factor 1/2.
+        # Fuente total isotropica.  phi es la media angular:
+        # S = Sigma_S * phi + 1/2 * Q_ext + fission_source
+        # fission_source = nu*Sigma_f * phi / k (sin el 1/2).
         self.total_source = (
-            0.5 * (self.config.q_ext_vec + self.config.sigma_s_vec * self.scalar_flux)
+            self.config.sigma_s_vec * self.scalar_flux
+            + 0.5 * self.config.q_ext_vec
             + self.fission_source
         )
 
@@ -189,11 +214,12 @@ class Runner:
                 self.PSI_LEFT[k, m] = cell_out(psi_in, source, st, dx, mu, theta)
 
     def calculo_flujo(self):
-        """Compute the scalar flux from the cell averages of the scheme."""
+        """Compute the scalar flux as the angular average of the cell fluxes."""
         old_flux = self.scalar_flux.copy()
 
-        # Reiniciar flujo escalar
+        # Reiniciar flujo escalar y flujos angulares
         self.scalar_flux[:] = 0.0
+        self.scalar_flux_contribution[:] = 0.0
         self.angular_flux[:] = 0.0
 
         cfg = self.config
@@ -204,9 +230,12 @@ class Runner:
         right = self.PSI_RIGHT
         left = self.PSI_LEFT
         angular = self.angular_flux
+        contribution = self.scalar_flux_contribution
         scalar = self.scalar_flux
         dx_vec = cfg.dx_vec
         st_vec = cfg.sigma_t_vec
+        right_col = self._right_col
+        left_col = self._left_col
 
         for k in range(cfg.NTC):
             suma = 0.0
@@ -217,15 +246,22 @@ class Runner:
                 mu = abs(miu[m])
                 theta = None if scheme_data is None else scheme_data[k, m]
 
-                # Promedio en la celda para la dirección positiva (izq -> der)
+                # Promedio en la celda para la direccion positiva (izq -> der)
                 psi_avg_der = average(right[k, m], right[k + 1, m], st, dx, mu, theta)
 
-                # Promedio en la celda para la dirección negativa (der -> izq)
+                # Promedio en la celda para la direccion negativa (der -> izq)
                 psi_avg_izq = average(left[k + 1, m], left[k, m], st, dx, mu, theta)
 
-                angular_contribution = omega[m] * (psi_avg_der + psi_avg_izq)
+                # Flujo angular por celda y direccion (columnas por mu)
+                angular[k, right_col[m]] = psi_avg_der
+                angular[k, left_col[m]] = psi_avg_izq
+
+                # phi = 1/2 * sum(w_m * (psi+ + psi-)); los N pesos suman 2
+                angular_contribution = (
+                    0.5 * omega[m] * (psi_avg_der + psi_avg_izq)
+                )
                 suma += angular_contribution
-                angular[k, m] = angular_contribution
+                contribution[k, m] = angular_contribution
 
             scalar[k] = suma
 
@@ -309,6 +345,7 @@ class Runner:
     def _scale_state(self, factor: float):
         """Scale scalar and angular flux consistently."""
         self.scalar_flux *= factor
+        self.scalar_flux_contribution *= factor
         self.PSI_RIGHT *= factor
         self.PSI_LEFT *= factor
         self.angular_flux *= factor
@@ -329,8 +366,11 @@ class Runner:
         cfg = self.config
         if not np.any(cfg.nu_sigma_f_vec > 0.0):
             return None
-        production = float(np.sum(cfg.nu_sigma_f_vec * self.scalar_flux * cfg.dx_vec))
-        absorption = float(
+        # phi es la media angular: las tasas de reaccion usan 2*phi.
+        production = 2.0 * float(
+            np.sum(cfg.nu_sigma_f_vec * self.scalar_flux * cfg.dx_vec)
+        )
+        absorption = 2.0 * float(
             np.sum((cfg.sigma_t_vec - cfg.sigma_s_vec) * self.scalar_flux * cfg.dx_vec)
         )
         leakage = self._net_leakage()
@@ -403,7 +443,7 @@ class Runner:
             if self.reflex_izq:
                 self.update_reflective_boundaries_left()
             self.fission_source = (
-                0.5 * cfg.nu_sigma_f_vec * self.scalar_flux / self.k_eff
+                cfg.nu_sigma_f_vec * self.scalar_flux / self.k_eff
             )
             self.sweep()
             old_flux = self.calculo_flujo()
@@ -449,7 +489,7 @@ class Runner:
         for outer in range(1, cfg.MAX_OUTER + 1):
             self.outer_iterations = outer
             self.fission_source = (
-                0.5 * cfg.nu_sigma_f_vec * self.scalar_flux / self.k_eff
+                cfg.nu_sigma_f_vec * self.scalar_flux / self.k_eff
             )
             inner_ok = self._inner_solve()
 
@@ -512,7 +552,10 @@ class Runner:
         else:
             raise ValueError("POWER_KW requires SIGMA_F per zone or NU (nu_bar).")
 
-        fission_integral = float(np.sum(sigma_f * self.scalar_flux * cfg.dx_vec))
+        # phi es la media angular: la integral de fision fisica es 2*sum(sf*phi)
+        fission_integral = 2.0 * float(
+            np.sum(sigma_f * self.scalar_flux * cfg.dx_vec)
+        )
         if fission_integral <= 0.0:
             raise ValueError("Cannot normalize power: fission integral is zero.")
 
@@ -540,7 +583,10 @@ class Runner:
 
         return {
             "scalar_flux": self.scalar_flux,
+            "scalar_flux_contribution": self.scalar_flux_contribution,
             "angular_flux": self.angular_flux,
+            "miu": self.miu,
+            "omega": self.omega,
             "iteration": self.iteration,
             "PSI_RIGHT": self.PSI_RIGHT,
             "PSI_LEFT": self.PSI_LEFT,
