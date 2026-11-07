@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.1.0-blue)](Changelog_EN.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -84,6 +84,7 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 | `nts-1d-config` | Interactive 1D config JSON generator (`-o` optional) |
 | `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |
 | `nts-1d-run-dd` / `-step` / `-sc` | Same flags, but forces the spatial scheme |
+| `nts-1d-excel output_1d_###.json [-o out.xlsx] [--run ...]` | Export a consolidated 1D output to a formatted Excel workbook |
 | `nts-test` | Run the unittest suite (`-v`, `--failfast`, `-p PATTERN`) |
 | `nts-1d-data [--latest] [--positions 0 100] [--inputs inputs.py]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` (uses embedded config when available) |
 | `nts-1d-plot -r output_1d.json [--kind scalar\|angular\|k-history] [--run ...]` | Scalar/angular flux or `k_history` from a raw output |
@@ -510,6 +511,25 @@ See the example in the [1D workflow](#3-run-the-1d-solver) above.
 }
 ```
 
+### Excel workbook — `outputs/results/output_1d_###.xlsx`
+
+`nts-1d-run --excel` (or `nts-1d-excel output_1d_###.json`) exports the
+whole payload to a formatted workbook:
+
+| Sheet | Content |
+|---|---|
+| `Metadata` | solver, timestamp, totals and schemes |
+| `Runs` | one row per run (mode, scheme, `k_eff`, iterations, power, source) |
+| `Zones` / `Regions` | cross sections and mesh per run |
+| `Boundaries` | incoming flux per side and direction |
+| `ScalarFlux` | cell × run matrix |
+| `AngularFlux` | long format: run, cell, x, direction, μ, ψ |
+| `Directions` | μ and ω per run |
+| `k_history` | k_eff per outer iteration |
+
+`--excel` without a value writes next to the JSON; `--excel PATH` chooses
+the file. `nts-1d-excel` accepts `--run NAME|INDEX` to export a subset.
+
 ## 📁 Project Layout
 
 ```
@@ -533,6 +553,7 @@ neutron-transport-PINNs/
 │   ├── extract_1d_flux.py       # nts-1d-data: flux extraction
 │   ├── generate_1d_config.py    # nts-1d-config: interactive JSON config
 │   ├── plot_1d_flux.py          # nts-1d-plot: scalar/angular/k_history
+│   ├── excel_1d.py              # nts-1d-excel: consolidated JSON → xlsx
 │   └── plot_scs_flux.py         # legacy SCS vs flux plots
 ├── solvers/
 │   ├── runners/                 # C binaries + sources + Python solver

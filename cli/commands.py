@@ -521,7 +521,9 @@ def cmd_generate_placeholder(args):
     return 0
 
 
-def _serialize_1d_run(name: str, cfg_dict: dict, result: dict) -> dict:
+def _serialize_1d_run(
+    name: str, cfg_dict: dict, result: dict, source=None
+) -> dict:
     """Build one run entry for the consolidated output_1d JSON."""
     return {
         "config_name": name,
@@ -541,6 +543,7 @@ def _serialize_1d_run(name: str, cfg_dict: dict, result: dict) -> dict:
         "outer_iterations": result.get("outer_iterations"),
         "power_w": result.get("power_w"),
         "power_scale": result.get("power_scale"),
+        "source": str(source) if source is not None else None,
         "timestamp": datetime.now().isoformat(timespec="seconds"),
     }
 
@@ -574,7 +577,7 @@ def cmd_run_1d(args):
         nonlocal failures
         try:
             result = Runner(conf, source=source, run_name=name)()
-            results.append(_serialize_1d_run(name, cfg_dict, result))
+            results.append(_serialize_1d_run(name, cfg_dict, result, source=source))
         except Exception as e:
             failures += 1
             logger.exception("NTS_DD_1D run failed")
@@ -697,6 +700,22 @@ def cmd_run_1d(args):
     console.print(
         f"[bold green]✓ Completed {len(results)} run(s).[/] Output: {output_path}"
     )
+
+    excel_arg = getattr(args, "excel", None)
+    if excel_arg:
+        from utils.excel_1d import write_workbook
+
+        excel_path = (
+            output_path.with_suffix(".xlsx")
+            if excel_arg == "auto"
+            else Path(excel_arg)
+        )
+        try:
+            write_workbook(payload, excel_path)
+        except Exception as e:
+            console.print(f"[bold red]✗ Failed to write Excel:[/] {str(e)}")
+            return 1
+        console.print(f"[bold green]✓ Excel saved:[/] {excel_path}")
 
     if failures > 0:
         console.print(f"[yellow]Warning:[/] {failures} run(s) failed")

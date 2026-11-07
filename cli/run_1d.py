@@ -42,6 +42,14 @@ def build_parser(
         "--output",
         help="Output JSON path (default: auto-numbered outputs/results/output_1d_###.json)",
     )
+    parser.add_argument(
+        "--excel",
+        nargs="?",
+        const="auto",
+        default=None,
+        metavar="PATH",
+        help="Also write an Excel workbook (default: next to the JSON)",
+    )
     parser.set_defaults(forced_scheme=forced_scheme)
     return parser
 

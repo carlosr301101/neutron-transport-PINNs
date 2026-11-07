@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v3.0.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v3.1.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -80,6 +80,7 @@ Shortcuts (`pyproject.toml` scripts):
 | `nts-1d-run-sc` | same flags, forces Step Characteristic |
 | `nts-1d-data [--latest] [--positions 0 50 100]` | extract fluxes + embedded config → `datos.json` |
 | `nts-1d-plot [-r output_1d.json \| -i datos.json] [--kind scalar\|angular\|k-history\|scs] [--run ...]` | scalar/angular flux, k_history, or legacy SCS plots |
+| `nts-1d-excel output_1d_###.json [-o out.xlsx] [--run ...]` | export the consolidated JSON to a formatted workbook |
 | `nts-test [-v] [--failfast] [-p PATTERN]` | run the unittest suite |
 
 ## Parametric sweep recipe (1D workflow)
@@ -345,6 +346,10 @@ uv run nts-1d-plot -i outputs/results/datos.json --x k_eff
 - `angular_flux` is `(NTC, N)`: cell-averaged `ψ` per direction (columns by
   increasing `μ`), with `miu`/`omega` in the run. The scalar flux is the
   angular average `φ = 1/2 Σ ω ψ`.
+- `nts-1d-run --excel [PATH]` also writes the workbook (Metadata, Runs,
+  Zones, Regions, Boundaries, ScalarFlux, AngularFlux, Directions,
+  k_history); without a path it uses the JSON stem. `nts-1d-excel`
+  converts an existing output.
 - `--kind k-history` only works for `MODE=eigenvalue`.
 - Default outputs: `outputs/results/plots/scalar_flux.png`,
   `angular_flux.png`, `k_history.png`.

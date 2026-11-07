@@ -7,7 +7,6 @@ resolved from ``config.method``) and used through the ``Scheme`` protocol.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from time import time
 
 import numpy as np
@@ -635,100 +634,3 @@ class Runner:
         df = pd.DataFrame(data)
 
         return df
-
-    def _guardar_excel(
-        self,
-        df,
-        filename=f"results_runner_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.xlsx",
-    ):
-        """Save the DataFrame to an Excel file with additional information."""
-        try:
-            with pd.ExcelWriter(filename, engine="openpyxl") as writer:
-                # Sheet 1: main results
-                df.to_excel(writer, sheet_name="Scalar_Flux", index=False)
-
-                # Sheet 2: convergence information
-                info_convergencia = pd.DataFrame(
-                    {
-                        "Parameter": [
-                            "Iterations",
-                            "Converged",
-                            "Epsilon",
-                            "Max Iter",
-                            "Total Cells",
-                            "Total Nodes",
-                            "Quadrature",
-                            "Mode",
-                            "k_eff",
-                            "k_balance",
-                        ],
-                        "Value": [
-                            self.iteration,
-                            "converged" if self.converged else "not converged",
-                            self.config.epsilon,
-                            self.config.max_iter,
-                            self.config.NTC,
-                            self.config.NTP,
-                            f"S{self.config.N}",
-                            self.mode,
-                            self.k_eff,
-                            self.k_balance,
-                        ],
-                    }
-                )
-                info_convergencia.to_excel(
-                    writer, sheet_name="Convergence_Info", index=False
-                )
-
-                # Sheet 3: material properties
-                propiedades = pd.DataFrame(
-                    {
-                        "Zone": np.arange(1, self.config.num_zones + 1),
-                        "Sigma_Total": self.config.SCT,
-                        "Sigma_Scattering": self.config.SCS,
-                        "nu_Sigma_f": self.config.NU_SIGF,
-                    }
-                )
-                propiedades.to_excel(
-                    writer, sheet_name="Material_Properties", index=False
-                )
-
-                regiones_df = pd.DataFrame(
-                    {
-                        "Region": np.arange(1, self.config.num_regions + 1),
-                        "NC (cells per region)": list(self.config.NC),
-                        "HR (thickness [cm])": list(self.config.HR),
-                        "IZL (zone, 1-based)": list(self.config.IZL),
-                        "Q (source per region)": list(self.config.Q),
-                    }
-                )
-                regiones_df.to_excel(
-                    writer, sheet_name="Region_Distribution", index=False
-                )
-
-                resumen = pd.DataFrame(
-                    {
-                        "Parameter": [
-                            "Number_of_Regions",
-                            "Number_of_Zones",
-                            "Total_Cells",
-                            "Total_Nodes",
-                            "Quadrature_Order",
-                        ],
-                        "Value": [
-                            self.config.num_regions,
-                            self.config.num_zones,
-                            self.config.NTC,
-                            self.config.NTP,
-                            f"S{self.config.N}",
-                        ],
-                    }
-                )
-                resumen.to_excel(writer, sheet_name="Summary", index=False)
-
-            print(f"✓ Results saved to: {filename}")
-            logger.info(f"Results saved to: {filename}")
-
-        except Exception as e:
-            print(f"✗ Error saving Excel: {e}")
-            logger.error(f"Error saving Excel: {e}")

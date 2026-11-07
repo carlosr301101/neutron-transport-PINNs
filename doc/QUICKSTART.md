@@ -152,6 +152,12 @@ uv run nts-1d-run --manual
 
 # One JSON object or a list of objects
 uv run nts-1d-run --json config.json
+
+# Also write a formatted Excel workbook next to the JSON
+uv run nts-1d-run --json config.json --excel
+
+# Convert an existing output
+uv run nts-1d-excel outputs/results/output_1d_003.json -o results.xlsx
 ```
 
 `--manual`, `--json` and `-c` are mutually exclusive. The wizard prints a

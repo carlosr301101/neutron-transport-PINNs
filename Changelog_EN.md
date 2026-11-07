@@ -2,6 +2,16 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [3.1.0] - 2026-11-07 - Excel export
+
+### Added
+- `nts-1d-excel` entry point: converts a consolidated `output_1d_###.json`
+  into a formatted `.xlsx` (Metadata, Runs, Zones, Regions, Boundaries,
+  ScalarFlux, AngularFlux, Directions, k_history), with frozen headers,
+  autofilter and numeric formats.
+- `nts-1d-run --excel [PATH]` writes the workbook alongside the JSON.
+- `runs[].source` in the JSON, recording where each configuration came from.
+
 ## [3.0.0] - 2026-11-07 - Scalar-flux convention and directional angular flux
 
 ### Changed (breaking output schema)
