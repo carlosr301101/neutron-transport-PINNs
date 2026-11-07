@@ -1,7 +1,8 @@
 # Multiplicative media and effective multiplication factor (`k_eff`)
 
-Guide to the multiplicative mode of the 1D solver `NTS_DD_1D`
-(`solvers/runners/NTS_DD_1D.py`).
+Guide to the multiplicative mode of the 1D solvers (`NTS_DD_1D.py`,
+`NTS_STEP_1D.py`, `NTS_SC_1D.py`, over a shared engine in `config.py` and
+`runner.py`).
 
 > **Scope:** this feature is exclusive to the Python 1D solver. The 2D C
 > solvers (`NTS_DD`, `NTS_LD`, `NTS_STEP`, `NTS_RM_CN`, `NTS_RM_LLN`) remain
@@ -523,4 +524,7 @@ boundaries must be solved.
 - `doc/NTS_DOCUMENTATION.md` — 2D C solver documentation.
 - `tests/test_dd_1d_fission.py` — acceptance tests.
 - `skills/nts-pinns-autopilot/SKILL.md` — operational skill guide.
+- `solvers/runners/config.py`, `runner.py`, `scheme.py` — configuration,
+  transport engine and scheme dispatch.
+- `solvers/runners/NTS_DD_1D.md`, `NTS_STEP_1D.md`, `NTS_SC_1D.md` — per-method cards.
 - `doc/MULTIPLICATIVE_MEDIA.md` — Spanish version.

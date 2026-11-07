@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v2.9.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v2.10.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -74,7 +74,10 @@ Shortcuts (`pyproject.toml` scripts):
 |----------|-----------|
 | `nts-generate` | `nts generate` in placeholder mode (`--place-holder`, `--json`, `-o`) |
 | `nts-1d-config` | Interactive 1D config JSON generator |
-| `nts-1d-run` | `nts run-1d` (`-c`, `--json`, `--manual`) |
+| `nts-1d-run` | `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |
+| `nts-1d-run-dd` | same flags, forces Diamond Difference |
+| `nts-1d-run-step` | same flags, forces Step |
+| `nts-1d-run-sc` | same flags, forces Step Characteristic |
 | `nts-1d-data [--latest] [--positions 0 50 100]` | extract fluxes + embedded config → `datos.json` |
 | `nts-1d-plot [-r output_1d.json \| -i datos.json] [--kind scalar\|angular\|k-history\|scs] [--run ...]` | scalar/angular flux, k_history, or legacy SCS plots |
 | `nts-test [-v] [--failfast] [-p PATTERN]` | run the unittest suite |
@@ -128,7 +131,8 @@ pos-100 flux trend vs kk, and the artifact paths.
 
 ## Multiplicative media / k_eff (1D)
 
-`NTS_DD_1D` solves the one-group S_N equations with isotropic fission:
+The 1D solvers (`NTS_DD_1D`, `NTS_STEP_1D` and `NTS_SC_1D` over a shared
+engine) solve the one-group S_N equations with isotropic fission:
 
 ```text
 mu_m dPsi_m/dx + Sigma_t Psi_m
@@ -195,7 +199,19 @@ support fission.
   STEP's ~0.9% gap is expected (first order), not a defect.
 - No clipping or positivity constraints. DD can give negative angular fluxes
   in thick cells; report them, do not "fix" them.
-- Full reference: `doc/SPATIAL_SCHEMES_EN.md`.
+### Solver modules
+
+| Module | Responsibility |
+|---|---|
+| `NTS_DD_1D.py` | Diamond Difference scheme + compatibility facade (`Config`, `Runner`) |
+| `NTS_STEP_1D.py` | Step (implicit upwind) scheme |
+| `NTS_SC_1D.py` | Step Characteristic scheme (`theta` + `prepare()`) |
+| `scheme.py` | `Method`, `Scheme` protocol, dispatch |
+| `config.py` | Scheme-agnostic `Config` |
+| `runner.py` | Shared transport engine |
+
+Per-method cards: `solvers/runners/NTS_DD_1D.md`, `NTS_STEP_1D.md`,
+`NTS_SC_1D.md`. Full reference: `doc/SPATIAL_SCHEMES_EN.md`.
 
 ### Benchmark (20 cm, vacuum, S8)
 

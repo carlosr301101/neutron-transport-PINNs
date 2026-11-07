@@ -15,9 +15,9 @@ Comprehensive documentation for 5 neutron transport simulation programs implemen
 | **NTS_RM_LLN.c** | Response Matrix + Linear Lattice | 5-15 iter | Reactor assemblies/lattices | ✅ Complete |
 
 > **Scope note (2D vs 1D):** the five C programs above solve the
-> **fixed-source** 2D transport equation. The Python 1D solver
-> (`solvers/runners/NTS_DD_1D.py`) additionally supports **multiplicative
-> media and `k_eff`**; see
+> **fixed-source** 2D transport equation. The Python 1D solvers
+> (`NTS_DD_1D.py`, `NTS_STEP_1D.py`, `NTS_SC_1D.py`, over a shared engine)
+> additionally support **multiplicative media and `k_eff`**; see
 > [MULTIPLICATIVE_MEDIA_EN.md](MULTIPLICATIVE_MEDIA_EN.md). The 2D programs do
 > not accept `NU_SIGF` or `k_eff`.
 
@@ -281,9 +281,11 @@ gcc -O2 -g -o NTS_DD solvers/runners/NTS_DD.c -lm
 
 ## 1D Python Solver (Multiplicative Media)
 
-The 1D Python solver `NTS_DD_1D.py` is not one of the compiled C programs
-documented above. It uses the same S_N / Diamond-Difference formulation but
-is driven by Python config dicts (`outputs/inputs/inputs.py`) and adds:
+The 1D Python solvers (`NTS_DD_1D.py`, `NTS_STEP_1D.py`, `NTS_SC_1D.py`)
+are not among the compiled C programs documented above. They share a
+transport engine (`config.py` + `runner.py`) with selectable DD / STEP / SC
+discretization, are driven by Python config dicts
+(`outputs/inputs/inputs.py` or JSON) and add:
 
 - `NU_SIGF` (νΣf) per material zone;
 - `MODE = fixed_source | eigenvalue | fixed_k | driven`;

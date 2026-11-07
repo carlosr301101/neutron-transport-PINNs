@@ -53,14 +53,20 @@ def make_datos(path: Path) -> None:
     )
 
 
+def run_plot(argv: list[str], stdout: io.StringIO | None = None) -> int:
+    """Run the plot CLI capturing console output (tests assert behaviour)."""
+    with contextlib.redirect_stdout(stdout or io.StringIO()):
+        with contextlib.redirect_stderr(io.StringIO()):
+            return plot.main(argv)
+
+
 class TestPlot1DFlux(unittest.TestCase):
     def test_list_runs(self):
         with tempfile.TemporaryDirectory() as tmp:
             result = Path(tmp) / "output_1d_test.json"
             make_output(result, n_runs=2)
             out = io.StringIO()
-            with contextlib.redirect_stdout(out):
-                rc = plot.main(["-r", str(result), "--list-runs"])
+            rc = run_plot(["-r", str(result), "--list-runs"], stdout=out)
         self.assertEqual(rc, 0)
         text = out.getvalue()
         self.assertIn("[0] run_0", text)
@@ -72,7 +78,7 @@ class TestPlot1DFlux(unittest.TestCase):
             result = Path(tmp) / "output_1d_test.json"
             make_output(result, n_runs=2)
             with contextlib.redirect_stderr(io.StringIO()):
-                rc = plot.main(["-r", str(result), "--kind", "scalar"])
+                rc = run_plot(["-r", str(result), "--kind", "scalar"])
         self.assertEqual(rc, 2)
 
     def test_scalar_selected_run(self):
@@ -80,7 +86,7 @@ class TestPlot1DFlux(unittest.TestCase):
             result = Path(tmp) / "output_1d_test.json"
             output = Path(tmp) / "scalar.png"
             make_output(result, n_runs=2)
-            rc = plot.main(
+            rc = run_plot(
                 [
                     "-r", str(result), "--kind", "scalar",
                     "--run", "run_1", "-o", str(output),
@@ -94,7 +100,7 @@ class TestPlot1DFlux(unittest.TestCase):
             result = Path(tmp) / "output_1d_test.json"
             output = Path(tmp) / "scalar_all.png"
             make_output(result, n_runs=2)
-            rc = plot.main(
+            rc = run_plot(
                 [
                     "-r", str(result), "--kind", "scalar",
                     "--run", "all", "-o", str(output),
@@ -126,7 +132,7 @@ class TestPlot1DFlux(unittest.TestCase):
             result = Path(tmp) / "output_1d_test.json"
             output = Path(tmp) / "angular.png"
             make_output(result, n_runs=2)
-            rc = plot.main(
+            rc = run_plot(
                 [
                     "-r", str(result), "--kind", "angular",
                     "--run", "run_0", "--directions", "1",
@@ -141,7 +147,7 @@ class TestPlot1DFlux(unittest.TestCase):
             result = Path(tmp) / "output_1d_test.json"
             make_output(result, n_runs=2)
             with contextlib.redirect_stderr(io.StringIO()):
-                rc = plot.main(
+                rc = run_plot(
                     ["-r", str(result), "--kind", "angular", "--run", "all"]
                 )
         self.assertEqual(rc, 2)
@@ -151,7 +157,7 @@ class TestPlot1DFlux(unittest.TestCase):
             result = Path(tmp) / "output_1d_test.json"
             output = Path(tmp) / "khistory.png"
             make_output(result, n_runs=2)
-            rc = plot.main(
+            rc = run_plot(
                 [
                     "-r", str(result), "--kind", "k-history",
                     "--run", "run_0", "-o", str(output),
@@ -165,7 +171,7 @@ class TestPlot1DFlux(unittest.TestCase):
             result = Path(tmp) / "output_1d_test.json"
             make_output(result, n_runs=2)
             with contextlib.redirect_stderr(io.StringIO()):
-                rc = plot.main(
+                rc = run_plot(
                     [
                         "-r", str(result), "--kind", "k-history",
                         "--run", "run_1",
@@ -178,7 +184,7 @@ class TestPlot1DFlux(unittest.TestCase):
             datos = Path(tmp) / "datos.json"
             output = Path(tmp) / "scs.png"
             make_datos(datos)
-            rc = plot.main(
+            rc = run_plot(
                 ["-i", str(datos), "--x", "k_eff", "-o", str(output)]
             )
             self.assertEqual(rc, 0)
@@ -189,18 +195,18 @@ class TestPlot1DFlux(unittest.TestCase):
             result = Path(tmp) / "output_1d_test.json"
             make_output(result, n_runs=2)
             with contextlib.redirect_stderr(io.StringIO()):
-                rc = plot.main(
+                rc = run_plot(
                     ["-r", str(result), "--kind", "scalar", "--run", "nope"]
                 )
         self.assertEqual(rc, 2)
 
     def test_mutually_exclusive_sources(self):
         with self.assertRaises(SystemExit):
-            plot.main(["-r", "a.json", "-i", "b.json"])
+            run_plot(["-r", "a.json", "-i", "b.json"])
 
     def test_directions_only_for_angular(self):
         with self.assertRaises(SystemExit):
-            plot.main(
+            run_plot(
                 [
                     "-r", "a.json", "--kind", "scalar",
                     "--directions", "0",

@@ -94,7 +94,7 @@ class Runner:
             self.boundary_conditions_left()
 
     def boundary_conditions_left(self):
-        print("\n--- CONDICIONES DE FRONTERA ---")
+        print("\n--- BOUNDARY CONDITIONS ---")
         # Frontera Izquierda (x=0) incidiendo hacia la derecha
 
         if self.config.bound_left is not None:
@@ -113,7 +113,7 @@ class Runner:
             self.PSI_RIGHT[0, :] = vals_izq
 
     def boundary_conditions_right(self):
-        print("\n--- CONDICIONES DE FRONTERA ---")
+        print("\n--- BOUNDARY CONDITIONS ---")
         # Frontera Derecha (x=L) incidiendo hacia la izquierda
 
         if self.config.bound_right is not None:

@@ -212,7 +212,8 @@ Tolerance:
 1D PYTHON SOLVER — MULTIPLICATIVE MEDIA (k_eff)
 ═══════════════════════════════════════════════════════════════════════════
 
-The 1D solver (NTS_DD_1D.py) supports fission; the 2D C programs do NOT.
+The 1D solvers (NTS_DD_1D.py / NTS_STEP_1D.py / NTS_SC_1D.py) support
+fission; the 2D C programs do NOT.
 
 Config keys:
   NU_SIGF   : nu*Sigma_f per zone [cm^-1]      (0 = no fission)

@@ -9,6 +9,8 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
   su esquema espacial (mismas flags que `nts-1d-run`).
 - `spatial_schemes` a nivel de archivo en `output_1d_###.json` y `datos.json`;
   cada run mantiene su `spatial_scheme`.
+- Fichas por método: `solvers/runners/NTS_DD_1D.md`,
+  `NTS_STEP_1D.md` y `NTS_SC_1D.md`.
 - `solvers/runners/scheme.py` (Method, protocolo `Scheme`, dispatch),
   `config.py`, `runner.py`, `NTS_STEP_1D.py` y `NTS_SC_1D.py`.
   `NTS_DD_1D.py` queda con el esquema DD y la fachada de compatibilidad.
@@ -23,6 +25,9 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
 
 ### Fixed
 - `nts` fallaba con `ModuleNotFoundError: No module named 'main'`.
+- Encabezados y avisos de consola traducidos (`BOUNDARY CONDITIONS`,
+  `EXTERNAL SOURCE`, `Warning: no data for S...`) y la suite ya no imprime
+  salida de producto.
 - `import solvers...` fallaba al ejecutar desde otro directorio.
 
 ## [2.9.0] - 2026-11-03 - Esquemas espaciales DD / STEP / SC

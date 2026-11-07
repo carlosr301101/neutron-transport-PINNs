@@ -51,7 +51,9 @@ uv run nts-test -v                      # Verbose tests
 - `NTS_RM_CN` — Response Matrix + Crank-Nicolson (most precise)
 - `NTS_RM_LLN` — Response Matrix + Linear Lattice (assemblies)
 
-1D (Python, `solvers/runners/NTS_DD_1D.py`): Diamond Difference SN solver.
+1D (Python, `NTS_DD_1D.py` / `NTS_STEP_1D.py` / `NTS_SC_1D.py`): S_N solver
+with selectable DD / STEP / SC discretization over a shared engine
+(`config.py` + `runner.py`).
 
 ## 📝 Configuration Format (2D)
 

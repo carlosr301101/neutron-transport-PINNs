@@ -1,7 +1,8 @@
 # Medios multiplicativos y factor efectivo de multiplicación (`k_eff`)
 
-Guía del modo multiplicativo del solver 1D `NTS_DD_1D`
-(`solvers/runners/NTS_DD_1D.py`).
+Guía del modo multiplicativo de los solvers 1D (`NTS_DD_1D.py`,
+`NTS_STEP_1D.py`, `NTS_SC_1D.py`, sobre un motor compartido en `config.py`
+y `runner.py`).
 
 > **Alcance:** esta capacidad es exclusiva del solver 1D en Python. Los
 > solvers 2D en C (`NTS_DD`, `NTS_LD`, `NTS_STEP`, `NTS_RM_CN`,
@@ -518,4 +519,7 @@ con vacío o reflexivas.
 - `doc/QUICKSTART.md` — cheatsheet.
 - `doc/NTS_DOCUMENTATION.md` — documentación de los solvers 2D en C.
 - `tests/test_dd_1d_fission.py` — tests de aceptación.
+- `solvers/runners/config.py`, `runner.py`, `scheme.py` — configuración,
+  motor de transporte y dispatch de esquemas.
+- `solvers/runners/NTS_DD_1D.md`, `NTS_STEP_1D.md`, `NTS_SC_1D.md` — fichas por método.
 - `skills/nts-pinns-autopilot/SKILL.md` — guía operativa de la skill.

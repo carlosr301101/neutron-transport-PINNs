@@ -9,6 +9,8 @@ Record of all notable changes in the NTS Automation System project.
   force their spatial scheme (same flags as `nts-1d-run`).
 - `spatial_schemes` at file level in `output_1d_###.json` and `datos.json`;
   each run row keeps `spatial_scheme`.
+- Per-method reference cards: `solvers/runners/NTS_DD_1D.md`,
+  `NTS_STEP_1D.md` and `NTS_SC_1D.md`.
 - `solvers/runners/scheme.py` (Method, `Scheme` protocol, dispatch),
   `config.py`, `runner.py`, `NTS_STEP_1D.py` and `NTS_SC_1D.py`.
   `NTS_DD_1D.py` now holds the DD scheme plus a compatibility facade.
@@ -23,6 +25,9 @@ Record of all notable changes in the NTS Automation System project.
 
 ### Fixed
 - `nts` crashed with `ModuleNotFoundError: No module named 'main'`.
+- Console headers and warnings fully translated (`BOUNDARY CONDITIONS`,
+  `EXTERNAL SOURCE`, `Warning: no data for S...`), and the test suite no
+  longer prints product output.
 - `import solvers...` failed when running from another directory.
 
 ## [2.9.0] - 2026-11-03 - DD / STEP / SC spatial schemes

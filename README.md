@@ -58,7 +58,7 @@ uv run nts status
 
 ## 🖥 CLI Reference
 
-Main entry point: `uv run nts <command>` (implemented in `main.py` → `cli/commands.py`).
+Main entry point: `uv run nts <command>` (implemented in `cli/main.py` → `cli/commands.py`; the root `main.py` is a compatibility shim).
 
 | Command | Purpose |
 |---------|---------|
@@ -508,10 +508,11 @@ See the example in the [1D workflow](#3-run-the-1d-solver) above.
 
 ```
 neutron-transport-PINNs/
-├── main.py                      # CLI entry point (uv run nts)
+├── main.py                      # Compatibility shim (delegates to cli.main)
 ├── cli/                         # CLI plumbing
+│   ├── main.py                  # CLI entry point (uv run nts)
 │   ├── commands.py              # All `nts` subcommands (argparse)
-│   ├── run_1d.py                # Entry point: nts-1d-run
+│   ├── run_1d.py                # nts-1d-run[-dd|-step|-sc]
 │   └── generate_placeholder.py  # Entry point: nts-generate
 ├── core/                        # Config generation and validation
 │   ├── config.py                # Pydantic models (Zone, SimulationConfig)
@@ -529,9 +530,12 @@ neutron-transport-PINNs/
 │   └── plot_scs_flux.py         # legacy SCS vs flux plots
 ├── solvers/
 │   ├── runners/                 # C binaries + sources + Python solver
-│   │   │   ├── NTS_DD_1D.py         # 1D DD solver (+ compatibility facade)
+│   │   ├── NTS_DD_1D.py         # 1D DD solver (+ compatibility facade)
 │   │   ├── NTS_STEP_1D.py       # 1D Step solver
 │   │   ├── NTS_SC_1D.py         # 1D Step Characteristic solver
+│   │   ├── NTS_DD_1D.md         # DD method card
+│   │   ├── NTS_STEP_1D.md       # STEP method card
+│   │   ├── NTS_SC_1D.md         # SC method card
 │   │   ├── scheme.py            # Method enum, Scheme protocol, dispatch
 │   │   ├── config.py            # Config (scheme agnostic)
 │   │   ├── runner.py            # Transport engine (sweep, k_eff, power)
@@ -641,6 +645,9 @@ multiplicative-media guide and the changelog are kept alongside them.
 | `doc/MULTIPLICATIVE_MEDIA_EN.md` | 1D fission/`k_eff` modes, benchmark, power normalization, validation (English) |
 | `doc/SPATIAL_SCHEMES_EN.md` | DD / STEP / SC spatial schemes: formulation, selection, results (English) |
 | `doc/SPATIAL_SCHEMES.md` | Spanish version of the spatial-schemes guide |
+| `solvers/runners/NTS_DD_1D.md` | DD method card: equations, benchmark, entry point |
+| `solvers/runners/NTS_STEP_1D.md` | STEP method card |
+| `solvers/runners/NTS_SC_1D.md` | SC method card |
 | `doc/MULTIPLICATIVE_MEDIA.md` | Spanish version of the same guide |
 | `doc/QUICK_REFERENCE.txt` | Compact printable reference for the C solvers |
 | `doc/desc_EN.md` | Reference 1D problem definition (English) |

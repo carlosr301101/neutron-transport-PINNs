@@ -39,25 +39,33 @@ def capture(runner) -> str:
     return buffer.getvalue()
 
 
+def make_runner(**kwargs) -> Runner:
+    """Build a Runner quietly (its constructor prints boundary messages)."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        return Runner(build(), **kwargs)
+
+
 class TestRunnerSourceLine(unittest.TestCase):
     def test_banner_without_source(self):
-        output = capture(Runner(build()))
+        output = capture(make_runner())
         self.assertIn("--- STARTING CALCULATION ---", output)
         self.assertNotIn("Source:", output)
 
     def test_banner_with_file_and_run_name(self):
-        output = capture(Runner(build(), source="outputs/inputs/inputs.py", run_name="config_dict_003"))
+        output = capture(
+            make_runner(source="outputs/inputs/inputs.py", run_name="config_dict_003")
+        )
         self.assertIn("--- STARTING CALCULATION ---", output)
         self.assertIn("Source: outputs/inputs/inputs.py | run config_dict_003", output)
 
     def test_banner_with_source_only(self):
-        output = capture(Runner(build(), source="config.json"))
+        output = capture(make_runner(source="config.json"))
         self.assertIn("Source: config.json", output)
 
     def test_source_line_helper(self):
-        self.assertIsNone(Runner(build())._source_line())
+        self.assertIsNone(make_runner()._source_line())
         self.assertEqual(
-            Runner(build(), source="a.py", run_name="r1")._source_line(),
+            make_runner(source="a.py", run_name="r1")._source_line(),
             "a.py | run r1",
         )
 

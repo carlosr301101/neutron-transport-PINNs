@@ -1,7 +1,8 @@
 # Spatial discretization schemes (DD, STEP, SC)
 
-Reference for the cell schemes of the Python 1D solver
-(`solvers/runners/NTS_DD_1D.py`).
+Reference for the cell schemes of the Python 1D solvers
+(`NTS_DD_1D.py`, `NTS_STEP_1D.py`, `NTS_SC_1D.py`, over a shared engine in
+`config.py` and `runner.py`).
 
 > **Scope:** exclusive to the 1D solver. The 2D C programs (`NTS_DD`,
 > `NTS_LD`, `NTS_STEP`, `NTS_RM_CN`, `NTS_RM_LLN`) keep their own scheme and
@@ -48,6 +49,8 @@ $$
 Second order in `Δx`. It is the historical scheme, so `"DD"` reproduces the
 previous results exactly (same floating-point operations).
 
+Per-method card: [NTS_DD_1D.md](../solvers/runners/NTS_DD_1D.md).
+
 ## 4. Step Difference (`STEP`)
 
 $$
@@ -62,6 +65,8 @@ price of first-order accuracy.
 
 > The explicit variant (`ψ̄ = ψ_in`) is **not** implemented: it is unstable
 > for optically thick cells.
+
+Per-method card: [NTS_STEP_1D.md](../solvers/runners/NTS_STEP_1D.md).
 
 ## 5. Step Characteristics (`SC`)
 
@@ -82,6 +87,8 @@ $$
 and to `1` for thick cells (the average → the STEP convention). Second order
 in `Δx`.
 
+Per-method card: [NTS_SC_1D.md](../solvers/runners/NTS_SC_1D.md).
+
 ### Numerics of `θ`
 
 - `α = 0` (no attenuation) returns `θ = 0`.
@@ -92,8 +99,8 @@ in `Δx`.
 - `α ≥ 1e-3` uses `1/tanh(α/2) − 2/α`, which saturates cleanly (`tanh`
   reaches 1.0 around `α ≈ 40`, so no overflow).
 - Negative optical thickness raises `ValueError`; `α = inf` returns `1.0`.
-- `θ` is precomputed once per run as a `(NTC, N_HALF)` array
-  (`Config.theta_sc`) and reused by the sweep and by the scalar-flux
+- `θ` is precomputed once per run by `StepCharacteristic.prepare()` as a
+  `(NTC, N_HALF)` array and reused by the sweep and by the scalar-flux
   integration, so the `tanh` cost is paid once.
 
 ## 6. Selecting a scheme
@@ -223,8 +230,10 @@ uv run nts-test
 
 ## 11. Internal references
 
-- `solvers/runners/NTS_DD_1D.py` — `Method`, kernels, `cell_out`,
-  `cell_average`, `Config.theta_sc`.
+- `solvers/runners/scheme.py` — `Method`, `Scheme` protocol, dispatch.
+- `solvers/runners/NTS_DD_1D.py`, `NTS_STEP_1D.py`, `NTS_SC_1D.py` —
+  scheme implementations (see the per-method cards next to each module).
+- `solvers/runners/config.py`, `runner.py` — configuration and engine.
 - `tests/test_spatial_schemes.py` — scheme tests.
 - `doc/MULTIPLICATIVE_MEDIA_EN.md` — fission modes and `k_eff`.
 - `doc/SPATIAL_SCHEMES.md` — Spanish version.

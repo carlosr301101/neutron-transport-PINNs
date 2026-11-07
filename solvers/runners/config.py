@@ -537,7 +537,7 @@ class Config:
             self.Q = np.zeros(self.num_regions)
             print("\nEigenvalue mode: Q = 0 (homogeneous problem).")
         else:
-            print("\n--- FUENTE EXTERNA ---")
+            print("\n--- EXTERNAL SOURCE ---")
             self.Q = np.array(
                 [
                     self._prompt_number(
@@ -550,7 +550,7 @@ class Config:
             )
 
         # Fronteras
-        print("\n--- Boundary Conditions---")
+        print("\n--- BOUNDARY CONDITIONS ---")
         self.reflex_izq = input("Reflective left? (y/n) [n]: ").strip().lower() in {
             "y",
             "s",
@@ -688,7 +688,7 @@ class Config:
         subset = df[df["N"] == self.N]
         if subset.empty:
             # Fallback simple si no hay datos
-            print(f"Advertencia: No hay datos para S{self.N}, usando S2.")
+            print(f"Warning: no data for S{self.N}, falling back to S2.")
             self.miu_m = np.array([0.57735])
             self.omega_m = np.array([1.0])
             self.N_HALF = 1

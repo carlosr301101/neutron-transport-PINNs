@@ -1,7 +1,8 @@
 # Esquemas de discretización espacial (DD, STEP, SC)
 
-Referencia de los esquemas de celda del solver 1D en Python
-(`solvers/runners/NTS_DD_1D.py`).
+Referencia de los esquemas de celda de los solvers 1D en Python
+(`NTS_DD_1D.py`, `NTS_STEP_1D.py`, `NTS_SC_1D.py`, sobre un motor compartido
+en `config.py` y `runner.py`).
 
 > **Alcance:** exclusivo del solver 1D. Los programas 2D en C (`NTS_DD`,
 > `NTS_LD`, `NTS_STEP`, `NTS_RM_CN`, `NTS_RM_LLN`) conservan su propio
@@ -49,6 +50,8 @@ $$
 Segundo orden en `Δx`. Es el esquema histórico, así que `"DD"` reproduce
 exactamente los resultados anteriores (mismas operaciones en coma flotante).
 
+Ficha del método: [NTS_DD_1D.md](../solvers/runners/NTS_DD_1D.md).
+
 ## 4. Step Difference (`STEP`)
 
 $$
@@ -63,6 +66,8 @@ negativos), a costa de precisión de primer orden.
 
 > La variante explícita (`ψ̄ = ψ_in`) **no** está implementada: es inestable
 > en celdas ópticamente gruesas.
+
+Ficha del método: [NTS_STEP_1D.md](../solvers/runners/NTS_STEP_1D.md).
 
 ## 5. Step Characteristics (`SC`)
 
@@ -82,6 +87,8 @@ $$
 `θ` es un peso convexo en `[0,1)`: tiende a `0` en celdas finas (SC → DD) y a
 `1` en celdas gruesas (la media → convención STEP). Segundo orden en `Δx`.
 
+Ficha del método: [NTS_SC_1D.md](../solvers/runners/NTS_SC_1D.md).
+
 ### Numérica de `θ`
 
 - `α = 0` (sin atenuación) devuelve `θ = 0`.
@@ -92,9 +99,9 @@ $$
 - `α ≥ 1e-3` usa `1/tanh(α/2) − 2/α`, que satura sin desbordar (`tanh` llega
   a 1.0 alrededor de `α ≈ 40`).
 - Espesor óptico negativo lanza `ValueError`; `α = inf` devuelve `1.0`.
-- `θ` se precalcula una vez por corrida como un arreglo `(NTC, N_HALF)`
-  (`Config.theta_sc`) y lo reutilizan el barrido y la integración del flujo
-  escalar, así que el coste de `tanh` se paga una sola vez.
+- `θ` se precalcula una vez por corrida en `StepCharacteristic.prepare()`
+  como un arreglo `(NTC, N_HALF)` y lo reutilizan el barrido y la
+  integración del flujo escalar, así que el coste de `tanh` se paga una vez.
 
 ## 6. Cómo seleccionar el esquema
 
@@ -225,8 +232,10 @@ uv run nts-test
 
 ## 11. Referencias internas
 
-- `solvers/runners/NTS_DD_1D.py` — `Method`, kernels, `cell_out`,
-  `cell_average`, `Config.theta_sc`.
+- `solvers/runners/scheme.py` — `Method`, protocolo `Scheme`, dispatch.
+- `solvers/runners/NTS_DD_1D.py`, `NTS_STEP_1D.py`, `NTS_SC_1D.py` —
+  implementaciones (ver las fichas junto a cada módulo).
+- `solvers/runners/config.py`, `runner.py` — configuración y motor.
 - `tests/test_spatial_schemes.py` — tests de los esquemas.
 - `doc/MULTIPLICATIVE_MEDIA.md` — modos de fisión y `k_eff`.
 - `doc/SPATIAL_SCHEMES_EN.md` — versión en inglés.
