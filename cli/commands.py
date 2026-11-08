@@ -533,6 +533,7 @@ def _serialize_1d_run(
         "miu": result["miu"].tolist(),
         "omega": result["omega"].tolist(),
         "iteration": int(result["iteration"]),
+        "iteration_eigenvalue": result.get("iteration_eigenvalue"),
         "converged": bool(result["converged"]),
         "mode": result.get("mode"),
         "spatial_scheme": result.get("spatial_scheme"),

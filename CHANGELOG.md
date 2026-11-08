@@ -2,6 +2,29 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [3.5.0] - 2026-11-08 - Contadores de actualizaciones de flujo e iteraciones de autovalor
+
+### Changed
+- `iteration` se incrementa solo dentro de `check_convergence`, una vez por
+  actualización de flujo completada (barrido derecho + izquierdo + recálculo
+  del flujo escalar). Acumula entre iteraciones de potencia en eigenvalue.
+- `iteration_eigenvalue` reporta las iteraciones de potencia (`null` fuera de
+  eigenvalue); `outer_iterations` se mantiene como alias.
+- La hoja `Runs` del Excel incluye `iteration_eigenvalue`.
+
+## [3.4.0] - 2026-11-08 - Criterio de convergencia del flujo
+
+### Changed
+- `check_convergence` usa `max_i |1 - phi_new_i/phi_old_i|` con `|phi_old|`
+  en el denominador (antes dividía por el flujo nuevo). Las celdas con
+  `phi_old = 0` caen a diferencia absoluta.
+- Documentado `epsilon = 1e-5` en modos de fuente fija y
+  `min(epsilon, TOL_K) = 1e-6` en el flujo interno del autovalor.
+
+### Added
+- `Runner._relative_flux_change` y `tests/test_convergence.py` para la
+  fórmula, el fallback con flujo nulo y flujos negativos.
+
 ## [3.3.0] - 2026-11-08 - NU por defecto para normalización de potencia
 
 ### Added

@@ -21,7 +21,7 @@ POWER_FORMAT = "0.000000E+00"
 
 RUN_COLUMNS = [
     "run", "mode", "spatial_scheme", "k_eff", "k_balance", "k_converged",
-    "iteration", "outer_iterations", "converged", "power_w", "power_scale", "power_unnormalized",
+    "iteration", "iteration_eigenvalue", "outer_iterations", "converged", "power_w", "power_scale", "power_unnormalized",
     "timestamp", "source", "error",
 ]
 ZONE_COLUMNS = ["run", "zone", "Sigma_t", "Sigma_s", "nu_Sigma_f", "Sigma_f"]
@@ -79,6 +79,7 @@ def _runs_sheet(runs: list[dict]) -> pd.DataFrame:
                 "k_balance": run.get("k_balance"),
                 "k_converged": run.get("k_converged"),
                 "iteration": run.get("iteration"),
+                "iteration_eigenvalue": run.get("iteration_eigenvalue"),
                 "outer_iterations": run.get("outer_iterations"),
                 "converged": run.get("converged"),
                 "power_w": run.get("power_w"),

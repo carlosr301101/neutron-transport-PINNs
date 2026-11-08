@@ -305,8 +305,9 @@ uv run nts-1d-run --json outputs/inputs/inputs_1d.json
 3. Repetir para `outer = 1..MAX_OUTER`:
    1. Congelar la fuente de fisión:
       `S_f = ½ νΣf Φ / k`.
-   2. Iteración interna de scattering hasta que el cambio relativo de `Φ`
-      sea menor que `min(epsilon, TOL_K)`.
+   2. Iteración interna de scattering hasta
+      `max_i |1 - Φ_new_i/Φ_old_i| < min(epsilon, TOL_K)` (celdas con
+      flujo viejo nulo usan diferencia absoluta).
    3. `P_new = ∫νΣf Φ_new dx`.
    4. `k_new = k · P_new / P_old`.
    5. Normalizar **todo** el estado (`Φ`, `Ψ⁺`, `Ψ⁻`, `angular_flux`).
@@ -432,6 +433,10 @@ Cada run de `output_1d_###.json` añade:
   "power_scale": 1.0
 }
 ```
+
+Cada run registra además `iteration` (actualizaciones de flujo completadas)
+e `iteration_eigenvalue` (iteraciones de potencia; `null` fuera de
+eigenvalue).
 
 `nts-1d-data` añade `NU_SIGF`, `mode`, `k_eff` y `k_balance` a cada fila de
 `datos.json`. `nts-1d-plot --x k_eff` permite graficar flujo contra `k_eff`;

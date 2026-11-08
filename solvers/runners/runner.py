@@ -53,8 +53,8 @@ class Runner:
         self.reflex_der = config.reflex_der
 
         self.iteration = 0
-        self.total_inner_iterations = 0
         self.outer_iterations = 0
+        self.iteration_eigenvalue = None
 
         # Flujos Angulares [Nodos x Direcciones]
         # PSI_RIGHT: neutrones viajando hacia x+ (mu > 0)
@@ -291,13 +291,31 @@ class Runner:
 
         return fuga_izquierda, fuga_derecha
 
+    @staticmethod
+    def _relative_flux_change(old_flux, new_flux) -> float:
+        """max_i |1 - phi_new_i / phi_old_i|.
+
+        Algebraically equal to ``max |phi_new - phi_old| / |phi_old|``.
+        Cells with ``phi_old = 0`` fall back to an absolute difference
+        (the relative change is undefined there).
+        """
+        old = np.asarray(old_flux, dtype=float)
+        new = np.asarray(new_flux, dtype=float)
+        denom = np.where(np.abs(old) > 1e-13, np.abs(old), 1.0)
+        return float(np.max(np.abs(new - old) / denom))
+
     def check_convergence(
         self, old_flux, verbose: bool = True, tol: float | None = None
     ):
-        # Manejo seguro de división por cero
-        denom = np.where(self.scalar_flux > 1e-13, self.scalar_flux, 1.0)
-        diff = np.abs(self.scalar_flux - old_flux)
-        rel_error = np.max(diff / denom)
+        """Stop when the relative flux change is below the tolerance.
+
+        ``max_i |1 - phi_new_i / phi_old_i| < epsilon`` (see
+        ``_relative_flux_change`` for the zero-flux fallback).  This is the
+        only place that increments ``iteration``: one count per completed
+        flux update (right + left sweep + scalar-flux recalculation).
+        """
+        self.iteration += 1
+        rel_error = self._relative_flux_change(old_flux, self.scalar_flux)
         threshold = self.config.epsilon if tol is None else tol
 
         if verbose and self.iteration % 100 == 0:
@@ -381,11 +399,10 @@ class Runner:
         iteración de scattering no sesgue k_eff.
         """
         self.converged = False
-        self.iteration = 0
+        inner = 0
         inner_tol = min(self.config.epsilon, self.config.TOL_K)
-        while self.iteration < self.config.max_iter:
-            self.iteration += 1
-            self.total_inner_iterations += 1
+        while inner < self.config.max_iter:
+            inner += 1
             if self.reflex_der:
                 self.update_reflective_boundaries_right()
             if self.reflex_izq:
@@ -401,7 +418,6 @@ class Runner:
         logger.info("Starting source iteration (no fission)...")
         self.converged = False
         while self.iteration < self.config.max_iter:
-            self.iteration += 1
             if self.reflex_der:
                 self.update_reflective_boundaries_right()
             if self.reflex_izq:
@@ -432,7 +448,6 @@ class Runner:
             )
 
         while self.iteration < cfg.max_iter:
-            self.iteration += 1
             if self.reflex_der:
                 self.update_reflective_boundaries_right()
             if self.reflex_izq:
@@ -519,15 +534,15 @@ class Runner:
                 self.k_converged = True
                 break
 
-        self.iteration = self.total_inner_iterations
+        self.iteration_eigenvalue = self.outer_iterations
         self.converged = self.k_converged
         self.k_balance = self.balance_k()
 
         if self.k_converged:
             print(
                 f"\nEIGENVALUE CONVERGED: k_eff = {self.k_eff:.10f} "
-                f"({self.outer_iterations} outer iterations, "
-                f"{self.total_inner_iterations} inner)"
+                f"({self.outer_iterations} eigenvalue iterations, "
+                f"{self.iteration} flux updates)"
             )
         else:
             print(f"\nWARNING: k_eff did not converge. Last value = {self.k_eff:.10f}")
@@ -577,6 +592,7 @@ class Runner:
             "miu": self.miu,
             "omega": self.omega,
             "iteration": self.iteration,
+            "iteration_eigenvalue": self.iteration_eigenvalue,
             "PSI_RIGHT": self.PSI_RIGHT,
             "PSI_LEFT": self.PSI_LEFT,
             "converged": self.converged,

@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.3.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.5.0-blue)](Changelog_EN.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -329,6 +329,26 @@ and fission enter without an extra `1/2` (only `Q` keeps its `1/2`). Do
 
 `k_eff` and `k_balance` obey the global balance
 `k = P/(A+L)`, with `P=∫νΣfΦdx`, `A=∫(Σt−Σs)Φdx` and `L` the net leakage.
+
+### Convergence
+
+The inner (scattering) iteration stops when
+
+```text
+max_i |1 - phi_new_i / phi_old_i| < epsilon
+```
+
+with an absolute fallback for cells where `phi_old = 0` (the relative
+change is undefined there). Defaults: `epsilon = 1e-5` in
+`fixed_source`/`fixed_k`/`driven`; in `eigenvalue` the inner flux uses
+`min(epsilon, TOL_K) = 1e-6` so the scattering error does not bias
+`k_eff`. The eigenvalue itself converges with `|Δk|/k < TOL_K`.
+
+`iteration` counts completed flux updates (one per right + left sweep and
+scalar-flux recalculation) and accumulates across power iterations in
+`eigenvalue`. `iteration_eigenvalue` reports the number of power
+iterations (`outer_iterations` is kept as an alias; `null` outside
+`eigenvalue`).
 
 ### Spatial discretization schemes
 

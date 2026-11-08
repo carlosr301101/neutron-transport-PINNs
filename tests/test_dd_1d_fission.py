@@ -104,6 +104,18 @@ class TestMultiplicativeMedia(unittest.TestCase):
         self.assertEqual(conf.NU, 2.49)
         self.assertAlmostEqual(result["power_w"], 10_000.0, delta=1e-6)
 
+    def test_sweep_counters(self):
+        eigen = run_config(NC=[20])
+        self.assertGreater(eigen["iteration"], 0)
+        self.assertEqual(
+            eigen["iteration_eigenvalue"], eigen["outer_iterations"]
+        )
+        fixed = run_config(
+            NC=[20], MODE="fixed_source", NU_SIGF=[0.0], Q=[1.0]
+        )
+        self.assertGreater(fixed["iteration"], 0)
+        self.assertIsNone(fixed["iteration_eigenvalue"])
+
     def test_power_normalization(self):
         """POWER_KW scales the flux so that the integrated power is 10 kW."""
         result = run_config(

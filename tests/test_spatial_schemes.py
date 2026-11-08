@@ -358,6 +358,8 @@ class TestSolverIntegration(unittest.TestCase):
         result = run_config()
         self.assertTrue(result["k_converged"])
         self.assertEqual(result["iteration"], 999)
+        self.assertEqual(result["iteration_eigenvalue"], 25)
+        self.assertEqual(result["outer_iterations"], 25)
         self.assertAlmostEqual(result["k_eff"], 1.0266764379437188, delta=1e-12)
         self.assertAlmostEqual(
             result["k_balance"], 1.0266775219239312, delta=1e-12

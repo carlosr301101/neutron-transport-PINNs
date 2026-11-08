@@ -2,7 +2,7 @@
   "num_regions": 1,
   "num_zones": 1,
   "NC": [
-    5
+    1
   ],
   "HR": [
     20.0
@@ -14,34 +14,19 @@
     1.0
   ],
   "SCS": [
-    0.9
+    0.97
   ],
-  "NU_SIGF": [
-    0.11
-  ],
-  "SIGMA_F": null,
   "Q": [
     0.0
   ],
-  "N": 4,
+  "N": 2,
   "SPATIAL_SCHEME": "DD",
   "reflex_izq": false,
   "reflex_der": false,
   "bound_left": [
-    0.0,
-    0.0
+    1.0
   ],
   "bound_right": [
-    0.0,
     0.0
-  ],
-  "MODE": "eigenvalue",
-  "K_EFF": null,
-  "TOL_K": 1e-06,
-  "MAX_OUTER": 200,
-  "K0": null,
-  "POWER_KW": 10.0,
-  "E_F_MEV": 200.0,
-  "NU": 2.49,
-  "AREA_CM2": 1.0
+  ]
 }

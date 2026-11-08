@@ -232,6 +232,11 @@ Expected S8 result: `k_eff ≈ 1.02668` (`k_inf = 1.1`).
 | `fixed_k` | Imposes `k`; with a source it is driven, without it a mode shape |
 | `driven` | Physical source + fission (`k=1`); requires `Q` or incoming flux |
 
+The flux iteration stops when `max |1 - phi_new/phi_old| < epsilon`
+(`epsilon = 1e-5`; in `eigenvalue` the inner flux uses
+`min(epsilon, TOL_K) = 1e-6`). Cells with `phi_old = 0` use an absolute
+difference.
+
 Optional power normalization:
 
 ```python

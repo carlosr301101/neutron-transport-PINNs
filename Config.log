@@ -1,20 +1,23 @@
 INFO:solvers.runners.config:Configuration loaded from dictionary.
 
 Program configuration: 1 regions, 1 zones.
-Spatial discretization: [5]
+Spatial discretization: [10]
 Thicknesses: [20.]
 Zone distribution: [1]
 Material properties:
 Sigma_T: [1.]
-Sigma_S: [0.9]
-nu*Sigma_f: [0.11]
+Sigma_S: [0.97]
+nu*Sigma_f: [0.]
 Sources: [0.]
-Quadrature order: S4 with 2 directions.
+Quadrature order: S2 with 1 directions.
 Spatial scheme: DD
-Weights: [0.34785485 0.65214515]
-Directions: [0.86113631 0.33998104]
-Mode: eigenvalue | K_EFF: None
-Power: 10.0 kW (E_f=200.0 MeV, area=1.0 cm2)
-INFO:solvers.runners.runner:Using right boundary conditions from configuration: [0. 0.]
-INFO:solvers.runners.runner:Using left boundary conditions from configuration: [0. 0.]
-INFO:solvers.runners.runner:Elapsed calculation time: 0.027976512908935547
+Weights: [1.]
+Directions: [0.57735027]
+Mode: fixed_source | K_EFF: None
+Power: None kW (E_f=200.0 MeV, area=1.0 cm2)
+INFO:solvers.runners.runner:Using right boundary conditions from configuration: [0.]
+INFO:solvers.runners.runner:Using left boundary conditions from configuration: [1.]
+INFO:solvers.runners.runner:Starting source iteration (no fission)...
+INFO:solvers.runners.runner:Iter 100: Error Max = 1.54e-02
+INFO:solvers.runners.runner:Iter 200: Error Max = 3.65e-04
+INFO:solvers.runners.runner:Elapsed calculation time: 0.013981342315673828

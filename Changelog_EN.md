@@ -2,6 +2,29 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [3.5.0] - 2026-11-08 - Flux-update and eigenvalue counters
+
+### Changed
+- `iteration` is incremented only inside `check_convergence`, i.e. once per
+  completed flux update (right + left sweep + scalar-flux recalculation).
+  It accumulates across power iterations in eigenvalue mode.
+- `iteration_eigenvalue` reports the number of power iterations (`null`
+  outside eigenvalue); `outer_iterations` is kept as an alias.
+- The Excel `Runs` sheet includes `iteration_eigenvalue`.
+
+## [3.4.0] - 2026-11-08 - Flux convergence criterion
+
+### Changed
+- `check_convergence` now uses `max_i |1 - phi_new_i/phi_old_i|` with
+  `|phi_old|` as denominator (previously it divided by the new flux).
+  Cells where `phi_old = 0` fall back to an absolute difference.
+- Documented `epsilon = 1e-5` for fixed modes and `min(epsilon, TOL_K) = 1e-6`
+  for the eigenvalue inner flux.
+
+### Added
+- `Runner._relative_flux_change` plus `tests/test_convergence.py` for the
+  formula, the zero-flux fallback and negative fluxes.
+
 ## [3.3.0] - 2026-11-08 - Default nu for power normalization
 
 ### Added

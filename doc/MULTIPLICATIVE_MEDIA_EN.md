@@ -304,8 +304,9 @@ uv run nts-1d-run --json outputs/inputs/inputs_1d.json
 2. `Φ ← 1` (flat positive guess).
 3. Repeat for `outer = 1..MAX_OUTER`:
    1. Freeze the fission source: `S_f = ½ νΣf Φ / k`.
-   2. Inner scattering iteration until the relative change of `Φ` is below
-      `min(epsilon, TOL_K)`.
+   2. Inner scattering iteration until
+      `max_i |1 - Φ_new_i/Φ_old_i| < min(epsilon, TOL_K)` (cells with
+      zero old flux use an absolute difference).
    3. `P_new = ∫νΣf Φ_new dx`.
    4. `k_new = k · P_new / P_old`.
    5. Normalize the **entire** state (`Φ`, `Ψ⁺`, `Ψ⁻`, `angular_flux`).
@@ -432,6 +433,9 @@ Each run in `output_1d_###.json` adds:
   "power_scale": 1.0
 }
 ```
+
+Each run also records `iteration` (completed flux updates) and
+`iteration_eigenvalue` (power iterations; `null` outside eigenvalue).
 
 `nts-1d-data` adds `NU_SIGF`, `mode`, `k_eff` and `k_balance` to each
 `datos.json` row. `nts-1d-plot --x k_eff` plots flux against `k_eff`;

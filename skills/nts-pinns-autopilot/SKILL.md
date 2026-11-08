@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v3.3.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v3.5.0), a CLI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -166,6 +166,12 @@ support fission.
   `k` of the computed shape.
 - If `MODE` is omitted: `NU_SIGF=0` -> `fixed_source`; `NU_SIGF>0` with no
   `K_EFF` -> `eigenvalue`; `NU_SIGF>0` with `K_EFF` -> `fixed_k`.
+- Convergence: `max |1 - phi_new/phi_old| < epsilon` (`epsilon = 1e-5`;
+  `eigenvalue` inner flux uses `min(epsilon, TOL_K) = 1e-6`). Cells with
+  `phi_old = 0` fall back to an absolute difference.
+- `iteration` counts completed flux updates (one per right + left sweep
+  and scalar-flux update); `iteration_eigenvalue` counts power iterations
+  and is `null` outside `eigenvalue`.
 
 ### Config keys
 
