@@ -158,6 +158,9 @@ uv run nts-1d-run --json config.json --excel
 
 # Convert an existing output
 uv run nts-1d-excel outputs/results/output_1d_003.json -o results.xlsx
+
+# Normalize an existing output to a target power
+uv run nts-1d-normalize outputs/results/output_1d_003.json --power-kw 10
 ```
 
 `--manual`, `--json` and `-c` are mutually exclusive. The wizard prints a

@@ -21,7 +21,7 @@ POWER_FORMAT = "0.000000E+00"
 
 RUN_COLUMNS = [
     "run", "mode", "spatial_scheme", "k_eff", "k_balance", "k_converged",
-    "iteration", "outer_iterations", "converged", "power_w", "power_scale",
+    "iteration", "outer_iterations", "converged", "power_w", "power_scale", "power_unnormalized",
     "timestamp", "source", "error",
 ]
 ZONE_COLUMNS = ["run", "zone", "Sigma_t", "Sigma_s", "nu_Sigma_f", "Sigma_f"]
@@ -83,6 +83,7 @@ def _runs_sheet(runs: list[dict]) -> pd.DataFrame:
                 "converged": run.get("converged"),
                 "power_w": run.get("power_w"),
                 "power_scale": run.get("power_scale"),
+                "power_unnormalized": run.get("power_unnormalized"),
                 "timestamp": run.get("timestamp"),
                 "source": run.get("source"),
                 "error": run.get("error"),
@@ -223,7 +224,8 @@ def _k_history_sheet(runs: list[dict]) -> pd.DataFrame:
 SHEETS = (
     ("Metadata", _metadata_sheet, {}),
     ("Runs", _runs_sheet, {"k_eff": K_FORMAT, "k_balance": K_FORMAT,
-                            "power_w": POWER_FORMAT, "power_scale": POWER_FORMAT}),
+                            "power_w": POWER_FORMAT, "power_scale": POWER_FORMAT,
+                            "power_unnormalized": POWER_FORMAT}),
     ("Zones", _zones_sheet, {}),
     ("Regions", _regions_sheet, {}),
     ("Boundaries", _boundaries_sheet, {}),

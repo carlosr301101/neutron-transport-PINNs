@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from .cuadraturas import DATA
+from .power import DEFAULT_NU
 from .scheme import Method, method_from_name
 
 logger = logging.getLogger(__name__)
@@ -381,9 +382,9 @@ class Config:
                 if self.NU <= 0.0:
                     raise ValueError("NU must be > 0.")
             if self.SIGMA_F is None and self.NU is None:
-                raise ValueError(
-                    "POWER_KW requires SIGMA_F per zone or NU (nu_bar) "
-                    "para convertir NU_SIGF en Sigma_f."
+                self.NU = DEFAULT_NU
+                print(
+                    f"Using default NU = {DEFAULT_NU} (U-238 fast fission)."
                 )
 
         # Inferencia del modo si no se indica explícitamente
@@ -670,7 +671,10 @@ class Config:
             if conv not in {"nu", "sigma_f"}:
                 raise ValueError("Conversion must be 'nu' or 'sigma_f'.")
             if conv == "nu":
-                self.NU = self._prompt_float("nu (neutrons/fission, e.g. 2.4): ")
+                self.NU = self._prompt_float(
+                    f"nu (neutrons/fission, U-238 default) [{DEFAULT_NU}]: ",
+                    default=DEFAULT_NU,
+                )
             else:
                 self.SIGMA_F = np.array(
                     [

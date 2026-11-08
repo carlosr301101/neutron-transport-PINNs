@@ -163,7 +163,8 @@ class TestExcelWorkbook(unittest.TestCase):
         ws = wb["Runs"]
         self.assertTrue(ws["A1"].font.bold)
         self.assertEqual(ws.freeze_panes, "A2")
-        self.assertEqual(ws.auto_filter.ref, "A1:N3")
+        self.assertEqual(ws.auto_filter.ref, "A1:O3")
+        self.assertIn("power_unnormalized", header(ws))
 
     def test_run_filter(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -89,6 +89,16 @@ class TestManualConfiguration(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     Config(manual=True, allow_placeholders=True)
 
+    def test_manual_power_default_nu(self):
+        inputs = [
+            "1", "1", "40", "20", "1", "1.0", "0.9",
+            "", "", "s", "0.11", "eigenvalue", "", "", "",
+            "s", "10", "", "", "", "", "n", "n",
+        ]
+        conf, result = run_manual(inputs)
+        self.assertEqual(conf.NU, 2.49)
+        self.assertAlmostEqual(result["power_w"], 10_000.0, delta=1e-6)
+
     def test_manual_eigenvalue_with_sigma_f_power(self):
         inputs = [
             "1", "1", "20", "20", "1", "1.0", "0.5",
@@ -99,6 +109,7 @@ class TestManualConfiguration(unittest.TestCase):
         self.assertEqual(result["mode"], "eigenvalue")
         self.assertAlmostEqual(result["power_w"], 10_000.0, delta=1e-6)
         self.assertEqual(conf.SIGMA_F.tolist(), [0.3])
+        self.assertIsNone(conf.NU)
 
     def test_manual_fixed_k_with_source(self):
         inputs = [

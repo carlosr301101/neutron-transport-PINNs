@@ -2,6 +2,36 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [3.3.0] - 2026-11-08 - NU por defecto para normalización de potencia
+
+### Added
+- `DEFAULT_NU = 2.49` (U-238, fisión rápida) se usa cuando `POWER_KW` está
+  definido y no hay `SIGMA_F` ni `NU`.
+- El wizard muestra el default en el prompt de `nu`; los configs JSON y
+  `nts-1d-normalize` caen al default con un aviso.
+- `SIGMA_F` mantiene prioridad sobre `NU`.
+
+### Fixed
+- El wizard ya no falla con "Value required" al dejar `nu` vacío durante la
+  normalización de potencia.
+
+## [3.2.0] - 2026-11-08 - Normalización de potencia
+
+### Added
+- Entrypoint `nts-1d-normalize`: escala un output consolidado existente a una
+  potencia objetivo (`--power-kw`), con `--ef-mev`, `--area-cm2`, `--nu` y
+  `--run`. `k_eff` no cambia; la salida es `<stem>_normalized.json` salvo
+  que se indique `-o`.
+- `power_unnormalized` (`P~`) en el JSON de cada run y en la hoja `Runs` del
+  Excel.
+- `solvers/runners/power.py`: helpers compartidos de integral de fisión,
+  potencia y factor de escala.
+- `doc/CALCULO_NORMALIZACION_1D_EN.md` y la guía española corregida.
+
+### Changed
+- `POWER_KW` registra `P~` y `C_N` (`power_unnormalized`, `power_scale`)
+  junto a la potencia objetivo `power_w`.
+
 ## [3.1.0] - 2026-11-07 - Exportación a Excel
 
 ### Added

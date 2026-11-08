@@ -366,6 +366,10 @@ reports `power_w` and `power_scale`.
 > `E_f = 200 MeV`, `ν = 2.4` and `A = 1 cm²` are working choices. If the
 > course uses other values, change them in the configuration.
 
+If `NU` is omitted and `SIGMA_F` is not given, the solver uses
+`NU = 2.49` (U-238 fast fission) to derive `Σf`, prints a note and
+records the effective `NU` in `configuration`.
+
 ## 6. Reference benchmark
 
 Data: `L = 20 cm`, `σt = 1.0`, `σs0 = 0.9`, `νσf = 0.11`, vacuum.

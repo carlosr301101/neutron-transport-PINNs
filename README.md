@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.1.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.3.0-blue)](Changelog_EN.md)
 
 CLI automation system for **SN neutron transport simulations**:
 
@@ -85,6 +85,7 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 | `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |
 | `nts-1d-run-dd` / `-step` / `-sc` | Same flags, but forces the spatial scheme |
 | `nts-1d-excel output_1d_###.json [-o out.xlsx] [--run ...]` | Export a consolidated 1D output to a formatted Excel workbook |
+| `nts-1d-normalize output_1d_###.json --power-kw 10 [--nu 2.4]` | Normalize an existing output to a target power |
 | `nts-test` | Run the unittest suite (`-v`, `--failfast`, `-p PATTERN`) |
 | `nts-1d-data [--latest] [--positions 0 100] [--inputs inputs.py]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` (uses embedded config when available) |
 | `nts-1d-plot -r output_1d.json [--kind scalar\|angular\|k-history] [--run ...]` | Scalar/angular flux or `k_history` from a raw output |
@@ -530,6 +531,23 @@ whole payload to a formatted workbook:
 `--excel` without a value writes next to the JSON; `--excel PATH` chooses
 the file. `nts-1d-excel` accepts `--run NAME|INDEX` to export a subset.
 
+### Power normalization
+
+`POWER_KW` scales the converged flux so the integrated power is the
+target. The run records `power_unnormalized` (`P̃`), `power_scale` (`C_N`)
+and `power_w` (target). To normalize an output produced without
+`POWER_KW`:
+
+```bash
+uv run nts-1d-normalize outputs/results/output_1d_003.json --power-kw 10
+```
+
+`Σf` comes from `SIGMA_F` or `NU_SIGF/NU` (`--nu` overrides `NU`); if
+`NU` is missing, 2.49 (U-238 fast fission) is used. `--ef-mev` and
+`--area-cm2` default to the embedded configuration. Full
+derivation: [doc/CALCULO_NORMALIZACION_1D_EN.md](doc/CALCULO_NORMALIZACION_1D_EN.md)
+(Spanish: [doc/CALCULO_NORMALIZACION_1D.md](doc/CALCULO_NORMALIZACION_1D.md)).
+
 ## 📁 Project Layout
 
 ```
@@ -672,6 +690,8 @@ multiplicative-media guide and the changelog are kept alongside them.
 | `doc/MULTIPLICATIVE_MEDIA_EN.md` | 1D fission/`k_eff` modes, benchmark, power normalization, validation (English) |
 | `doc/SPATIAL_SCHEMES_EN.md` | DD / STEP / SC spatial schemes: formulation, selection, results (English) |
 | `doc/SPATIAL_SCHEMES.md` | Spanish version of the spatial-schemes guide |
+| `doc/CALCULO_NORMALIZACION_1D_EN.md` | Power calculation and normalization (English) |
+| `doc/CALCULO_NORMALIZACION_1D.md` | Spanish version of the normalization guide |
 | `solvers/runners/NTS_DD_1D.md` | DD method card: equations, benchmark, entry point |
 | `solvers/runners/NTS_STEP_1D.md` | STEP method card |
 | `solvers/runners/NTS_SC_1D.md` | SC method card |

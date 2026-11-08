@@ -89,6 +89,21 @@ class TestMultiplicativeMedia(unittest.TestCase):
         self.assertAlmostEqual(result["k_eff"], 1.0, delta=1e-12)
         self.assertAlmostEqual(result["k_balance"], 0.5, delta=1e-4)
 
+    def test_power_default_nu(self):
+        """POWER_KW without NU uses 2.49 (U-238) to derive Sigma_f."""
+        cfg = {
+            "num_regions": 1, "num_zones": 1, "NC": [20], "HR": [20.0],
+            "IZL": [1], "SCT": [1.0], "SCS": [0.9], "NU_SIGF": [0.11],
+            "Q": [0.0], "N": 8, "reflex_izq": False, "reflex_der": False,
+            "bound_left": [0] * 4, "bound_right": [0] * 4,
+            "MODE": "eigenvalue", "POWER_KW": 10.0, "E_F_MEV": 200.0,
+        }
+        with contextlib.redirect_stdout(io.StringIO()):
+            conf = Config(manual=False, **cfg)
+            result = Runner(conf)()
+        self.assertEqual(conf.NU, 2.49)
+        self.assertAlmostEqual(result["power_w"], 10_000.0, delta=1e-6)
+
     def test_power_normalization(self):
         """POWER_KW scales the flux so that the integrated power is 10 kW."""
         result = run_config(
@@ -109,6 +124,12 @@ class TestMultiplicativeMedia(unittest.TestCase):
             * float(np.sum(sigma_f * result["scalar_flux"] * dx))
         )
         self.assertAlmostEqual(power_w, 10_000.0, delta=1e-3)
+        self.assertGreater(result["power_unnormalized"], 0.0)
+        self.assertAlmostEqual(
+            result["power_scale"] * result["power_unnormalized"],
+            10_000.0,
+            delta=1e-6,
+        )
 
     def test_fixed_source_regression(self):
         """NU_SIGF=0 keeps the historical fixed-source behaviour."""

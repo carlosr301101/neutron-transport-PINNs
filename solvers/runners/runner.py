@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from .config import Config
+from .power import power_watts
 from .scheme import Scheme, get_scheme
 
 logger = logging.getLogger(__name__)
@@ -98,6 +99,7 @@ class Runner:
         self.k_balance = None
         self.power_w = None
         self.power_scale = 1.0
+        self.power_unnormalized = None
 
         # Un problema homogéneo (autovalor o fixed_k sin fuente) necesita
         # un flujo inicial no nulo; si no, la fuente de fisión es cero.
@@ -546,19 +548,14 @@ class Runner:
             raise ValueError("POWER_KW requires SIGMA_F per zone or NU (nu_bar).")
 
         # phi es la media angular: la integral de fision fisica es 2*sum(sf*phi)
-        fission_integral = 2.0 * float(
-            np.sum(sigma_f * self.scalar_flux * cfg.dx_vec)
+        self.power_unnormalized = power_watts(
+            self.scalar_flux, sigma_f, cfg.dx_vec, cfg.E_F_MEV, cfg.AREA_CM2
         )
-        if fission_integral <= 0.0:
+        if self.power_unnormalized <= 0.0:
             raise ValueError("Cannot normalize power: fission integral is zero.")
 
-        # E_f [MeV/fisión] * 1.602176634e-13 [W/(MeV/s)]
-        power_w = cfg.AREA_CM2 * cfg.E_F_MEV * 1.602176634e-13 * fission_integral
-        if power_w <= 0.0:
-            raise ValueError("Computed power is not positive.")
-
         target_w = cfg.POWER_KW * 1e3
-        self.power_scale = target_w / power_w
+        self.power_scale = target_w / self.power_unnormalized
         self._scale_state(self.power_scale)
         self.power_w = target_w
 
@@ -593,6 +590,7 @@ class Runner:
             "outer_iterations": self.outer_iterations,
             "power_w": self.power_w,
             "power_scale": self.power_scale,
+            "power_unnormalized": self.power_unnormalized,
         }
 
     def _source_line(self) -> str | None:

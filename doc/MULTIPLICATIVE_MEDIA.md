@@ -367,6 +367,10 @@ reporta `power_w` y `power_scale`.
 > La convención `E_f = 200 MeV`, `ν = 2.4` y `A = 1 cm²` es una elección
 > de trabajo. Si el curso usa otros valores, cámbialos en la configuración.
 
+Si falta `NU` y no se da `SIGMA_F`, el solver usa `NU = 2.49` (U-238,
+fisión rápida) para derivar `Σf`, imprime un aviso y registra el `NU`
+efectivo en `configuration`.
+
 ## 6. Benchmark de referencia
 
 Datos: `L = 20 cm`, `σt = 1.0`, `σs0 = 0.9`, `νσf = 0.11`, vacío.

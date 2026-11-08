@@ -543,6 +543,7 @@ def _serialize_1d_run(
         "outer_iterations": result.get("outer_iterations"),
         "power_w": result.get("power_w"),
         "power_scale": result.get("power_scale"),
+        "power_unnormalized": result.get("power_unnormalized"),
         "source": str(source) if source is not None else None,
         "timestamp": datetime.now().isoformat(timespec="seconds"),
     }
@@ -661,7 +662,7 @@ def cmd_run_1d(args):
                     }
                 )
                 continue
-            execute(name, conf, cfg, source=source)
+            execute(name, conf, conf.as_dict(), source=source)
 
     if args.output:
         output_path = Path(args.output)
