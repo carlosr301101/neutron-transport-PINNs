@@ -14,6 +14,7 @@ Config.log
 
 # Placeholders y configs generados (se regeneran con nts-generate)
 outputs/inputs/inputs.py
+outputs/inputs
 outputs/inputs/inputs_placeholder.py
 outputs/inputs/__pycache__/
 
