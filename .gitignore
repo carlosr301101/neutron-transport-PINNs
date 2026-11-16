@@ -33,7 +33,7 @@ __pycache__/
 *$py.class
 *.so
 *.png
-
+*.xlsx
 
 # Distribution / packaging
 .Python
