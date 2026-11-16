@@ -99,6 +99,18 @@ class NTSApp(App):
         margin-bottom: 1;
     }
 
+    #region-table,
+    #zone-table,
+    #fission-table {
+        height: auto;
+    }
+
+    #region-rows,
+    #zone-rows,
+    #fission-rows {
+        height: auto;
+    }
+
     .table-title {
         text-style: bold;
         color: $secondary;

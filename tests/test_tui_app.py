@@ -56,6 +56,17 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                     "saved", pane.query_one("#cfg-status", Static).content.lower()
                 )
 
+    async def test_region_and_zone_tables_are_visible(self):
+        app = NTSApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab-config"
+            await pilot.pause()
+            self.assertGreater(app.query_one("#region-table").size.height, 5)
+            self.assertGreater(app.query_one("#zone-table").size.height, 4)
+            self.assertTrue(app.query_one("#region-add").display)
+            self.assertTrue(app.query_one("#zone-add").display)
+
     async def test_blank_mode_round_trip(self):
         import copy
 
