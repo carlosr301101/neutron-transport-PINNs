@@ -354,7 +354,7 @@ class ConfigEditorPane(VerticalScroll):
             try:
                 if int(row["zone"]) == index + 1:
                     return False
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 continue
         return True
 
