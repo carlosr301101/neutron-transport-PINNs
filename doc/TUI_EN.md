@@ -87,7 +87,10 @@ Actions:
 - Optional scheme override (`DD`, `STEP`, `SC`).
 - Output JSON path (blank uses the next `output_1d_###.json`).
 - Excel switch writes the workbook next to the JSON.
-- `Run selected` streams the CLI log. `Cancel` terminates the child process.
+- `Run selected` streams the CLI log. `Cancel` terminates the child process,
+  waits for it and escalates to `kill` if it does not exit.
+- After a run finishes every tab refreshes itself (`refresh_all`). Closing the
+  TUI cancels any solver still running.
 
 Configs with unresolved placeholders are rejected; expand them in Sweep first.
 

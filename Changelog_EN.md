@@ -2,6 +2,39 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [3.9.0] - 2026-11-16 - TUI: global refresh, cancellation and structure
+
+### Added
+- `NTSApp.refresh_all()` keeps Dashboard, Config, Run, Results, Plots, Sweep
+  and Export in sync after every run.
+- External stylesheet `tui/app.tcss`, shipped with the package.
+- Diagnostics log at `outputs/logs/tui.log` for the tracebacks the TUI used to
+  show only as red text.
+- `Cancel` on Sweep, sharing the loading indicator with Run.
+- `RowTable` base widget and `RunPanel` mixin to stop duplicating tables and
+  subprocess handling.
+- `tui/services/paths.py` centralizes numbering, free-name lookup and anchoring
+  of relative paths to the project root.
+- `ruff` configuration in `pyproject.toml` plus tests for paths, cancellation,
+  global refresh and row/run mapping.
+
+### Fixed
+- `next_config_path` and `next_result_path` can no longer return an existing
+  name (they used to overwrite results at 1000 or with non-numeric names).
+- The Results detail no longer crashes on payload entries that are not objects.
+- Relative paths typed in the TUI resolve against the project root instead of
+  the launch directory.
+- Cancelling waits for the child and escalates to `kill`; closing the TUI stops
+  the running solver.
+- `0` iteration counts are displayed instead of treated as missing.
+- Tables accept placeholders in their cells.
+- `parse_field` reads `"false"`/`"0"` as false.
+
+### Changed
+- `MODE` is always saved as a concrete value in the JSON.
+- The Plots run selector uses indices, so two runs with the same
+  `config_name` stay distinct.
+
 ## [3.8.1] - 2026-11-16 - Fast TUI startup
 
 ### Changed

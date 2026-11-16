@@ -2,6 +2,41 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [3.9.0] - 2026-11-16 - TUI: refresco global, cancelación y estructura
+
+### Added
+- `NTSApp.refresh_all()` mantiene sincronizadas Dashboard, Config, Run,
+  Results, Plots, Sweep y Export después de cada corrida.
+- Hoja de estilos externa `tui/app.tcss`, incluida en el paquete.
+- Log de diagnóstico en `outputs/logs/tui.log` con los tracebacks que la TUI
+  solo mostraba como texto rojo.
+- `Cancel` en Sweep y `LoadingIndicator` compartido con Run.
+- Widget base `RowTable` y mixin `RunPanel` para no duplicar tablas ni
+  manejo del subproceso.
+- `tui/services/paths.py` centraliza numeración, nombres libres y anclaje de
+  rutas relativas al directorio del proyecto.
+- Configuración de `ruff` en `pyproject.toml` y pruebas de rutas, cancelación,
+  refresco global y mapeo fila/run.
+
+### Fixed
+- `next_config_path` y `next_result_path` ya no pueden devolver un nombre
+  existente (antes sobrescribían resultados al llegar a 1000 o al haber
+  nombres no numéricos).
+- El detalle de Results ya no falla cuando el payload contiene entradas que no
+  son objetos.
+- Las rutas relativas escritas en la TUI se resuelven contra la raíz del
+  proyecto, no contra el directorio desde donde se lanzó.
+- Cancelar espera al proceso y escala a `kill`; cerrar la TUI detiene la
+  corrida en curso.
+- Los valores `0` de iteraciones se muestran en vez de tratarse como ausentes.
+- Las tablas aceptan placeholders en sus celdas.
+- `parse_field` interpreta `"false"`/`"0"` como falso.
+
+### Changed
+- `MODE` se guarda siempre con un valor concreto en el JSON.
+- El selector de runs de Plots usa índices, así que dos runs con el mismo
+  `config_name` no se confunden.
+
 ## [3.8.1] - 2026-11-16 - Arranque rápido de la TUI
 
 ### Changed

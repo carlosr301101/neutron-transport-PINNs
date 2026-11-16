@@ -89,7 +89,10 @@ Acciones:
 - Override opcional de esquema (`DD`, `STEP`, `SC`).
 - Ruta del JSON de salida (vacía usa el siguiente `output_1d_###.json`).
 - Switch de Excel: escribe el libro junto al JSON.
-- `Run selected` muestra el log de la CLI en vivo. `Cancel` termina el proceso.
+- `Run selected` muestra el log de la CLI en vivo. `Cancel` termina el proceso,
+  espera su salida y escala a `kill` si no responde.
+- Al terminar, todas las pestañas se refrescan solas (`refresh_all`). Cerrar la
+  TUI cancela cualquier corrida en curso.
 
 Los configs con placeholders sin resolver se rechazan; hay que expandirlos en
 Sweep.
@@ -115,7 +118,8 @@ convergencia y rango del flujo. `Use in Plots` manda el archivo a Plots.
 2. Completar `start`, `end` y `step` para cada placeholder.
 3. `Preview` muestra la cantidad de configs y el primero.
 4. `Save` escribe una lista JSON o un `.py` (`config_dict_###`).
-5. `Run` ejecuta el lote y escribe un único archivo de resultados.
+5. `Run sweep` ejecuta el lote y escribe un único archivo de resultados;
+   `Cancel` detiene la corrida en curso.
 
 ## Pestaña Export
 
