@@ -43,7 +43,9 @@ The form mirrors `Config.manual_input` and `nts-1d-config`:
 
 - **Geometry and materials**: a geometry bar coloured by zone, an editable
   region table (`cells`, `length`, `zone`, `Q`) and an editable zone table
-  (`Sigma_t`, `Sigma_s0`). Add or remove rows with the table buttons.
+  (`Sigma_t`, `Sigma_s0`). Add or remove rows with the table buttons. `Q` is
+  the external source per region (`0` = none); it is hidden and forced to zero
+  in `eigenvalue`.
 - **Physics mode**: `MODE` is the first field.
   - `fixed_source`: fission fields and the fission table are hidden; `NU_SIGF`
     is saved as zero.
@@ -57,8 +59,9 @@ The form mirrors `Config.manual_input` and `nts-1d-config`:
 - **Angular**: `N`, `SPATIAL_SCHEME`.
 - **Source and boundaries**: `Q` is part of the region table; the rest are
   `reflex_izq`, `reflex_der`, `bound_left`, `bound_right`. A boundary scalar
-  expands to `N/2` equal values; a full vector is kept. Reflective sides hide
-  the corresponding incoming-flux field.
+  expands to `N/2` equal values; a full vector is kept. Example with `N=8`:
+  `0` becomes `[0,0,0,0]`, `1` becomes `[1,1,1,1]`, and `[0,1,1,0]` is kept.
+  Reflective sides hide the corresponding incoming-flux field.
 - **Convergence**: `epsilon`, `max_iter`.
 
 Only boundary arrays use comma-separated values. Numeric fields accept

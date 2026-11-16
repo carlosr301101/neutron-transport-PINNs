@@ -9,6 +9,9 @@ Guide to the multiplicative mode of the 1D solvers (`NTS_DD_1D.py`,
 > fixed-source and do not accept `NU_SIGF` or `k_eff`.
 >
 > Spanish version: [MULTIPLICATIVE_MEDIA.md](MULTIPLICATIVE_MEDIA.md).
+>
+> TUI: `uv run nts tui`. The **Physics mode** selector applies these same
+> rules (`fixed_source`, `eigenvalue`, `fixed_k`, `driven`).
 
 ## 1. Equation solved
 

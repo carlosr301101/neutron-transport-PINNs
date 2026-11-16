@@ -11,10 +11,10 @@ description: >-
   normalization). Use this skill ANY time the user works in this repository,
   runs `uv run nts*` commands, or mentions kk/mm/SCT/SCS/NU_SIGF placeholders,
   k_eff, medio multiplicativo, eigenvalue, fixed_k, driven, nts-1d-config,
-  inputs_placeholder.py, inputs.py, cuadraturas.py, output_1d_*.json, datos.json, N=4/N=6/N=8,
-  nts tui, nts-tui, TUI
-  quadrature orders, or asks to run/compare/plot DD simulations or prepare KPI
-  summaries — even if they never name the system.
+  inputs_placeholder.py, inputs.py, cuadraturas.py, output_1d_*.json, datos.json,
+  N=4/N=6/N=8, nts tui, nts-tui, TUI, quadrature orders, or asks to
+  run/compare/plot DD simulations or prepare KPI summaries — even if they
+  never name the system.
 ---
 
 # NTS PINNs Autopilot
@@ -86,6 +86,23 @@ Shortcuts (`pyproject.toml` scripts):
 | `nts-1d-excel output_1d_###.json [-o out.xlsx] [--run ...]` | export the consolidated JSON to a formatted workbook |
 | `nts-1d-normalize output_1d_###.json --power-kw 10 [--nu 2.4]` | normalize an existing output to a target power |
 | `nts-test [-v] [--failfast] [-p PATTERN]` | run the unittest suite |
+
+## TUI (1D workflow)
+
+Launch with `uv run nts tui` (same as `uv run nts-tui`).
+
+- **Config**: geometry bar, editable region table (`cells`, `length`, `zone`,
+  `Q`), zone table (`Sigma_t`, `Sigma_s0`), fission table (`nu*Sigma_f`,
+  `Sigma_f`), plus every scalar field of the 1D config.
+- **MODE rules**: `fixed_source` hides fission and stores `NU_SIGF=0`;
+  `eigenvalue` hides `K_EFF` and forces `Q=0`; `fixed_k` requires `K_EFF`;
+  `driven` uses `k=1`.
+- **Boundaries**: a scalar expands to `N/2` directions (`0` with S8 becomes
+  `[0,0,0,0]`); a full vector is kept. Reflective sides hide the field.
+- **Run**: subprocess with live log and cancel; output JSON and Excel.
+- **Results/Plots**: per-run `k_eff`; scalar, angular, `k_history`, SCS.
+- **Sweep/Export**: placeholder ranges, `datos.json`, Excel, SCS plot.
+- Optional inline preview: `uv sync --extra images`.
 
 ## Parametric sweep recipe (1D workflow)
 

@@ -105,7 +105,9 @@ uv run nts-tui
 
 The TUI covers the 1D workflow end to end:
 
-- **Config**: every field of the 1D wizard, including placeholders.
+- **Config**: every field of the 1D wizard, including placeholders, a
+  geometry bar, editable region/zone tables, conditional fission fields and
+  scalar boundary expansion.
 - **Run**: one or more configs, optional scheme override, live log, cancel,
   output JSON and Excel.
 - **Results**: per-run `k_eff`, `k_balance`, iterations and convergence.
@@ -607,8 +609,15 @@ neutron-transport-PINNs/
 │   ├── commands.py              # All `nts` subcommands (argparse)
 │   ├── run_1d.py                # nts-1d-run[-dd|-step|-sc]
 │   └── generate_placeholder.py  # Entry point: nts-generate
+├── tui/                         # Textual 1D UI (nts tui / nts-tui)
+│   ├── app.py                   # NTSApp and tab layout
+│   ├── schema.py                # Form field metadata
+│   ├── screens/                 # Dashboard, Config, Run, Results, Plots, Sweep, Export
+│   ├── widgets/                 # Region/zone/fission tables, geometry bar, preview
+│   └── services/                # Config store, runner, plots, sweeps, export
 ├── core/                        # Config generation and validation
 │   ├── config.py                # Pydantic models (Zone, SimulationConfig)
+│   ├── placeholders.py          # Shared placeholder expansion helpers
 │   ├── validator.py             # Validation helpers + summary
 │   └── input_builder.py         # JSON config → 11-line solver input
 ├── execution/                   # Solver execution
@@ -638,6 +647,8 @@ neutron-transport-PINNs/
 ├── tests/                       # unittest suite (1D multiplicative media)
 ├── templates/                   # base_input.json (annotated 2D template)
 ├── doc/                         # Project documentation & notes
+│   ├── TUI_EN.md                # 1D TUI guide (English)
+│   ├── TUI.md                   # 1D TUI guide (Spanish)
 │   ├── MULTIPLICATIVE_MEDIA_EN.md  # k_eff modes, benchmark and validation (English)
 │   └── MULTIPLICATIVE_MEDIA.md     # Spanish version
 ├── outputs/                     # Generated artifacts (gitignored)
@@ -651,6 +662,7 @@ neutron-transport-PINNs/
 
 ```mermaid
 flowchart TB
+    TUI["nts tui\n(Textual 1D UI)"] --> CFG
     CFG["JSON config or\ninputs_placeholder.py"] --> VAL["core/ (Pydantic validation)"]
     VAL --> GEN["cli/commands.py\ngenerate / --place-holder"]
     GEN --> IN["outputs/inputs/\ninput_###.txt | inputs.py"]
@@ -671,6 +683,9 @@ Key details:
   (`AVAILABLE_SOLVERS`, gitignored `outputs/` tree).
 - **`execution/runner.py`** runs `solver input.txt` via `subprocess` and the
   C solvers write their JSON directly to the redirect target.
+- **`tui/`** is a thin Textual layer over the same config store, solver
+  subprocess, plot helpers and export functions used by the CLI. It never
+  changes the transport numerics.
 - **The 1D solver** iterates source iterations (sweep → scalar flux →
   convergence check every 100 iterations) with default `epsilon=1e-5`,
   `max_iter=2000`; quadrature data lives in `solvers/runners/cuadraturas.py`.

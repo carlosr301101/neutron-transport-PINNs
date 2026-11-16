@@ -5,7 +5,9 @@
 **Total Tasks:** 27/27 completed (23 original + 4 corrections)
 
 > Historical note: the TUI described as removed below was replaced in 3.6.0
-> by a new 1D-only TUI (`nts tui` / `nts-tui`). See `doc/TUI_EN.md`.
+> by a new 1D-only TUI (`nts tui` / `nts-tui`) and expanded in 3.8.0 with
+> editable geometry/material tables, conditional modes and scalar boundaries.
+> See `doc/TUI_EN.md`.
 
 ---
 

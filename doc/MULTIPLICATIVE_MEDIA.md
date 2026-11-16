@@ -8,6 +8,9 @@ y `runner.py`).
 > solvers 2D en C (`NTS_DD`, `NTS_LD`, `NTS_STEP`, `NTS_RM_CN`,
 > `NTS_RM_LLN`) siguen siendo de fuente fija y no aceptan `NU_SIGF` ni
 > `k_eff`.
+>
+> TUI: `uv run nts tui`. El selector **Physics mode** aplica estas mismas
+> reglas (`fixed_source`, `eigenvalue`, `fixed_k`, `driven`).
 
 ## 1. Ecuación resuelta
 

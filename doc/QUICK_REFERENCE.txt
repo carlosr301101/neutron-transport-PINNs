@@ -2,6 +2,8 @@
 ║                    NTS PROGRAMS - QUICK REFERENCE                     ║
 ╚════════════════════════════════════════════════════════════════════════╝
 
+1D TUI: uv run nts tui  (config, runs, results, plots, sweeps, export)
+
 PROGRAM OVERVIEW
 ═══════════════════════════════════════════════════════════════════════════
 

@@ -293,6 +293,10 @@ discretization, are driven by Python config dicts
 - global balance `k_balance = P/(A+L)`;
 - optional power normalization (`POWER_KW`).
 
+Interactive 1D workflow: `uv run nts tui` (or `uv run nts-tui`). The Textual
+UI covers the config wizard, geometry/material tables, runs, results, plots,
+sweeps and exports. See [TUI_EN.md](TUI_EN.md).
+
 Quick benchmark (20 cm homogeneous slab, vacuum, `σt=1.0`, `σs0=0.9`,
 `νσf=0.11`):
 

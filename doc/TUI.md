@@ -43,7 +43,9 @@ El formulario refleja `Config.manual_input` y `nts-1d-config`:
 
 - **Geometría y materiales**: barra de geometría coloreada por zona, tabla
   editable de regiones (`cells`, `length`, `zone`, `Q`) y tabla editable de
-  zonas (`Sigma_t`, `Sigma_s0`). Agregar o quitar filas con los botones.
+  zonas (`Sigma_t`, `Sigma_s0`). Agregar o quitar filas con los botones. `Q`
+  es la fuente externa por región (`0` = ninguna); se oculta y se fuerza a
+  cero en `eigenvalue`.
 - **Physics mode**: `MODE` es el primer campo.
   - `fixed_source`: oculta fisión y la tabla de fisión; `NU_SIGF` se guarda
     como cero.
@@ -58,7 +60,9 @@ El formulario refleja `Config.manual_input` y `nts-1d-config`:
 - **Fuente y fronteras**: `Q` va en la tabla de regiones; el resto son
   `reflex_izq`, `reflex_der`, `bound_left`, `bound_right`. Un escalar de
   frontera se expande a `N/2` valores iguales; un vector completo se respeta.
-  Las fronteras reflexivas ocultan el flujo entrante correspondiente.
+  Ejemplo con `N=8`: `0` pasa a `[0,0,0,0]`, `1` a `[1,1,1,1]` y `[0,1,1,0]`
+  se conserva. Las fronteras reflexivas ocultan el flujo entrante
+  correspondiente.
 - **Convergencia**: `epsilon`, `max_iter`.
 
 Solo los arreglos de frontera usan valores separados por comas. Los campos
