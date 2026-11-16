@@ -9,7 +9,8 @@ from textual.containers import Horizontal, VerticalScroll
 from textual.widgets import Button, Input, Label, Select, Static
 
 from ..services import export, plots, terminal
-from ..services.results import default_plot_path, list_outputs
+from ..services.paths import default_plot_path
+from ..services.results import list_outputs
 from ..widgets import ImagePreview
 
 

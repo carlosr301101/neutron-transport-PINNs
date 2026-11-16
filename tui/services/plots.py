@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .results import default_plot_path
+from .paths import default_plot_path
 
 
 def _read_runs(result_path: Path | str) -> list[dict]:

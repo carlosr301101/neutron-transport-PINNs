@@ -12,6 +12,8 @@ from core.placeholders import detect_placeholders
 
 from utils.paths import INPUTS_DIR
 
+from .paths import numbered_path
+
 
 def list_configs() -> list[Path]:
     """All ``config_1d_*.json`` files, oldest first."""
@@ -20,16 +22,7 @@ def list_configs() -> list[Path]:
 
 def next_config_path() -> Path:
     """Next free ``outputs/inputs/config_1d_###.json`` path."""
-    INPUTS_DIR.mkdir(parents=True, exist_ok=True)
-    existing = sorted(INPUTS_DIR.glob("config_1d_*.json"))
-    if not existing:
-        index = 1
-    else:
-        try:
-            index = int(existing[-1].stem.split("_")[-1]) + 1
-        except ValueError:
-            index = len(existing) + 1
-    return INPUTS_DIR / f"config_1d_{index:03d}.json"
+    return numbered_path(INPUTS_DIR, "config_1d_")
 
 
 def load_config(path: Path | str) -> dict[str, Any]:

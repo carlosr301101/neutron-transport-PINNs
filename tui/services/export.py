@@ -8,7 +8,8 @@ from pathlib import Path
 from utils.extract_1d_flux import extract_flux
 from utils.paths import INPUTS_DIR, RESULTS_DIR
 
-from .results import load_payload, unique_path
+from .paths import unique_path
+from .results import load_payload
 
 
 def parse_positions(text: str) -> list[int]:
