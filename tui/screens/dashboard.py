@@ -41,13 +41,11 @@ class DashboardPane(VerticalScroll):
     def refresh_status(self) -> None:
         configs = list_configs()
         outputs = list_outputs()
-        latest = outputs[-1].name if outputs else "none"
 
         lines = [
             f"[b]Version[/b]  {__version__}",
             f"[b]Config files[/b]  {len(configs)}",
             f"[b]Result files[/b]  {len(outputs)}",
-            f"[b]Latest result[/b]  {latest}",
             "",
             "[b]Quick start[/b]",
             "1. Config wizard: fill geometry, materials, mode and source.",
