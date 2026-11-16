@@ -51,15 +51,6 @@ class PlotStudioPane(VerticalScroll):
             classes="field-row",
         )
         yield Horizontal(
-            Label("Directions", classes="field-label"),
-            Input(
-                value="",
-                placeholder="0, 1, ... (blank = all)",
-                id="plot-directions",
-            ),
-            classes="field-row",
-        )
-        yield Horizontal(
             Button("Generate", id="plot-generate", variant="primary"),
             Button("Open", id="plot-open"),
             classes="button-row",
@@ -103,10 +94,13 @@ class PlotStudioPane(VerticalScroll):
     def refresh_results(self) -> None:
         options = [(path.name, str(path)) for path in list_outputs()]
         select = self.query_one("#plot-result", Select)
+        previous = None if select.is_blank() else str(select.value)
         select.set_options(options)
-        if options:
-            select.value = options[-1][1]
-            self.refresh_runs()
+        if not options:
+            return
+        values = {value for _, value in options}
+        select.value = previous if previous in values else options[-1][1]
+        self.refresh_runs()
 
     def refresh_runs(self) -> None:
         select = self.query_one("#plot-result", Select)
@@ -129,12 +123,16 @@ class PlotStudioPane(VerticalScroll):
                 run_select.value = options[0][1]
 
     def set_source(self, path: Path | str) -> None:
+        target = str(Path(path))
+        options = [(item.name, str(item)) for item in list_outputs()]
+        if target not in {value for _, value in options}:
+            if not Path(path).exists():
+                self._status(f"Result not found: {path}")
+                return
+            options.append((Path(path).name, target))
         select = self.query_one("#plot-result", Select)
-        try:
-            select.value = str(path)
-        except Exception:  # noqa: BLE001 - not in the current option list
-            self._status(f"Result not listed yet: {path}")
-            return
+        select.set_options(options)
+        select.value = target
         self.refresh_runs()
         self._status(f"Ready to plot {Path(path).name}.")
 
@@ -147,6 +145,7 @@ class PlotStudioPane(VerticalScroll):
                 self.query_one("#plot-output", Input).value = str(
                     default_plot_path(kind)
                 )
+                self.refresh_runs()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button = event.button.id
@@ -168,15 +167,6 @@ class PlotStudioPane(VerticalScroll):
         value = str(select.value)
         return ["all"] if value == "all" else [value]
 
-    def _directions(self) -> list[int] | None:
-        text = self.query_one("#plot-directions", Input).value.strip()
-        if not text:
-            return None
-        try:
-            return [int(token) for token in text.replace(",", " ").split()]
-        except ValueError as exc:
-            raise ValueError(f"Invalid directions: {text!r}") from exc
-
     def _generate(self) -> None:
         result_select = self.query_one("#plot-result", Select)
         if result_select.is_blank():
@@ -191,7 +181,6 @@ class PlotStudioPane(VerticalScroll):
                 kind,
                 output,
                 run_selector=self._run_selector(),
-                directions=self._directions(),
             )
         except Exception as exc:  # noqa: BLE001
             self._status(f"[red]Plot failed:[/] {exc}")

@@ -116,7 +116,7 @@ class TestPlot1DFlux(unittest.TestCase):
             make_output(result, n_runs=2)
             run = plot.load_output(result)[0]
             with patch.object(plot, "_save") as save:
-                plot.plot_angular(run, None, Path(tmp) / "angular.png")
+                plot.plot_angular(run, Path(tmp) / "angular.png")
                 fig = save.call_args.args[0]
                 ax = fig.axes[0]
                 self.assertEqual(len(ax.lines), 2)
@@ -127,21 +127,6 @@ class TestPlot1DFlux(unittest.TestCase):
                     ax.lines[0].get_color(), ax.lines[1].get_color()
                 )
                 plt.close(fig)
-
-    def test_angular_selected_directions(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            result = Path(tmp) / "output_1d_test.json"
-            output = Path(tmp) / "angular.png"
-            make_output(result, n_runs=2)
-            rc = run_plot(
-                [
-                    "-r", str(result), "--kind", "angular",
-                    "--run", "run_0", "--directions", "1",
-                    "-o", str(output),
-                ]
-            )
-            self.assertEqual(rc, 0)
-            self.assertTrue(output.exists())
 
     def test_angular_all_runs_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -205,11 +190,11 @@ class TestPlot1DFlux(unittest.TestCase):
         with self.assertRaises(SystemExit):
             run_plot(["-r", "a.json", "-i", "b.json"])
 
-    def test_directions_only_for_angular(self):
+    def test_directions_flag_removed(self):
         with self.assertRaises(SystemExit):
             run_plot(
                 [
-                    "-r", "a.json", "--kind", "scalar",
+                    "-r", "a.json", "--kind", "angular",
                     "--directions", "0",
                 ]
             )
@@ -258,7 +243,7 @@ class TestEnglishLabelsAndMessages(unittest.TestCase):
             make_output(result, n_runs=2)
             run = plot.load_output(result)[0]
             fig = self._capture_figure(
-                plot.plot_angular, run, None, Path(tmp) / "angular.png"
+                plot.plot_angular, run, Path(tmp) / "angular.png"
             )
             ax = fig.axes[0]
             self.assertEqual(ax.get_xlabel(), "x [cm]")
@@ -317,7 +302,7 @@ class TestEnglishLabelsAndMessages(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as tmp:
             fig = self._capture_figure(
-                plot.plot_angular, run, None, Path(tmp) / "legacy.png"
+                plot.plot_angular, run, Path(tmp) / "legacy.png"
             )
             ax = fig.axes[0]
             self.assertEqual(ax.get_ylabel(), "Angular flux  ω_m(ψ⁺ + ψ⁻)")

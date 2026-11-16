@@ -454,7 +454,6 @@ uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar --run man
 
 # Angular flux: one line per direction, same axes, colors and legend
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual
-uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual --directions 0 1
 
 # k_eff vs outer iteration
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run manual

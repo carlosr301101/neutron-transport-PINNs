@@ -36,7 +36,6 @@ def generate(
     output: Path | str,
     *,
     run_selector: list[str] | None = None,
-    directions: list[int] | None = None,
     datos_path: Path | str | None = None,
     x_key: str = "SCS",
 ) -> Path:
@@ -58,7 +57,7 @@ def generate(
     elif kind == "angular":
         if len(selected) != 1:
             raise ValueError("Angular plot requires exactly one run.")
-        plot_angular(selected[0], directions, output)
+        plot_angular(selected[0], output)
     elif kind == "k-history":
         plot_k_history(selected, output)
     else:

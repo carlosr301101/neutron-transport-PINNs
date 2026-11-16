@@ -167,7 +167,6 @@ def plot_scalar(runs: list[dict], output: Path, show: bool = False) -> None:
 
 def plot_angular(
     run: dict,
-    directions: list[int] | None,
     output: Path,
     show: bool = False,
 ) -> None:
@@ -201,23 +200,14 @@ def plot_angular(
         legend_title = "Direction μ"
 
     n_directions = angular.shape[1]
-    if directions is None:
-        directions = list(range(n_directions))
-    bad = [m for m in directions if m < 0 or m >= n_directions]
-    if bad:
-        raise ValueError(
-            f"Directions out of range {bad}; there are {n_directions} directions "
-            f"(0..{n_directions - 1})."
-        )
-
     cmap = plt.get_cmap("viridis")
-    if len(directions) == 1:
+    if n_directions == 1:
         colors = [cmap(0.0)]
     else:
-        colors = [cmap(i / (len(directions) - 1)) for i in range(len(directions))]
+        colors = [cmap(m / (n_directions - 1)) for m in range(n_directions)]
 
     fig, ax = plt.subplots(figsize=(8.0, 4.5), dpi=150)
-    for color, m in zip(colors, directions):
+    for m, color in enumerate(colors):
         ax.plot(
             x,
             angular[:, m],
@@ -368,13 +358,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="List the runs in -r and exit",
     )
     parser.add_argument(
-        "--directions",
-        nargs="+",
-        type=int,
-        metavar="M",
-        help="Angular directions to plot (default: all)",
-    )
-    parser.add_argument(
         "--x",
         choices=["SCS", "NU_SIGF", "k_eff"],
         default="SCS",
@@ -411,10 +394,8 @@ def main(argv: list[str] | None = None) -> int:
     if kind == "scs":
         if args.result is not None:
             parser.error("--kind scs requires -i/--input (datos.json)")
-        if args.run or args.list_runs or args.directions:
-            parser.error(
-                "--run/--list-runs/--directions are only for -r/--result"
-            )
+        if args.run or args.list_runs:
+            parser.error("--run/--list-runs are only for -r/--result")
         output = args.output or DEFAULT_OUTPUTS["scs"]
         try:
             plot_datos(args.input, output, args.x, args.show)
@@ -428,8 +409,6 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"--kind {kind} requires -r/--result")
     if args.x != "SCS":
         parser.error("--x is only valid with --kind scs")
-    if args.directions and kind != "angular":
-        parser.error("--directions is only valid with --kind angular")
 
     runs = load_output(args.result)
 
@@ -451,9 +430,7 @@ def main(argv: list[str] | None = None) -> int:
         if kind == "scalar":
             plot_scalar(selected, output, args.show)
         elif kind == "angular":
-            if args.directions and len(selected) != 1:
-                raise ValueError("--directions requires exactly one run.")
-            plot_angular(selected[0], args.directions, output, args.show)
+            plot_angular(selected[0], output, args.show)
         elif kind == "k-history":
             plot_k_history(selected, output, args.show)
     except (ValueError, KeyError) as exc:
