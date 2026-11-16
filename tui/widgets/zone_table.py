@@ -10,6 +10,9 @@ from .row_table import Column, RowTable
 class ZoneTable(RowTable):
     """Sigma_t and Sigma_s0 per material zone."""
 
+    class Changed(RowTable.Changed):
+        """Posted after a zone row is added, removed or edited."""
+
     id_prefix = "zone"
     title = "Material zones"
     row_prefix = "Z"

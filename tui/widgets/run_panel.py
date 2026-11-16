@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from textual import work
+from textual.css.query import NoMatches
 from textual.widgets import Button, LoadingIndicator, RichLog, Static
 
 from ..services.runner import RunProcess
@@ -146,17 +147,20 @@ class RunPanel:
         self._set_busy(False)
 
     def _set_busy(self, busy: bool) -> None:
-        if not self.is_mounted:
-            return
-        self.query_one(f"#{self.start_id}", Button).disabled = busy
-        self.query_one(f"#{self.cancel_id}", Button).disabled = not busy
+        try:
+            self.query_one(f"#{self.start_id}", Button).disabled = busy
+            self.query_one(f"#{self.cancel_id}", Button).disabled = not busy
+        except NoMatches:
+            self.log.debug("run buttons are not mounted yet")
 
     def _set_loading(self, visible: bool) -> None:
-        if not self.is_mounted:
-            return
-        self.query_one(f"#{self.loading_id}", LoadingIndicator).display = visible
+        try:
+            self.query_one(f"#{self.loading_id}", LoadingIndicator).display = visible
+        except NoMatches:
+            self.log.debug("loading indicator is not mounted yet")
 
     def _set_status(self, message: str) -> None:
-        if not self.is_mounted:
-            return
-        self.query_one(f"#{self.status_id}", Static).update(message)
+        try:
+            self.query_one(f"#{self.status_id}", Static).update(message)
+        except NoMatches:
+            self.log.debug("status widget is not mounted yet")

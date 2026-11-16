@@ -201,3 +201,39 @@ class TestTerminal(unittest.TestCase):
         self.assertEqual(export.parse_positions("0, 2 4"), [0, 2, 4])
         with self.assertRaises(ValueError):
             export.parse_positions("x")
+
+
+class TestFormRobustness(unittest.TestCase):
+    def test_boolean_spellings(self):
+        field = FIELD_BY_KEY["reflex_izq"]
+        self.assertFalse(parse_field(field, "false"))
+        self.assertTrue(parse_field(field, "true"))
+        self.assertTrue(parse_field(field, 1))
+        with self.assertRaises(ValueError):
+            parse_field(field, "maybe")
+
+
+class TestResultHelpers(unittest.TestCase):
+    def test_summarize_keeps_payload_indices(self):
+        from tui.services.results import summarize
+
+        rows = summarize({"runs": [{"config_name": "a"}, None, {"config_name": "b"}]})
+        self.assertEqual([row["index"] for row in rows], [0, 2])
+        self.assertEqual([row["name"] for row in rows], ["a", "b"])
+
+    def test_zero_outer_iterations_are_kept(self):
+        from tui.services.results import summarize
+
+        rows = summarize({"runs": [{"iteration_eigenvalue": 0, "outer_iterations": 5}]})
+        self.assertEqual(rows[0]["outer"], 0)
+
+    def test_next_result_path_never_collides(self):
+        from tui.services import results
+
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "output_1d_003.json").write_text("{}")
+            (directory / "output_1d_notation.json").write_text("{}")
+            with patch.object(results, "RESULTS_DIR", directory):
+                path = results.next_result_path()
+            self.assertEqual(path.name, "output_1d_004.json")

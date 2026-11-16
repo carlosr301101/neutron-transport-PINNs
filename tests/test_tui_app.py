@@ -8,12 +8,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from textual.widgets import Input, Select, Static, TabbedContent
+from textual.widgets import Button, Input, Select, Static, TabbedContent
 
 from tui.app import NTSApp
 from tui.screens.config_editor import ConfigEditorPane
 from tui.screens.plot_studio import PlotStudioPane
 from tui.screens.results import ResultsPane
+from tui.screens.run_manager import RunManagerPane
 from tui.widgets.image_preview import ImagePreview
 
 
@@ -267,6 +268,85 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                 await pilot.pause()
                 run_value = pane.query_one("#plot-run", Select).value
                 self.assertNotEqual(str(run_value), "all")
+
+    async def test_dashboard_has_no_latest_result(self):
+        app = NTSApp()
+        async with app.run_test(size=(140, 50)) as pilot:
+            await pilot.pause()
+            text = str(app.query_one("#dash-status", Static).render())
+            self.assertNotIn("Latest result", text)
+            self.assertIn("Result files", text)
+
+    async def test_refresh_all_updates_counters(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch("tui.services.results.RESULTS_DIR", Path(tmp)):
+                app = NTSApp()
+                async with app.run_test(size=(140, 50)) as pilot:
+                    await pilot.pause()
+                    (Path(tmp) / "output_1d_001.json").write_text(
+                        json.dumps({"runs": []})
+                    )
+                    app.refresh_all()
+                    await pilot.pause()
+                    text = str(app.query_one("#dash-status", Static).render())
+                    self.assertIn("Result files  1", text)
+
+    async def test_run_and_sweep_expose_cancel(self):
+        app = NTSApp()
+        async with app.run_test(size=(140, 50)) as pilot:
+            await pilot.pause()
+            self.assertTrue(app.query_one("#run-cancel", Button).disabled)
+            self.assertTrue(app.query_one("#sweep-cancel", Button).disabled)
+
+    async def test_unmount_cancels_a_running_solver(self):
+        app = NTSApp()
+        async with app.run_test(size=(140, 50)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(RunManagerPane)
+            fake = _FakeRun()
+            pane._process = fake
+            app.on_unmount()
+            self.assertTrue(fake.cancelled)
+
+    async def test_results_detail_maps_skipped_runs(self):
+        payload = {
+            "runs": [
+                {"config_name": "alpha", "iteration": 1},
+                "junk",
+                {"config_name": "beta", "iteration": 7},
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "output_1d_001.json").write_text(json.dumps(payload))
+            with patch("tui.services.results.RESULTS_DIR", Path(tmp)):
+                app = NTSApp()
+                async with app.run_test(size=(140, 50)) as pilot:
+                    await pilot.pause()
+                    app.query_one("#tabs", TabbedContent).active = "tab-results"
+                    await pilot.pause()
+                    pane = app.query_one(ResultsPane)
+                    pane.on_data_table_row_selected(_FakeRowSelected(1))
+                    detail = str(pane.query_one("#results-detail", Static).render())
+                    self.assertIn("beta", detail)
+
+
+class _FakeRun:
+    """Stand-in for ``RunProcess`` that records cancellation."""
+
+    is_running = True
+
+    def __init__(self) -> None:
+        self.cancelled = False
+
+    def cancel(self, timeout: float = 5.0) -> None:
+        self.cancelled = True
+
+
+class _FakeRowSelected:
+    """Minimal ``DataTable.RowSelected`` replacement."""
+
+    def __init__(self, cursor_row: int) -> None:
+        self.cursor_row = cursor_row
 
 
 if __name__ == "__main__":

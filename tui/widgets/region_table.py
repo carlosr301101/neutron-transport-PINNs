@@ -10,6 +10,9 @@ from .row_table import Column, RowTable
 class RegionTable(RowTable):
     """Regions with cells, thickness, material zone and external source."""
 
+    class Changed(RowTable.Changed):
+        """Posted after a region row is added, removed or edited."""
+
     id_prefix = "region"
     title = "Regions"
     row_prefix = "R"
