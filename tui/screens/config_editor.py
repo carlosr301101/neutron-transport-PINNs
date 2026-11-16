@@ -9,7 +9,12 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, Select, Static, Switch
 
-from ..models import config_from_form, format_field, form_values_from_config
+from ..models import (
+    config_from_form,
+    format_field,
+    form_values_from_config,
+    normalize_boundary,
+)
 from ..schema import (
     DEFAULT_CONFIG,
     FIELD_BY_KEY,
@@ -228,6 +233,18 @@ class ConfigEditorPane(VerticalScroll):
             }
         )
 
+        n_half = int(config["N"]) // 2
+        if config.get("reflex_izq"):
+            config["bound_left"] = [0.0] * n_half
+        else:
+            config["bound_left"] = normalize_boundary(config.get("bound_left"), n_half)
+        if config.get("reflex_der"):
+            config["bound_right"] = [0.0] * n_half
+        else:
+            config["bound_right"] = normalize_boundary(
+                config.get("bound_right"), n_half
+            )
+
         mode = config.get("MODE") or "fixed_source"
         if mode == "fixed_source":
             config.update(
@@ -262,6 +279,7 @@ class ConfigEditorPane(VerticalScroll):
         self.query_one("#fission-wrap", Vertical).display = mode != "fixed_source"
         self.query_one(RegionTable).set_source_visible(mode != "eigenvalue")
         self.query_one("#mode-note", Static).update(self._mode_note(mode))
+        self._apply_reflection_visibility()
         if sanitize:
             self._sanitize_mode(mode)
         self._refresh_geometry()
@@ -362,6 +380,22 @@ class ConfigEditorPane(VerticalScroll):
             self._load_selected()
         elif event.select.id == "cfg-MODE":
             self._apply_mode(sanitize=True)
+
+    def on_switch_changed(self, event: Switch.Changed) -> None:
+        if event.switch.id in ("cfg-reflex_izq", "cfg-reflex_der"):
+            self._apply_reflection_visibility()
+
+    def _apply_reflection_visibility(self) -> None:
+        left = self._widgets.get("reflex_izq")
+        right = self._widgets.get("reflex_der")
+        if "bound_left" in self._rows:
+            self._rows["bound_left"].display = not (
+                isinstance(left, Switch) and left.value
+            )
+        if "bound_right" in self._rows:
+            self._rows["bound_right"].display = not (
+                isinstance(right, Switch) and right.value
+            )
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if self._updating:

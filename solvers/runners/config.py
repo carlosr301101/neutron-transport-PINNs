@@ -19,6 +19,25 @@ from .scheme import Method, method_from_name
 logger = logging.getLogger(__name__)
 
 
+def boundary_vector(value, n_half: int, name: str, strict: bool = True) -> np.ndarray:
+    """Normalize an incoming-flux boundary value.
+
+    A scalar (or a one-element list) expands to ``n_half`` identical values.
+    A full vector is kept as-is.  Other lengths are rejected when *strict* is
+    true.
+    """
+    if value is None:
+        value = 0.0
+    array = np.atleast_1d(np.asarray(value, dtype=float)).reshape(-1)
+    if array.size == 1:
+        array = np.repeat(array, n_half)
+    if strict and array.size != n_half:
+        raise ValueError(
+            f"{name} must have {n_half} elements or one scalar; got {array.size}"
+        )
+    return array
+
+
 class Config:
     def __init__(
         self,
@@ -273,11 +292,20 @@ class Config:
         # Cargar direcciones y pesos
         self.weights_directions()
 
-        # Fronteras: por defecto, flujo entrante nulo (vacío)
+        # Fronteras: por defecto, flujo entrante nulo (vacío).
+        # Un escalar se expande a N/2 valores; un vector completo se respeta.
         default_bound = np.zeros(self.N_HALF)
-        self.bound_left = np.array(kwargs.get("bound_left", default_bound), dtype=float)
-        self.bound_right = np.array(
-            kwargs.get("bound_right", default_bound), dtype=float
+        self.bound_left = boundary_vector(
+            kwargs.get("bound_left", default_bound),
+            self.N_HALF,
+            "bound_left",
+            strict=not self.reflex_izq,
+        )
+        self.bound_right = boundary_vector(
+            kwargs.get("bound_right", default_bound),
+            self.N_HALF,
+            "bound_right",
+            strict=not self.reflex_der,
         )
 
         # --- Medio multiplicativo ---

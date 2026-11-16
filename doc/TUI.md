@@ -56,7 +56,9 @@ El formulario refleja `Config.manual_input` y `nts-1d-config`:
 - **Fisión por zona**: tabla editable de `nu*Sigma_f` y `Sigma_f` opcional.
 - **Angular**: `N`, `SPATIAL_SCHEME`.
 - **Fuente y fronteras**: `Q` va en la tabla de regiones; el resto son
-  `reflex_izq`, `reflex_der`, `bound_left`, `bound_right`.
+  `reflex_izq`, `reflex_der`, `bound_left`, `bound_right`. Un escalar de
+  frontera se expande a `N/2` valores iguales; un vector completo se respeta.
+  Las fronteras reflexivas ocultan el flujo entrante correspondiente.
 - **Convergencia**: `epsilon`, `max_iter`.
 
 Solo los arreglos de frontera usan valores separados por comas. Los campos

@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.7.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.8.0-blue)](Changelog_EN.md)
 
 CLI/TUI automation system for **SN neutron transport simulations**:
 
@@ -525,7 +525,7 @@ See `templates/base_input.json` (2D, with `_comment` keys) and `example_config.j
 | `N` | Quadrature order (2, 4, 6 or 8 have tabulated quadratures) |
 | `SPATIAL_SCHEME` | `DD` (default), `STEP` or `SC` |
 | `reflex_izq`, `reflex_der` | Reflective boundary on left/right |
-| `bound_left`, `bound_right` | Incoming flux per quadrature direction at each boundary (vectors of length N/2) |
+| `bound_left`, `bound_right` | Incoming flux per quadrature direction at each boundary. A scalar expands to N/2 equal values; a vector must have N/2 entries |
 | `MODE` | `fixed_source` (default), `eigenvalue`, `fixed_k` or `driven` |
 | `K_EFF` | Imposed k; only `fixed_k` (`driven` forces 1) |
 | `TOL_K`, `MAX_OUTER`, `K0` | Eigenvalue convergence controls |

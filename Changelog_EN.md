@@ -2,6 +2,18 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [3.8.0] - 2026-11-16 - Scalar boundary values
+
+### Added
+- `bound_left` and `bound_right` accept a scalar or one-element list and expand
+  it to `N/2` equal values.
+- The TUI shows the expansion hint on the incoming-flux fields.
+- Reflective sides hide the corresponding incoming-flux field.
+
+### Fixed
+- A scalar boundary value no longer fails with a length error.
+- The error message reports the expected and received length.
+
 ## [3.7.0] - 2026-11-16 - Editable geometry and materials in the TUI
 
 ### Added

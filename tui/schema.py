@@ -248,7 +248,7 @@ FIELDS: tuple[Field, ...] = (
         "list_float",
         "Source and boundaries",
         [0.0],
-        help="Comma-separated; length = N/2 when the left side is vacuum.",
+        help="One scalar expands to N/2 values, or enter N/2 comma-separated values.",
     ),
     Field(
         "bound_right",
@@ -256,7 +256,7 @@ FIELDS: tuple[Field, ...] = (
         "list_float",
         "Source and boundaries",
         [0.0],
-        help="Comma-separated; length = N/2 when the right side is vacuum.",
+        help="One scalar expands to N/2 values, or enter N/2 comma-separated values.",
     ),
     # Convergence --------------------------------------------------------
     Field(

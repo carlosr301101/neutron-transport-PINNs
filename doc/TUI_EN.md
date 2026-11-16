@@ -56,7 +56,9 @@ The form mirrors `Config.manual_input` and `nts-1d-config`:
 - **Fission per zone**: editable `nu*Sigma_f` and optional `Sigma_f` table.
 - **Angular**: `N`, `SPATIAL_SCHEME`.
 - **Source and boundaries**: `Q` is part of the region table; the rest are
-  `reflex_izq`, `reflex_der`, `bound_left`, `bound_right`.
+  `reflex_izq`, `reflex_der`, `bound_left`, `bound_right`. A boundary scalar
+  expands to `N/2` equal values; a full vector is kept. Reflective sides hide
+  the corresponding incoming-flux field.
 - **Convergence**: `epsilon`, `max_iter`.
 
 Only boundary arrays use comma-separated values. Numeric fields accept

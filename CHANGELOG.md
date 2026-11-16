@@ -2,6 +2,18 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [3.8.0] - 2026-11-16 - Fronteras escalares
+
+### Added
+- `bound_left` y `bound_right` aceptan un escalar o una lista de un elemento y
+  lo expanden a `N/2` valores iguales.
+- La TUI muestra la ayuda de expansión en los campos de flujo entrante.
+- Las fronteras reflexivas ocultan el flujo entrante correspondiente.
+
+### Fixed
+- Un valor escalar en la frontera ya no falla con longitud incorrecta.
+- El mensaje de error indica la longitud esperada y la recibida.
+
 ## [3.7.0] - 2026-11-16 - Geometría y materiales editables en la TUI
 
 ### Added

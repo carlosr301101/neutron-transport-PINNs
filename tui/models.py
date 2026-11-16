@@ -85,6 +85,26 @@ def format_field(field: Field, value: Any) -> Any:
     return str(value)
 
 
+def normalize_boundary(values: Any, n_half: int) -> list:
+    """Expand a scalar boundary value to ``n_half`` directions.
+
+    A one-element list is also expanded.  A full vector is kept as-is.
+    Placeholder strings are preserved so they can be expanded later.
+    """
+    if values is None:
+        values = []
+    if isinstance(values, (int, float, str)):
+        values = [values]
+    values = list(values)
+    if len(values) == 1:
+        return [values[0]] * n_half
+    if len(values) == n_half:
+        return values
+    raise ValueError(
+        f"boundary must have {n_half} values or one scalar; got {len(values)}"
+    )
+
+
 def config_from_form(raw_values: dict[str, Any]) -> dict[str, Any]:
     """Build a configuration dictionary from form widget values."""
     config: dict[str, Any] = {}

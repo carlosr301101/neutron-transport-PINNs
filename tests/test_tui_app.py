@@ -56,6 +56,43 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                     "saved", pane.query_one("#cfg-status", Static).content.lower()
                 )
 
+    async def test_boundary_scalar_and_vector(self):
+        app = NTSApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab-config"
+            await pilot.pause()
+            pane = app.query_one(ConfigEditorPane)
+            pane.query_one("#cfg-N", Input).value = "8"
+            pane.query_one("#cfg-bound_left", Input).value = "0"
+            pane.query_one("#cfg-bound_right", Input).value = "1"
+            config = pane._collect()
+            self.assertEqual(config["bound_left"], [0.0] * 4)
+            self.assertEqual(config["bound_right"], [1.0] * 4)
+
+            pane.query_one("#cfg-bound_left", Input).value = "0,1,1,0"
+            self.assertEqual(pane._collect()["bound_left"], [0.0, 1.0, 1.0, 0.0])
+
+            pane.query_one("#cfg-bound_left", Input).value = "0,1"
+            with self.assertRaises(ValueError):
+                pane._collect()
+
+    async def test_reflection_hides_incoming_flux(self):
+        app = NTSApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab-config"
+            await pilot.pause()
+            pane = app.query_one(ConfigEditorPane)
+            pane._widgets["reflex_izq"].value = True
+            pane._widgets["reflex_der"].value = True
+            await pilot.pause()
+            self.assertFalse(pane._rows["bound_left"].display)
+            self.assertFalse(pane._rows["bound_right"].display)
+            config = pane._collect()
+            self.assertEqual(config["bound_left"], [0.0])
+            self.assertEqual(config["bound_right"], [0.0])
+
     async def test_region_and_zone_tables_are_visible(self):
         app = NTSApp()
         async with app.run_test(size=(160, 60)) as pilot:
