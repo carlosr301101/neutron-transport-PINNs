@@ -2,6 +2,14 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [3.8.1] - 2026-11-16 - Fast TUI startup
+
+### Changed
+- `tui.services` no longer imports `export` or `plots` at startup.
+- `Config`, `matplotlib`, `pandas` and `openpyxl` load only when used.
+- Results and Plots load data when their tab is activated, not in `on_mount`.
+- `nts tui` skips importing `cli.commands`; `nts-tui` remains the direct shortcut.
+
 ## [3.8.0] - 2026-11-16 - Scalar boundary values
 
 ### Added

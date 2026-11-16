@@ -13,6 +13,7 @@ from textual.widgets import Input, Select, Static, TabbedContent
 from tui.app import NTSApp
 from tui.screens.config_editor import ConfigEditorPane
 from tui.screens.plot_studio import PlotStudioPane
+from tui.screens.results import ResultsPane
 from tui.widgets.image_preview import ImagePreview
 
 
@@ -92,6 +93,24 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
             config = pane._collect()
             self.assertEqual(config["bound_left"], [0.0])
             self.assertEqual(config["bound_right"], [0.0])
+
+    async def test_results_and_plots_load_on_activation(self):
+        app = NTSApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            results = app.query_one(ResultsPane)
+            plots = app.query_one(PlotStudioPane)
+            self.assertFalse(results._loaded)
+            self.assertFalse(plots._loaded)
+
+            tabs = app.query_one("#tabs", TabbedContent)
+            tabs.active = "tab-results"
+            await pilot.pause()
+            self.assertTrue(results._loaded)
+
+            tabs.active = "tab-plots"
+            await pilot.pause()
+            self.assertTrue(plots._loaded)
 
     async def test_region_and_zone_tables_are_visible(self):
         app = NTSApp()

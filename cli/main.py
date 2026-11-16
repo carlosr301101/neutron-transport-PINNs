@@ -43,7 +43,13 @@ def main():
         if not check_prerequisites():
             logger.error("Prerequisites check failed")
             return 1
-        
+
+        # Fast path: do not import the full CLI (rich/pydantic) for the TUI.
+        if len(sys.argv) == 2 and sys.argv[1] == "tui":
+            from tui.app import main as tui_main
+
+            return tui_main() or 0
+
         # Run CLI
         from cli.commands import main as cli_main
         return cli_main()

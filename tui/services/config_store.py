@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 from core.placeholders import detect_placeholders
-from solvers.runners.NTS_DD_1D import Config
 
 from utils.paths import INPUTS_DIR
 
@@ -69,6 +68,9 @@ def validate_config(config: dict[str, Any]) -> tuple[list[str], str]:
         return [], f"Placeholders detected ({names}); expand them with Sweep."
 
     try:
+        # Import here so merely opening the TUI does not load numpy/pandas.
+        from solvers.runners.NTS_DD_1D import Config
+
         with contextlib.redirect_stdout(io.StringIO()):
             Config(manual=False, **config)
     except Exception as exc:  # noqa: BLE001 - surface the exact message

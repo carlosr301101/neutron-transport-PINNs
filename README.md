@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.8.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.8.1-blue)](Changelog_EN.md)
 
 CLI/TUI automation system for **SN neutron transport simulations**:
 

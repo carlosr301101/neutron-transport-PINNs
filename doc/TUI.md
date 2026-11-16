@@ -9,6 +9,14 @@ resultados, gráficas, sweeps y exportación.
 
 ## Inicio
 
+`uv run nts-tui` es la entrada directa y evita el parser de la CLI. `uv run
+nts tui` usa un atajo que también evita importar `cli.commands`.
+
+Los módulos pesados (`pandas`, `matplotlib`, `openpyxl`) se cargan solo cuando
+se usan. Results y Plots leen sus archivos al activar la pestaña por primera
+vez.
+
+
 ```bash
 uv run nts tui
 # equivalente

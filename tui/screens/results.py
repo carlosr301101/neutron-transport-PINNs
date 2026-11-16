@@ -21,6 +21,7 @@ class ResultsPane(VerticalScroll):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._payload: dict = {}
+        self._loaded = False
 
     def compose(self) -> ComposeResult:
         yield Static("Results", classes="title")
@@ -33,10 +34,15 @@ class ResultsPane(VerticalScroll):
         yield DataTable(id="results-table", cursor_type="row")
         yield Static("", id="results-detail", classes="detail")
 
-    def on_mount(self) -> None:
+    def ensure_loaded(self) -> None:
+        """Load the latest result only when the tab is opened."""
+        if self._loaded:
+            return
+        self._loaded = True
         self.refresh_outputs()
 
     def refresh_outputs(self) -> None:
+        self._loaded = True
         options = [(path.name, str(path)) for path in list_outputs()]
         select = self.query_one("#results-file", Select)
         select.set_options(options)

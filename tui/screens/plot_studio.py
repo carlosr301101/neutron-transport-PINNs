@@ -16,6 +16,10 @@ from ..widgets import ImagePreview
 class PlotStudioPane(VerticalScroll):
     """Generate PNGs from one result file."""
 
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._loaded = False
+
     def compose(self) -> ComposeResult:
         yield Static("Plot studio", classes="title")
         yield Horizontal(
@@ -88,10 +92,15 @@ class PlotStudioPane(VerticalScroll):
         )
         yield Button("Generate SCS", id="scs-generate", variant="primary")
 
-    def on_mount(self) -> None:
+    def ensure_loaded(self) -> None:
+        """Load result files only when the tab is opened."""
+        if self._loaded:
+            return
+        self._loaded = True
         self.refresh_results()
 
     def refresh_results(self) -> None:
+        self._loaded = True
         options = [(path.name, str(path)) for path in list_outputs()]
         select = self.query_one("#plot-result", Select)
         previous = None if select.is_blank() else str(select.value)
@@ -123,6 +132,7 @@ class PlotStudioPane(VerticalScroll):
                 run_select.value = options[0][1]
 
     def set_source(self, path: Path | str) -> None:
+        self._loaded = True
         target = str(Path(path))
         options = [(item.name, str(item)) for item in list_outputs()]
         if target not in {value for _, value in options}:

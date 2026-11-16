@@ -15,6 +15,11 @@ from .screens.results import ResultsPane
 from .screens.run_manager import RunManagerPane
 from .screens.sweep import SweepPane
 
+_TAB_PANES = {
+    "tab-results": ResultsPane,
+    "tab-plots": PlotStudioPane,
+}
+
 
 class NTSApp(App):
     """Main Textual application."""
@@ -201,6 +206,18 @@ class NTSApp(App):
             with TabPane("Export", id="tab-export"):
                 yield ExportPane(classes="pane")
         yield Footer()
+
+    def on_tabbed_content_tab_activated(
+        self, event: TabbedContent.TabActivated
+    ) -> None:
+        """Load data for a tab only when the user opens it."""
+        pane_type = _TAB_PANES.get(event.pane.id)
+        if pane_type is None:
+            return
+        pane = self.query_one(pane_type)
+        ensure_loaded = getattr(pane, "ensure_loaded", None)
+        if callable(ensure_loaded):
+            ensure_loaded()
 
     def refresh_results(self) -> None:
         """Refresh the results table after a run."""

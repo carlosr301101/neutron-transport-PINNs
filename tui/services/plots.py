@@ -2,23 +2,25 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
-
-from utils.plot_1d_flux import (
-    load_output,
-    plot_angular,
-    plot_datos,
-    plot_k_history,
-    plot_scalar,
-    select_runs,
-)
 
 from .results import default_plot_path
 
 
+def _read_runs(result_path: Path | str) -> list[dict]:
+    """Read only the ``runs`` list without importing matplotlib."""
+    with Path(result_path).open("r") as handle:
+        payload = json.load(handle)
+    runs = payload.get("runs")
+    if not isinstance(runs, list) or not runs:
+        raise ValueError(f"{result_path} does not contain a non-empty 'runs' list")
+    return runs
+
+
 def available_runs(result_path: Path | str) -> list[tuple[str, str]]:
     """Options for a run selector: ``(label, value)`` pairs."""
-    runs = load_output(Path(result_path))
+    runs = _read_runs(result_path)
     options: list[tuple[str, str]] = [("All runs", "all")]
     for index, run in enumerate(runs):
         name = str(run.get("config_name", f"run_{index}"))
@@ -39,7 +41,20 @@ def generate(
     datos_path: Path | str | None = None,
     x_key: str = "SCS",
 ) -> Path:
-    """Generate one PNG and return its path."""
+    """Generate one PNG and return its path.
+
+    ``matplotlib`` is imported here, not at module import time, so the TUI
+    starts without paying its cost.
+    """
+    from utils.plot_1d_flux import (  # noqa: PLC0415 - lazy by design
+        load_output,
+        plot_angular,
+        plot_datos,
+        plot_k_history,
+        plot_scalar,
+        select_runs,
+    )
+
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
 

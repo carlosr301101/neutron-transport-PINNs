@@ -9,6 +9,13 @@ plots, sweeps and exports.
 
 ## Launch
 
+`uv run nts-tui` is the direct entry point and skips the CLI parser. `uv run
+nts tui` uses a fast path that also avoids importing `cli.commands`.
+
+Heavy modules (`pandas`, `matplotlib`, `openpyxl`) load only when needed.
+Results and Plots read their result files when the tab is first activated.
+
+
 ```bash
 uv run nts tui
 # equivalent
