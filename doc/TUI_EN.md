@@ -1,0 +1,106 @@
+# NTS 1D TUI
+
+Terminal UI for the complete 1D workflow: configuration, runs, results,
+plots, sweeps and exports.
+
+> Scope: 1D only. The 2D C solvers remain CLI-only.
+>
+> Spanish version: [TUI.md](TUI.md).
+
+## Launch
+
+```bash
+uv run nts tui
+# equivalent
+uv run nts-tui
+```
+
+Optional inline image preview:
+
+```bash
+uv sync --extra images
+```
+
+The preview uses the terminal image protocol when available (Kitty, WezTerm,
+iTerm2, sixel). Otherwise the PNG path is shown and the `Open` button uses the
+desktop default application.
+
+## Tabs
+
+| Tab | Purpose |
+|---|---|
+| Dashboard | Version, config count, result count, latest result |
+| Config | Full 1D wizard: geometry, materials, angular, fission, source, boundaries, convergence |
+| Run | Select configs, optional scheme override, output JSON, Excel, live log, cancel |
+| Results | Runs table with `k_eff`, `k_balance`, iterations and convergence |
+| Plots | Scalar, angular, `k_history` and SCS plots with optional inline preview |
+| Sweep | Placeholder ranges, preview, save JSON/Python, batch run |
+| Export | `datos.json`, Excel workbook, SCS plot |
+
+## Config tab
+
+The form mirrors `Config.manual_input` and `nts-1d-config`:
+
+- Geometry: `num_regions`, `num_zones`, `NC`, `HR`, `IZL`.
+- Materials: `SCT`, `SCS` per zone.
+- Angular: `N`, `SPATIAL_SCHEME`.
+- Fission: `NU_SIGF`, `SIGMA_F`, `MODE`, `K_EFF`, `TOL_K`, `MAX_OUTER`, `K0`,
+  `POWER_KW`, `E_F_MEV`, `NU`, `AREA_CM2`.
+- Source and boundaries: `Q`, `reflex_izq`, `reflex_der`, `bound_left`,
+  `bound_right`.
+- Convergence: `epsilon`, `max_iter`.
+
+Array fields accept comma-separated values. Numeric fields accept placeholder
+names (`kk`, `mm`, ...) for later expansion in the Sweep tab.
+
+Actions:
+
+- `Validate`: runs the same `Config` validation as the CLI.
+- `Save`: writes `outputs/inputs/config_1d_###.json` or the path in the form.
+- `Load`: reads an existing config from the dropdown.
+- `New`: resets the form to defaults.
+
+## Run tab
+
+- Select one or more configs.
+- Optional scheme override (`DD`, `STEP`, `SC`).
+- Output JSON path (blank uses the next `output_1d_###.json`).
+- Excel switch writes the workbook next to the JSON.
+- `Run selected` streams the CLI log. `Cancel` terminates the child process.
+
+Configs with unresolved placeholders are rejected; expand them in Sweep first.
+
+## Results tab
+
+The table lists one row per run. Select a row to see mode, scheme, `k_eff`,
+`k_balance`, outer iterations, flux updates, convergence and flux range.
+`Use in Plots` sends the file to the Plot tab.
+
+## Plots tab
+
+- Result file and run selector.
+- Kinds: scalar, angular, `k_history`.
+- Directions for angular plots (`0, 1, ...`; blank means all).
+- Output PNG path (blank uses the next default name).
+- `Open` opens the PNG with the desktop default application.
+- SCS section: `datos.json`, x-axis (`SCS`, `NU_SIGF`, `k_eff`) and output PNG.
+
+## Sweep tab
+
+1. Load a config containing placeholders.
+2. Fill `start`, `end` and `step` for each placeholder.
+3. `Preview` shows the number of configs and the first one.
+4. `Save` writes a JSON list or a `.py` file (`config_dict_###`).
+5. `Run` executes the batch and writes one consolidated result file.
+
+## Export tab
+
+- `Extract flux`: writes `datos.json` for the given cell indices.
+- `Write Excel`: exports the selected result file.
+- `Write SCS plot`: plots `datos.json` against `SCS`, `NU_SIGF` or `k_eff`.
+
+## Tests
+
+```bash
+uv run nts-test -p "test_tui_*.py" -v
+```

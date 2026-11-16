@@ -1,8 +1,8 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.5.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.6.0-blue)](Changelog_EN.md)
 
-CLI automation system for **SN neutron transport simulations**:
+CLI/TUI automation system for **SN neutron transport simulations**:
 
 - A **2D workflow** that drives a family of C solvers (`NTS_DD`, `NTS_LD`, `NTS_STEP`, `NTS_RM_CN`, `NTS_RM_LLN`) from JSON configurations.
 - A **1D workflow** with a pure-Python Diamond Difference solver (`NTS_DD_1D`) used to generate training datasets for PINN models.
@@ -14,6 +14,7 @@ CLI automation system for **SN neutron transport simulations**:
 - [Requirements](#-requirements)
 - [Installation](#-installation)
 - [CLI Reference](#-cli-reference)
+- [TUI (1D workflow)](#-tui-1d-workflow)
 - [2D Workflow (binaries)](#-2d-workflow-binary-solvers)
 - [1D Workflow (Python solver)](#-1d-workflow-python-solver-nts_dd_1d)
 - [Multiplicative Media (1D)](#multiplicative-media-1d)
@@ -33,6 +34,7 @@ CLI automation system for **SN neutron transport simulations**:
 - **1D multiplicative media** (`MODE=eigenvalue|fixed_k|driven`) with `k_eff`, power iteration and optional power normalization
 - **1D manual or JSON configuration**: interactive `--manual` wizard or `--json` file, with the effective config embedded in the output
 - **1D config generator**: `nts-1d-config` writes JSON with optional `kk`/`mm` placeholders, expandable via `nts-generate --json`
+- **1D TUI**: `nts tui` / `nts-tui` manages the full 1D workflow (config wizard, runs, results, plots, sweeps, exports)
 - **1D result plots**: scalar flux vs `x`, angular flux per direction on one axes, `k_history`, and legacy SCS plots
 - **Post-processing**: scalar-flux extraction, SCS/NU_SIGF/k_eff-vs-flux plots, 2D MFLUX heatmaps
 - **Structured logging** per simulation plus a global rotating log
@@ -62,6 +64,7 @@ Main entry point: `uv run nts <command>` (implemented in `cli/main.py` → `cli/
 
 | Command | Purpose |
 |---------|---------|
+| `nts tui` | Launch the 1D terminal UI |
 | `nts status` | Show solver binary availability and file counts |
 | `nts validate <config.json>` | Validate a JSON configuration (Pydantic) and print a summary |
 | `nts generate <config.json>` [-p] [-o PATH] | Generate a numbered `input_###.txt` for the 2D solvers |
@@ -81,6 +84,7 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 | Shortcut | Purpose |
 |----------|---------|
 | `nts-generate` | Placeholder expansion (`--place-holder`, `--json`, `-o`) |
+| `nts-tui` | Launch the 1D terminal UI |
 | `nts-1d-config` | Interactive 1D config JSON generator (`-o` optional) |
 | `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |
 | `nts-1d-run-dd` / `-step` / `-sc` | Same flags, but forces the spatial scheme |
@@ -90,6 +94,32 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 | `nts-1d-data [--latest] [--positions 0 100] [--inputs inputs.py]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` (uses embedded config when available) |
 | `nts-1d-plot -r output_1d.json [--kind scalar\|angular\|k-history] [--run ...]` | Scalar/angular flux or `k_history` from a raw output |
 | `nts-1d-plot -i datos.json [--x SCS\|NU_SIGF\|k_eff]` | Legacy SCS/NU_SIGF/k_eff vs flux, one subplot per position |
+
+## 🖥 TUI (1D workflow)
+
+```bash
+uv run nts tui
+# equivalent
+uv run nts-tui
+```
+
+The TUI covers the 1D workflow end to end:
+
+- **Config**: every field of the 1D wizard, including placeholders.
+- **Run**: one or more configs, optional scheme override, live log, cancel,
+  output JSON and Excel.
+- **Results**: per-run `k_eff`, `k_balance`, iterations and convergence.
+- **Plots**: scalar, angular, `k_history` and SCS; optional inline preview.
+- **Sweep**: placeholder ranges, preview, save JSON/Python, batch run.
+- **Export**: `datos.json`, Excel and SCS plots.
+
+Inline image preview is optional:
+
+```bash
+uv sync --extra images
+```
+
+See `doc/TUI_EN.md` (English) and `doc/TUI.md` (Spanish).
 
 ## 🌀 2D Workflow (binary solvers)
 
@@ -706,6 +736,8 @@ multiplicative-media guide and the changelog are kept alongside them.
 | Document | Content |
 |----------|---------|
 | `doc/QUICKSTART.md` | One-page command cheatsheet |
+| `doc/TUI_EN.md` | 1D terminal UI guide (English) |
+| `doc/TUI.md` | 1D terminal UI guide (Spanish) |
 | `doc/NTS_DOCUMENTATION.md` | Master reference for the 5 C programs (input format, method selection, performance) |
 | `doc/MULTIPLICATIVE_MEDIA_EN.md` | 1D fission/`k_eff` modes, benchmark, power normalization, validation (English) |
 | `doc/SPATIAL_SCHEMES_EN.md` | DD / STEP / SC spatial schemes: formulation, selection, results (English) |

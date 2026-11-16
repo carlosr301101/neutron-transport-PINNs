@@ -215,7 +215,7 @@ wheels = [
 
 [[package]]
 name = "neutron-transport-pinns"
-version = "3.5.0"
+version = "3.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
@@ -226,6 +226,11 @@ dependencies = [
     { name = "textual" },
 ]
 
+[package.optional-dependencies]
+images = [
+    { name = "textual-image" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.8.0" },
@@ -233,8 +238,10 @@ requires-dist = [
     { name = "pandas", specifier = ">=3.0.3" },
     { name = "pydantic", specifier = ">=2.6.0" },
     { name = "rich", specifier = ">=13.7.0" },
-    { name = "textual", specifier = ">=0.50.0" },
+    { name = "textual", specifier = ">=8.0.0,<9" },
+    { name = "textual-image", marker = "extra == 'images'", specifier = ">=0.8" },
 ]
+provides-extras = ["images"]
 
 [[package]]
 name = "numpy"
@@ -478,6 +485,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4f/07/766ad19cf2b15cae2d79e0db46a1b783b62316e9ff3e058e7424b2a4398b/textual-8.2.1.tar.gz", hash = "sha256:4176890e9cd5c95dcdd206541b2956b0808e74c8c36381c88db53dcb45237451", size = 1848386, upload-time = "2026-03-29T03:57:32.242Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/25/09/c6f000c2e3702036e593803319af02feee58a662528d0d5728a37e1cf81b/textual-8.2.1-py3-none-any.whl", hash = "sha256:746cbf947a8ca875afc09779ef38cadbc7b9f15ac886a5090f7099fef5ade990", size = 723871, upload-time = "2026-03-29T03:57:34.334Z" },
+]
+
+[[package]]
+name = "textual-image"
+version = "0.14.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pillow" },
+    { name = "rich" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f9/78/ce1683a3a9c5afd9bb9440adf518ec67d1e3e71d6c1c8ead4e9f84a5aeea/textual_image-0.14.4.tar.gz", hash = "sha256:b410e6a3af16b0d6a125ea18a57105a1f1dbde48420355c0e2e3b9a06f6cc575", size = 181969, upload-time = "2026-11-12T19:50:29.446Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/74/48/517cf9b8414351105d4b1212cc2279b189bee1d87ab9e823cf53f18ab5ac/textual_image-0.14.4-py3-none-any.whl", hash = "sha256:d5e1c5f55a67c2b800042da73a8303eb1977f59e6f7526adc65021395b879d78", size = 184246, upload-time = "2026-11-12T19:50:27.873Z" },
 ]
 
 [[package]]

@@ -2,6 +2,24 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [3.6.0] - 2026-11-16 - TUI 1D
+
+### Added
+- `nts tui` y `nts-tui`: interfaz Textual para el flujo 1D completo.
+- Pestañas Dashboard, Config, Run, Results, Plots, Sweep y Export.
+- Wizard con todos los campos de `Config.manual_input`, incluyendo placeholders.
+- Run manager con log en vivo, cancelación, salida JSON y Excel.
+- Plot studio con scalar, angular, `k_history` y SCS; preview inline opcional.
+- Sweep de placeholders con preview, guardado JSON/Python y corrida por lote.
+- Exportación de `datos.json`, Excel y gráficas SCS.
+- `tests/test_tui_services.py` y `tests/test_tui_app.py`.
+
+### Changed
+- Las reglas de placeholders se movieron a `core/placeholders.py` y las usan
+  la CLI y la TUI.
+- `textual` requiere `>=8,<9`.
+- Extra opcional `images` con `textual-image` para preview inline.
+
 ## [3.5.0] - 2026-11-08 - Contadores de actualizaciones de flujo e iteraciones de autovalor
 
 ### Changed

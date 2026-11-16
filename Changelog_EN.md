@@ -2,6 +2,23 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [3.6.0] - 2026-11-16 - 1D TUI
+
+### Added
+- `nts tui` and `nts-tui`: Textual interface for the complete 1D workflow.
+- Dashboard, Config, Run, Results, Plots, Sweep and Export tabs.
+- Wizard with every `Config.manual_input` field, including placeholders.
+- Run manager with live log, cancel, JSON output and Excel.
+- Plot studio with scalar, angular, `k_history` and SCS; optional inline preview.
+- Placeholder sweep with preview, JSON/Python save and batch run.
+- `datos.json`, Excel and SCS plot exports.
+- `tests/test_tui_services.py` and `tests/test_tui_app.py`.
+
+### Changed
+- Placeholder rules moved to `core/placeholders.py` and shared by CLI and TUI.
+- `textual` now requires `>=8,<9`.
+- Optional `images` extra with `textual-image` for inline preview.
+
 ## [3.5.0] - 2026-11-08 - Flux-update and eigenvalue counters
 
 ### Changed

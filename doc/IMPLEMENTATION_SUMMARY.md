@@ -4,6 +4,9 @@
 **Date:** 2026-03-30  
 **Total Tasks:** 27/27 completed (23 original + 4 corrections)
 
+> Historical note: the TUI described as removed below was replaced in 3.6.0
+> by a new 1D-only TUI (`nts tui` / `nts-tui`). See `doc/TUI_EN.md`.
+
 ---
 
 ## ⚠️ CORRECTIONS APPLIED (Post-Implementation)

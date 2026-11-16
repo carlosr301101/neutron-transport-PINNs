@@ -1,11 +1,11 @@
 [project]
 name = "neutron-transport-pinns"
-version = "3.5.0"
+version = "3.6.0"
 description = "Automated system for neutron transport simulations with parallel execution and TUI/CLI interfaces"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "textual>=0.50.0",
+    "textual>=8.0.0,<9",
     "pydantic>=2.6.0",
     "rich>=13.7.0",
     "matplotlib>=3.8.0",
@@ -24,9 +24,13 @@ nts-1d-run-dd = "cli.run_1d:cli_dd"
 nts-1d-run-step = "cli.run_1d:cli_step"
 nts-1d-run-sc = "cli.run_1d:cli_sc"
 nts-1d-config = "utils.generate_1d_config:main"
+nts-tui = "tui.app:main"
 nts-generate = "cli.generate_placeholder:cli"
 nts-test = "cli.run_tests:main"
 tests = "cli.run_tests:main"
+
+[project.optional-dependencies]
+images = ["textual-image>=0.8"]
 
 [tool.uv]
 package = true
@@ -36,6 +40,6 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["cli", "core", "execution", "utils", "solvers*"]
+include = ["cli", "core", "execution", "utils", "tui*", "solvers*"]
 
 [tool.setuptools]

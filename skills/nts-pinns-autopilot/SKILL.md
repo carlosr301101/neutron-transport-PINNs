@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v3.5.0), a CLI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v3.6.0), a CLI/TUI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -11,7 +11,8 @@ description: >-
   normalization). Use this skill ANY time the user works in this repository,
   runs `uv run nts*` commands, or mentions kk/mm/SCT/SCS/NU_SIGF placeholders,
   k_eff, medio multiplicativo, eigenvalue, fixed_k, driven, nts-1d-config,
-  inputs_placeholder.py, inputs.py, cuadraturas.py, output_1d_*.json, datos.json, N=4/N=6/N=8
+  inputs_placeholder.py, inputs.py, cuadraturas.py, output_1d_*.json, datos.json, N=4/N=6/N=8,
+  nts tui, nts-tui, TUI
   quadrature orders, or asks to run/compare/plot DD simulations or prepare KPI
   summaries — even if they never name the system.
 ---
@@ -58,6 +59,7 @@ Main CLI (`cli/commands.py` via `main.py`):
 
 | Command | Purpose | Key flags |
 |---------|---------|-----------|
+| `nts tui` | Launch the 1D terminal UI (config, run, results, plots, sweep, export) | — |
 | `nts status` | Solver binaries + file counts | — |
 | `nts validate <config.json>` | Pydantic validation + summary | — |
 | `nts generate <config.json>` | JSON config → `input_###.txt` | `-p` preview, `--place-holder NAME START END STEP` (repeatable, nargs=4), `--json` placeholder config, `-o` output |
@@ -72,6 +74,7 @@ Shortcuts (`pyproject.toml` scripts):
 
 | Shortcut | Equivalent |
 |----------|-----------|
+| `nts-tui` | `nts tui` (same 1D terminal UI) |
 | `nts-generate` | `nts generate` in placeholder mode (`--place-holder`, `--json`, `-o`) |
 | `nts-1d-config` | Interactive 1D config JSON generator |
 | `nts-1d-run` | `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |

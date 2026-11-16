@@ -6,6 +6,7 @@ All commands use the `nts` entry point (see `pyproject.toml`):
 
 ```bash
 uv run nts [command]        # main CLI
+uv run nts tui              # 1D terminal UI
 uv run nts-1d-run           # shortcuts
 uv run nts-generate
 uv run nts-1d-data --latest
@@ -29,6 +30,7 @@ uv run nts --help
 
 ```bash
 uv run nts status                       # System overview
+uv run nts tui                          # 1D TUI (config, run, plots, sweep)
 uv run nts validate <config.json>       # Validate JSON config (Pydantic)
 uv run nts generate <config.json>       # Generate input_###.txt
 uv run nts generate <config.json> -p    # Preview the 11-line input

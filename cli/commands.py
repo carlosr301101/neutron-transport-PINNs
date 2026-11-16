@@ -8,7 +8,6 @@ from pathlib import Path
 from datetime import datetime
 import importlib.util
 import pprint
-from decimal import Decimal
 
 from rich.console import Console
 from rich.table import Table
@@ -23,6 +22,12 @@ from rich.progress import (
 from core.config import SimulationConfig
 from core.validator import validate_file, get_validation_summary
 from core.input_builder import InputBuilder
+from core.placeholders import (
+    build_placeholder_values as _build_placeholder_values,
+    contains_placeholders as _contains_placeholders,
+    decimal_places as _decimal_places,
+    replace_placeholders as _replace_placeholders,
+)
 from execution.parallel import run_parallel
 from utils.paths import (
     list_input_files,
@@ -306,62 +311,6 @@ def _load_config_dicts(
             configs.append((name, value))
 
     return sorted(configs, key=lambda item: item[0])
-
-
-def _build_placeholder_values(start: float, end: float, step: float) -> list[float]:
-    if step <= 0:
-        raise ValueError("Step must be greater than 0")
-    if end < start:
-        raise ValueError("End must be greater than or equal to start")
-
-    values = []
-    idx = 0
-    epsilon = 1e-12
-    while True:
-        value = start + (step * idx)
-        if value > end + epsilon:
-            break
-        if value > end:
-            value = end
-        values.append(value)
-        idx += 1
-
-    if not values:
-        values.append(start)
-
-    return values
-
-
-def _replace_placeholders(value, replacements: dict[str, float]):
-    if isinstance(value, dict):
-        return {k: _replace_placeholders(v, replacements) for k, v in value.items()}
-    if isinstance(value, list):
-        return [_replace_placeholders(v, replacements) for v in value]
-    if isinstance(value, tuple):
-        return tuple(_replace_placeholders(v, replacements) for v in value)
-    if isinstance(value, str) and value in replacements:
-        return replacements[value]
-    return value
-
-
-def _contains_placeholders(value, placeholder_names: set[str]) -> bool:
-    if isinstance(value, dict):
-        return any(_contains_placeholders(v, placeholder_names) for v in value.values())
-    if isinstance(value, list) or isinstance(value, tuple):
-        return any(_contains_placeholders(v, placeholder_names) for v in value)
-    if isinstance(value, str):
-        return value in placeholder_names
-    return False
-
-
-def _decimal_places(value_str: str) -> int:
-    try:
-        decimal_value = Decimal(value_str)
-    except Exception:
-        return 0
-
-    exponent = decimal_value.as_tuple().exponent
-    return -exponent if exponent < 0 else 0
 
 
 def _should_validate_simulation_config(cfg: dict) -> bool:
@@ -726,6 +675,14 @@ def cmd_run_1d(args):
     return 0
 
 
+def cmd_tui(args):
+    """Launch the 1D terminal user interface."""
+    from tui.app import main as tui_main
+
+    tui_main()
+    return 0
+
+
 def _load_mflux(result_path: Path) -> list[list[float]]:
     with open(result_path, "r") as f:
         data = json.load(f)
@@ -975,6 +932,11 @@ def create_parser():
         help="Output JSON path (default: auto-numbered outputs/results/output_1d_###.json)",
     )
     run1d_parser.set_defaults(func=cmd_run_1d)
+
+    tui_parser = subparsers.add_parser(
+        "tui", help="Launch the 1D terminal user interface"
+    )
+    tui_parser.set_defaults(func=cmd_tui)
 
     return parser
 
