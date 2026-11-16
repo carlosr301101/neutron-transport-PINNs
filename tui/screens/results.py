@@ -21,6 +21,7 @@ class ResultsPane(VerticalScroll):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._payload: dict = {}
+        self._row_index: dict[int, int] = {}
         self._loaded = False
 
     def compose(self) -> ComposeResult:
@@ -81,7 +82,9 @@ class ResultsPane(VerticalScroll):
             "Flux updates",
             "Converged",
         )
-        for row in rows:
+        self._row_index = {}
+        for table_row, row in enumerate(rows):
+            self._row_index[table_row] = row["index"]
             table.add_row(
                 row["name"],
                 row["mode"],
@@ -116,10 +119,12 @@ class ResultsPane(VerticalScroll):
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         runs = self._payload.get("runs", [])
-        index = event.cursor_row
-        if index < 0 or index >= len(runs):
+        index = self._row_index.get(event.cursor_row)
+        if index is None or not 0 <= index < len(runs):
             return
         run = runs[index]
+        if not isinstance(run, dict):  # summarize() already skips these
+            return
         lines = [
             f"[b]Run[/b]      {run.get('config_name')}",
             f"[b]Mode[/b]     {run.get('mode')}",

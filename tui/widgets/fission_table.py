@@ -2,124 +2,53 @@
 
 from __future__ import annotations
 
-from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import Input, Label
+from typing import ClassVar
 
-DEFAULT_ROW = {"nusf": "0.0", "sigmaf": ""}
+from .row_table import Column, RowTable
 
 
-class FissionTable(Vertical):
+class FissionTable(RowTable):
     """nu*Sigma_f and Sigma_f per material zone."""
 
+    id_prefix = "fission"
+    title = "Fission per zone"
+    row_prefix = "Z"
+    row_name = "zone"
+    editable = False
+    columns: ClassVar[tuple[Column, ...]] = (
+        Column("nusf", "nu*Sigma_f", "0.0", kind="float"),
+        Column(
+            "sigmaf",
+            "Sigma_f (optional)",
+            "",
+            kind="float",
+            placeholder="blank",
+            required=False,
+        ),
+    )
+
     def __init__(self, rows: list[dict] | None = None, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._rows = [dict(row) for row in (rows or [DEFAULT_ROW])]
-
-    def compose(self) -> ComposeResult:
-        yield Label("Fission per zone", classes="table-title")
-        yield Horizontal(
-            Label("Z#", classes="cell-id"),
-            Label("nu*Sigma_f", classes="cell-head"),
-            Label("Sigma_f (optional)", classes="cell-head"),
-            classes="table-header",
-        )
-        yield Container(id="fission-rows")
-
-    def on_mount(self) -> None:
-        self._rebuild()
-
-    def _rebuild(self) -> None:
-        if not self.is_mounted:
-            return
-        container = self.query_one("#fission-rows", Container)
-        container.remove_children()
-        rows = []
-        for index, row in enumerate(self._rows):
-            rows.append(
-                Horizontal(
-                    Label(f"Z{index + 1}", classes="cell-id"),
-                    Input(
-                        value=row["nusf"],
-                        id=f"fission-{index}-nusf",
-                        classes="cell-input",
-                    ),
-                    Input(
-                        value=row["sigmaf"],
-                        placeholder="blank",
-                        id=f"fission-{index}-sigmaf",
-                        classes="cell-input",
-                    ),
-                    classes="table-row",
-                )
-            )
-        container.mount_all(rows)
+        super().__init__(rows, **kwargs)
+        self._zone_count: int | None = None
 
     def set_zone_count(self, count: int) -> None:
+        """Keep exactly one row per material zone."""
+        self._zone_count = count
         if count == len(self._rows):
             return
         while len(self._rows) < count:
-            self._rows.append(dict(DEFAULT_ROW))
+            self._rows.append(self._default_row())
         del self._rows[count:]
         if self.is_mounted:
             self._rebuild()
 
-    def set_values(self, nusf: list, sigmaf: list | None) -> None:
-        count = max(len(nusf), len(sigmaf or []), len(self._rows), 1)
-        rows = []
-        for index in range(count):
-            rows.append(
-                {
-                    "nusf": str(nusf[index]) if index < len(nusf) else "0.0",
-                    "sigmaf": (
-                        str(sigmaf[index])
-                        if sigmaf is not None and index < len(sigmaf)
-                        else ""
-                    ),
-                }
-            )
-        self._rows = rows
-        if self.is_mounted:
-            self._rebuild()
+    def set_values(self, nusf: list, sigmaf: list | None = None) -> None:
+        self.set_columns(nusf, sigmaf or [], minimum=self._zone_count or 0)
 
     def values(self) -> tuple[list[float], list[float] | None]:
-        nusf: list[float] = []
-        sigmaf: list[float | None] = []
-        for index, row in enumerate(self._rows):
-            try:
-                nusf.append(float(row["nusf"]))
-            except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    f"Zone Z{index + 1}: fill nu*Sigma_f with a number."
-                ) from exc
-            text = row["sigmaf"].strip()
-            if not text:
-                sigmaf.append(None)
-                continue
-            try:
-                sigmaf.append(float(text))
-            except ValueError as exc:
-                raise ValueError(
-                    f"Zone Z{index + 1}: Sigma_f must be a number or blank."
-                ) from exc
-
+        nusf, sigmaf = super().values()
         if all(value is None for value in sigmaf):
             return nusf, None
         if any(value is None for value in sigmaf):
             raise ValueError("Sigma_f: fill every zone or leave every zone blank.")
-        return nusf, [float(value) for value in sigmaf]
-
-    def on_input_changed(self, event: Input.Changed) -> None:
-        input_id = event.input.id or ""
-        if not input_id.startswith("fission-"):
-            return
-        parts = input_id.split("-")
-        if len(parts) != 3:
-            return
-        try:
-            index = int(parts[1])
-        except ValueError:
-            return
-        field = parts[2]
-        if 0 <= index < len(self._rows) and field in self._rows[index]:
-            self._rows[index][field] = event.value
+        return nusf, sigmaf

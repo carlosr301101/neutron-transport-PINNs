@@ -9,7 +9,7 @@ from textual.containers import Horizontal, VerticalScroll
 from textual.widgets import Button, Input, Label, Select, Static
 
 from ..services import export, plots, terminal
-from ..services.paths import default_plot_path
+from ..services.paths import default_plot_path, resolve_path
 from ..services.results import list_outputs
 from ..widgets import ImagePreview
 
@@ -185,7 +185,7 @@ class PlotStudioPane(VerticalScroll):
             return
         kind = str(self.query_one("#plot-kind", Select).value)
         output_text = self.query_one("#plot-output", Input).value.strip()
-        output = Path(output_text) if output_text else default_plot_path(kind)
+        output = resolve_path(output_text) if output_text else default_plot_path(kind)
         try:
             produced = plots.generate(
                 Path(str(result_select.value)),
@@ -201,8 +201,8 @@ class PlotStudioPane(VerticalScroll):
         self._status(f"Plot saved: {produced}")
 
     def _generate_scs(self) -> None:
-        datos = Path(self.query_one("#scs-datos", Input).value.strip())
-        output = Path(self.query_one("#scs-output", Input).value.strip())
+        datos = resolve_path(self.query_one("#scs-datos", Input).value.strip())
+        output = resolve_path(self.query_one("#scs-output", Input).value.strip())
         x_key = str(self.query_one("#scs-x", Select).value)
         try:
             produced = export.write_scs_plot(datos, output, x_key)

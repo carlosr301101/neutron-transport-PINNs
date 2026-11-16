@@ -11,8 +11,8 @@ from textual.widgets import Button, Input, Label, Select, Static, Switch
 
 from ..models import (
     config_from_form,
-    format_field,
     form_values_from_config,
+    format_field,
     normalize_boundary,
 )
 from ..schema import (
@@ -31,6 +31,7 @@ from ..services.config_store import (
     save_config,
     validate_config,
 )
+from ..services.paths import resolve_path
 from ..widgets import FissionTable, GeometryBar, RegionTable, ZoneTable
 
 
@@ -99,7 +100,7 @@ class ConfigEditorPane(VerticalScroll):
         yield Static("", id="cfg-status", classes="status")
 
     def on_mount(self) -> None:
-        self._refresh_load_options()
+        self.refresh_load_options()
         self._populate(DEFAULT_CONFIG)
 
     def _build_row(self, field: Field) -> Horizontal:
@@ -132,7 +133,8 @@ class ConfigEditorPane(VerticalScroll):
             id=widget_id,
         )
 
-    def _refresh_load_options(self) -> None:
+    def refresh_load_options(self) -> None:
+        """Reload the "Load config" selector from disk."""
         options = [(path.name, str(path)) for path in list_configs()]
         select = self.query_one("#cfg-select", Select)
         select.set_options(options)
@@ -197,7 +199,8 @@ class ConfigEditorPane(VerticalScroll):
         self._apply_mode(sanitize=False)
         self._refresh_geometry()
 
-    def _collect(self) -> dict:
+    def collect_config(self) -> dict:
+        """Build the configuration dictionary from the current form values."""
         raw: dict[str, object] = {}
         for field in FIELDS:
             widget = self._widgets.get(field.key)
@@ -246,6 +249,7 @@ class ConfigEditorPane(VerticalScroll):
             )
 
         mode = config.get("MODE") or "fixed_source"
+        config["MODE"] = mode
         if mode == "fixed_source":
             config.update(
                 {
@@ -322,8 +326,8 @@ class ConfigEditorPane(VerticalScroll):
                 region = self.query_one(RegionTable)
                 nc, hr, izl, _ = region.values()
                 region.set_values(nc, hr, izl, [0.0] * len(nc))
-            except Exception:  # noqa: BLE001 - leave values for validation
-                pass
+            except Exception:
+                self.log.debug("Q sanitization skipped", exc_info=True)
         elif mode == "driven":
             self._clear_input("K_EFF")
             self._clear_input("K0")
@@ -350,13 +354,13 @@ class ConfigEditorPane(VerticalScroll):
             try:
                 if int(row["zone"]) == index + 1:
                     return False
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 continue
         return True
 
     def _path(self) -> Path:
         text = self.query_one("#cfg-path", Input).value.strip()
-        return Path(text) if text else next_config_path()
+        return resolve_path(text) if text else next_config_path()
 
     def _status(self, message: str) -> None:
         self.query_one("#cfg-status", Static).update(message)
@@ -371,7 +375,7 @@ class ConfigEditorPane(VerticalScroll):
             self._loaded_path = None
             self._status("New configuration. Fill the fields and save.")
         elif button == "cfg-validate":
-            self._validate()
+            self.validate_current()
         elif button == "cfg-save":
             self._save()
 
@@ -401,7 +405,7 @@ class ConfigEditorPane(VerticalScroll):
         if self._updating:
             return
         input_id = event.input.id or ""
-        if input_id.startswith("region-") or input_id.startswith("zone-"):
+        if input_id.startswith(("region-", "zone-")):
             self._refresh_geometry()
 
     def on_region_table_changed(self, event) -> None:
@@ -412,8 +416,8 @@ class ConfigEditorPane(VerticalScroll):
             zone = self.query_one(ZoneTable)
             fission = self.query_one(FissionTable)
             fission.set_zone_count(zone.zone_count)
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception:
+            self.log.debug("zone/fission sync skipped", exc_info=True)
         self._refresh_geometry()
 
     def _load_selected(self) -> None:
@@ -432,9 +436,10 @@ class ConfigEditorPane(VerticalScroll):
         self._loaded_path = path
         self._status(f"Loaded {path}.")
 
-    def _validate(self) -> None:
+    def validate_current(self) -> None:
+        """Validate the form and report the result in the status line."""
         try:
-            config = self._collect()
+            config = self.collect_config()
         except Exception as exc:  # noqa: BLE001
             self._status(f"[red]Form error:[/] {exc}")
             return
@@ -444,9 +449,17 @@ class ConfigEditorPane(VerticalScroll):
         else:
             self._status(message)
 
+    def _validate(self) -> None:
+        """Deprecated alias for :meth:`validate_current`."""
+        self.validate_current()
+
+    def _collect(self) -> dict:
+        """Deprecated alias for :meth:`collect_config`."""
+        return self.collect_config()
+
     def _save(self) -> None:
         try:
-            config = self._collect()
+            config = self.collect_config()
             path = self._path()
             saved = save_config(path, config)
         except Exception as exc:  # noqa: BLE001
@@ -454,5 +467,5 @@ class ConfigEditorPane(VerticalScroll):
             return
         self._loaded_path = saved
         self.query_one("#cfg-path", Input).value = str(saved)
-        self._refresh_load_options()
+        self.refresh_load_options()
         self._status(f"Saved {saved}.")

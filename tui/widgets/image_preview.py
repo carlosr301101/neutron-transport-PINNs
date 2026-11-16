@@ -42,8 +42,8 @@ class ImagePreview(VerticalScroll):
                 body.mount(image)
                 status.update(f"Inline preview ({protocol}). {self.path}")
                 return
-            except Exception:  # noqa: BLE001 - fall back to text
-                pass
+            except Exception:
+                self.log.debug("inline image failed", exc_info=True)
 
         status.update(
             "Inline preview not supported by this terminal.\n"

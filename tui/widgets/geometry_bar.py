@@ -42,7 +42,7 @@ class GeometryBar(Static):
         for region in regions:
             try:
                 value = float(region.get("length", 0.0))
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 value = 0.0
             lengths.append(max(value, 0.0))
 
@@ -56,7 +56,7 @@ class GeometryBar(Static):
             width = max(3, round(WIDTH * lengths[index] / total))
             try:
                 zone_id = int(region.get("zone", 0))
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 zone_id = 0
             valid = 1 <= zone_id <= len(zones)
             background = PALETTE[(zone_id - 1) % len(PALETTE)] if valid else "grey37"

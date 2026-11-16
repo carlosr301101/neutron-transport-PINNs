@@ -7,6 +7,7 @@ from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header, TabbedContent, TabPane
 
+from .log import configure_logging
 from .screens.config_editor import ConfigEditorPane
 from .screens.dashboard import DashboardPane
 from .screens.export import ExportPane
@@ -26,163 +27,7 @@ class NTSApp(App):
 
     TITLE = "NTS Control"
     SUB_TITLE = "1D neutron transport"
-    CSS = """
-    Screen {
-        layout: vertical;
-    }
-
-    #tabs {
-        height: 1fr;
-    }
-
-    TabPane {
-        height: 1fr;
-        padding: 1 2;
-    }
-
-    .pane {
-        height: 1fr;
-    }
-
-    .title {
-        text-style: bold;
-        color: $accent;
-        margin-bottom: 1;
-    }
-
-    .section-title {
-        text-style: bold;
-        color: $secondary;
-        margin-top: 1;
-        margin-bottom: 0;
-    }
-
-    .field-label {
-        width: 34;
-        padding-top: 1;
-    }
-
-    .field-row {
-        height: auto;
-        margin-bottom: 0;
-    }
-
-    .button-row {
-        height: auto;
-        margin: 1 0;
-    }
-
-    .button-row Button {
-        margin-right: 1;
-    }
-
-    .status {
-        margin: 1 0;
-        text-style: italic;
-    }
-
-    .detail {
-        border: round $primary;
-        padding: 1;
-        margin-top: 1;
-    }
-
-    .preview {
-        height: 22;
-        border: round $secondary;
-        margin-top: 1;
-    }
-
-    .muted {
-        color: $text-muted;
-    }
-
-    .geometry-bar {
-        height: 11;
-        border: round $secondary;
-        padding: 0 1;
-        margin-bottom: 1;
-    }
-
-    #region-table,
-    #zone-table,
-    #fission-table {
-        height: auto;
-    }
-
-    #region-rows,
-    #zone-rows,
-    #fission-rows {
-        height: auto;
-    }
-
-    .table-title {
-        text-style: bold;
-        color: $secondary;
-        margin-top: 1;
-    }
-
-    .table-header {
-        height: auto;
-        text-style: bold;
-        margin-top: 1;
-    }
-
-    .table-row {
-        height: auto;
-    }
-
-    .cell-id {
-        width: 5;
-        padding-top: 1;
-    }
-
-    .cell-head {
-        width: 15;
-        padding-top: 1;
-    }
-
-    .cell-input {
-        width: 13;
-    }
-
-    .cell-del {
-        width: 5;
-    }
-
-    .mode-note {
-        color: $text-muted;
-        margin: 0 0 1 0;
-    }
-
-    .fission-wrap {
-        height: auto;
-        margin-top: 1;
-    }
-
-    #run-configs {
-        height: 9;
-        border: round $primary;
-    }
-
-    #run-log {
-        height: 12;
-        border: round $primary;
-    }
-
-    #sweep-log {
-        height: 12;
-        border: round $primary;
-    }
-
-    #results-table {
-        height: 14;
-    }
-
-    #sweep-ranges {
-        height: auto;
-    }
-    """
+    CSS_PATH = "app.tcss"
 
     BINDINGS = [
         ("q", "quit", "Quit"),
@@ -219,17 +64,53 @@ class NTSApp(App):
         if callable(ensure_loaded):
             ensure_loaded()
 
+    def refresh_all(self) -> None:
+        """Refresh every pane that shows filesystem data.
+
+        ``refresh_results`` used to touch only the results table, which left
+        the Plots/Export selectors and the dashboard counters stale.
+        """
+        refreshers = (
+            (DashboardPane, "refresh_status"),
+            (ConfigEditorPane, "refresh_load_options"),
+            (RunManagerPane, "refresh_configs"),
+            (ResultsPane, "refresh_outputs"),
+            (PlotStudioPane, "refresh_results"),
+            (SweepPane, "refresh_configs"),
+            (ExportPane, "refresh_outputs"),
+        )
+        for pane_type, method_name in refreshers:
+            try:
+                pane = self.query_one(pane_type)
+                getattr(pane, method_name)()
+            except Exception:
+                self.log.debug(
+                    "refresh failed for %s.%s",
+                    pane_type.__name__,
+                    method_name,
+                    exc_info=True,
+                )
+
     def refresh_results(self) -> None:
-        """Refresh the results table after a run."""
-        self.query_one(ResultsPane).refresh_outputs()
+        """Compatibility alias kept for callers from before ``refresh_all``."""
+        self.refresh_all()
 
     def set_plot_source(self, path: Path | str) -> None:
         """Send a result file to the plot studio and switch tabs."""
         self.query_one(PlotStudioPane).set_source(path)
         self.query_one("#tabs", TabbedContent).active = "tab-plots"
 
+    def on_unmount(self) -> None:
+        """Stop any solver still running when the app closes."""
+        for pane_type in (RunManagerPane, SweepPane):
+            try:
+                self.query_one(pane_type).cancel_run()
+            except Exception:  # noqa: BLE001 - shutdown must not raise
+                self.log.debug("cancel failed for %s", pane_type.__name__)
+
 
 def main() -> None:
+    configure_logging()
     NTSApp().run()
 
 

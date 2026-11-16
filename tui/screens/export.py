@@ -9,6 +9,7 @@ from textual.containers import Horizontal, VerticalScroll
 from textual.widgets import Button, Input, Label, Select, Static
 
 from ..services import export
+from ..services.paths import resolve_path
 from ..services.results import list_outputs
 
 
@@ -106,7 +107,8 @@ class ExportPane(VerticalScroll):
             positions = export.parse_positions(
                 self.query_one("#export-positions", Input).value
             )
-            output = Path(self.query_one("#export-datos", Input).value.strip())
+            text = self.query_one("#export-datos", Input).value.strip()
+            output = resolve_path(text) if text else export.default_datos_path()
             produced = export.extract_positions(source, positions, output)
         except Exception as exc:  # noqa: BLE001
             self._status(f"[red]Extract failed:[/] {exc}")
@@ -117,7 +119,7 @@ class ExportPane(VerticalScroll):
         try:
             source = self._source()
             text = self.query_one("#export-excel", Input).value.strip()
-            produced = export.write_excel(source, text or None)
+            produced = export.write_excel(source, resolve_path(text) if text else None)
         except Exception as exc:  # noqa: BLE001
             self._status(f"[red]Excel failed:[/] {exc}")
             return
@@ -126,8 +128,8 @@ class ExportPane(VerticalScroll):
 
     def _scs(self) -> None:
         try:
-            datos = Path(self.query_one("#export-datos", Input).value.strip())
-            output = Path(self.query_one("#export-plot", Input).value.strip())
+            datos = resolve_path(self.query_one("#export-datos", Input).value.strip())
+            output = resolve_path(self.query_one("#export-plot", Input).value.strip())
             x_key = str(self.query_one("#export-x", Select).value)
             produced = export.write_scs_plot(datos, output, x_key)
         except Exception as exc:  # noqa: BLE001

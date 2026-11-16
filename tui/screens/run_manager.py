@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, VerticalScroll
 from textual.widgets import (
@@ -20,16 +19,13 @@ from textual.widgets import (
 )
 
 from ..services.config_store import list_configs
+from ..services.paths import resolve_path
 from ..services.results import next_result_path
-from ..services.runner import RunProcess
+from ..widgets.run_panel import RunPanel
 
 
-class RunManagerPane(VerticalScroll):
+class RunManagerPane(RunPanel, VerticalScroll):
     """Select configurations and run the 1D solver in a subprocess."""
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._process: RunProcess | None = None
 
     def compose(self) -> ComposeResult:
         yield Static("Run manager", classes="title")
@@ -74,7 +70,7 @@ class RunManagerPane(VerticalScroll):
         yield RichLog(id="run-log", markup=False, wrap=True)
 
     def on_mount(self) -> None:
-        self.query_one("#run-loading", LoadingIndicator).display = False
+        self.init_run_panel()
         self.refresh_configs()
 
     def refresh_configs(self) -> None:
@@ -90,17 +86,17 @@ class RunManagerPane(VerticalScroll):
         elif button == "run-start":
             self._start()
         elif button == "run-cancel":
-            self._cancel()
+            self.cancel_run()
 
     def _start(self) -> None:
         selection = self.query_one("#run-configs", SelectionList)
         selected = [Path(str(value)) for value in selection.selected]
         if not selected:
-            self._status("Select at least one configuration.")
+            self._set_status("Select at least one configuration.")
             return
 
         output_text = self.query_one("#run-output", Input).value.strip()
-        output = Path(output_text) if output_text else next_result_path()
+        output = resolve_path(output_text) if output_text else next_result_path()
         scheme_select = self.query_one("#run-scheme", Select)
         scheme = (
             None
@@ -109,68 +105,16 @@ class RunManagerPane(VerticalScroll):
         )
         excel = self.query_one("#run-excel", Switch).value
 
-        self.query_one("#run-log", RichLog).clear()
-        self.query_one("#run-status", Static).update("Running...")
-        self.query_one("#run-loading", LoadingIndicator).display = True
-        self.query_one("#run-start", Button).disabled = True
-        self._process = RunProcess()
-        self._run_worker(selected, output, scheme, excel)
+        self.start_run(selected, output, scheme=scheme, excel=excel)
 
-    def _cancel(self) -> None:
-        if self._process is not None:
-            self._process.cancel()
-            self._status("Cancel requested.")
-
-    @work(thread=True, exclusive=True)
-    def _run_worker(
-        self,
-        selected: list[Path],
-        output: Path,
-        scheme: str | None,
-        excel: bool,
-    ) -> None:
-        assert self._process is not None
-
-        def on_line(line: str) -> None:
-            self.app.call_from_thread(self._append, line)
-
-        try:
-            result = self._process.run(
-                selected,
-                output,
-                excel=excel,
-                scheme=scheme,
-                on_line=on_line,
-            )
-        except Exception as exc:  # noqa: BLE001
-            self.app.call_from_thread(self._failed, str(exc))
-            return
-        self.app.call_from_thread(self._finished, result)
-
-    def _append(self, line: str) -> None:
-        self.query_one("#run-log", RichLog).write(line)
-
-    def _status(self, message: str) -> None:
-        self.query_one("#run-status", Static).update(message)
-
-    def _reset_controls(self) -> None:
-        self.query_one("#run-loading", LoadingIndicator).display = False
-        self.query_one("#run-start", Button).disabled = False
-
-    def _finished(self, result: dict) -> None:
-        self._reset_controls()
-        rc = result.get("returncode")
+    def on_run_complete(self, result: dict) -> None:
+        code = result.get("returncode")
         output = result.get("output_path")
         if result.get("cancelled"):
-            self._status(f"Cancelled. Partial output: {output}")
-        elif rc == 0:
-            self._status(f"Finished. Output: {output}")
+            self._set_status(f"Cancelled. Partial output: {output}")
+        elif code == 0:
+            self._set_status(f"Finished. Output: {output}")
         else:
-            self._status(f"Finished with code {rc}. Output: {output}")
+            self._set_status(f"Finished with code {code}. Output: {output}")
         self.query_one("#run-output", Input).value = str(next_result_path())
-        self.app.refresh_results()
-
-    def _failed(self, message: str) -> None:
-        self._reset_controls()
-        self._status(f"[red]Run failed:[/] {message}")
-        self.query_one("#run-log", RichLog).write(f"ERROR: {message}")
+        self.app.refresh_all()

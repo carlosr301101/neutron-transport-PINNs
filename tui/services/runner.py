@@ -8,12 +8,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from core.placeholders import detect_placeholders
+from utils.paths import PROJECT_ROOT
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = PROJECT_ROOT
 
 LineCallback = Callable[[str], None]
 
@@ -25,11 +26,25 @@ class RunProcess:
         self.process: subprocess.Popen[str] | None = None
         self.cancelled = False
 
-    def cancel(self) -> None:
-        """Terminate the child process, if any."""
+    @property
+    def is_running(self) -> bool:
+        """True while the child process is alive."""
+        return self.process is not None and self.process.poll() is None
+
+    def cancel(self, timeout: float = 5.0) -> None:
+        """Terminate the child process, escalating to kill if it ignores us."""
         self.cancelled = True
-        if self.process is not None and self.process.poll() is None:
-            self.process.terminate()
+        process = self.process
+        if process is None or process.poll() is not None:
+            return
+        try:
+            process.terminate()
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        except OSError:  # already gone
+            self.cancelled = True
 
     def run(
         self,
