@@ -2,6 +2,26 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [3.7.0] - 2026-11-16 - Editable geometry and materials in the TUI
+
+### Added
+- 1D geometry bar coloured by material zone.
+- Editable region table: `NC`, `HR`, `IZL` and `Q`.
+- Editable zone table: `SCT` and `SCS`.
+- Per-zone fission table: `NU_SIGF` and `SIGMA_F`.
+- Buttons to add and remove regions and zones.
+
+### Changed
+- `MODE` is the first field in the Physics section.
+- `fixed_source` hides fission and stores `NU_SIGF` as zero.
+- `eigenvalue` hides `K_EFF`; `fixed_k` requires it; `driven` uses `k=1`.
+- Fission and power fields appear only in fission modes.
+- `Q` is hidden in `eigenvalue` and forced to zero.
+- Comma-separated lists were removed for geometry, materials, source and
+  fission.
+- Angular plots show every direction; the `--directions` CLI flag and the TUI
+  direction selector were removed.
+
 ## [3.6.0] - 2026-11-16 - 1D TUI
 
 ### Added
@@ -18,6 +38,8 @@ Record of all notable changes in the NTS Automation System project.
 - Placeholder rules moved to `core/placeholders.py` and shared by CLI and TUI.
 - `textual` now requires `>=8,<9`.
 - Optional `images` extra with `textual-image` for inline preview.
+- Plot studio no longer offers direction selection: angular flux always plots
+  every component. The `--directions` flag was removed from `nts-1d-plot`.
 
 ## [3.5.0] - 2026-11-08 - Flux-update and eigenvalue counters
 

@@ -41,17 +41,26 @@ desktop default application.
 
 The form mirrors `Config.manual_input` and `nts-1d-config`:
 
-- Geometry: `num_regions`, `num_zones`, `NC`, `HR`, `IZL`.
-- Materials: `SCT`, `SCS` per zone.
-- Angular: `N`, `SPATIAL_SCHEME`.
-- Fission: `NU_SIGF`, `SIGMA_F`, `MODE`, `K_EFF`, `TOL_K`, `MAX_OUTER`, `K0`,
-  `POWER_KW`, `E_F_MEV`, `NU`, `AREA_CM2`.
-- Source and boundaries: `Q`, `reflex_izq`, `reflex_der`, `bound_left`,
-  `bound_right`.
-- Convergence: `epsilon`, `max_iter`.
+- **Geometry and materials**: a geometry bar coloured by zone, an editable
+  region table (`cells`, `length`, `zone`, `Q`) and an editable zone table
+  (`Sigma_t`, `Sigma_s0`). Add or remove rows with the table buttons.
+- **Physics mode**: `MODE` is the first field.
+  - `fixed_source`: fission fields and the fission table are hidden; `NU_SIGF`
+    is saved as zero.
+  - `eigenvalue`: shows the fission table, `TOL_K`, `MAX_OUTER`, `K0` and the
+    power fields; `K_EFF` is hidden.
+  - `fixed_k`: shows the fission table, `K_EFF`, `TOL_K`, `MAX_OUTER` and the
+    power fields.
+  - `driven`: shows the fission table and power fields; `K_EFF` is hidden
+    because the solver uses `k = 1`.
+- **Fission per zone**: editable `nu*Sigma_f` and optional `Sigma_f` table.
+- **Angular**: `N`, `SPATIAL_SCHEME`.
+- **Source and boundaries**: `Q` is part of the region table; the rest are
+  `reflex_izq`, `reflex_der`, `bound_left`, `bound_right`.
+- **Convergence**: `epsilon`, `max_iter`.
 
-Array fields accept comma-separated values. Numeric fields accept placeholder
-names (`kk`, `mm`, ...) for later expansion in the Sweep tab.
+Only boundary arrays use comma-separated values. Numeric fields accept
+placeholder names (`kk`, `mm`, ...) for later expansion in the Sweep tab.
 
 Actions:
 
@@ -80,7 +89,7 @@ The table lists one row per run. Select a row to see mode, scheme, `k_eff`,
 
 - Result file and run selector.
 - Kinds: scalar, angular, `k_history`.
-- Directions for angular plots (`0, 1, ...`; blank means all).
+- Angular plots always draw every direction (one line per component).
 - Output PNG path (blank uses the next default name).
 - `Open` opens the PNG with the desktop default application.
 - SCS section: `datos.json`, x-axis (`SCS`, `NU_SIGF`, `k_eff`) and output PNG.

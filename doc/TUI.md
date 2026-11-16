@@ -41,17 +41,26 @@ El preview usa el protocolo de imagen de la terminal cuando está disponible
 
 El formulario refleja `Config.manual_input` y `nts-1d-config`:
 
-- Geometría: `num_regions`, `num_zones`, `NC`, `HR`, `IZL`.
-- Materiales: `SCT`, `SCS` por zona.
-- Angular: `N`, `SPATIAL_SCHEME`.
-- Fisión: `NU_SIGF`, `SIGMA_F`, `MODE`, `K_EFF`, `TOL_K`, `MAX_OUTER`, `K0`,
-  `POWER_KW`, `E_F_MEV`, `NU`, `AREA_CM2`.
-- Fuente y fronteras: `Q`, `reflex_izq`, `reflex_der`, `bound_left`,
-  `bound_right`.
-- Convergencia: `epsilon`, `max_iter`.
+- **Geometría y materiales**: barra de geometría coloreada por zona, tabla
+  editable de regiones (`cells`, `length`, `zone`, `Q`) y tabla editable de
+  zonas (`Sigma_t`, `Sigma_s0`). Agregar o quitar filas con los botones.
+- **Physics mode**: `MODE` es el primer campo.
+  - `fixed_source`: oculta fisión y la tabla de fisión; `NU_SIGF` se guarda
+    como cero.
+  - `eigenvalue`: muestra tabla de fisión, `TOL_K`, `MAX_OUTER`, `K0` y los
+    campos de potencia; `K_EFF` queda oculto.
+  - `fixed_k`: muestra tabla de fisión, `K_EFF`, `TOL_K`, `MAX_OUTER` y los
+    campos de potencia.
+  - `driven`: muestra tabla de fisión y potencia; `K_EFF` queda oculto porque
+    el solver usa `k = 1`.
+- **Fisión por zona**: tabla editable de `nu*Sigma_f` y `Sigma_f` opcional.
+- **Angular**: `N`, `SPATIAL_SCHEME`.
+- **Fuente y fronteras**: `Q` va en la tabla de regiones; el resto son
+  `reflex_izq`, `reflex_der`, `bound_left`, `bound_right`.
+- **Convergencia**: `epsilon`, `max_iter`.
 
-Los campos de lista aceptan valores separados por comas. Los campos numéricos
-aceptan placeholders (`kk`, `mm`, ...) para expandirlos en Sweep.
+Solo los arreglos de frontera usan valores separados por comas. Los campos
+numéricos aceptan placeholders (`kk`, `mm`, ...) para expandirlos en Sweep.
 
 Acciones:
 
@@ -81,7 +90,7 @@ convergencia y rango del flujo. `Use in Plots` manda el archivo a Plots.
 
 - Archivo de resultados y selector de run.
 - Tipos: scalar, angular, `k_history`.
-- Direcciones para angular (`0, 1, ...`; vacío usa todas).
+- Las gráficas angulares siempre dibujan todas las direcciones (una línea por componente).
 - Ruta del PNG (vacía usa el siguiente nombre por defecto).
 - `Open` abre el PNG con la aplicación por defecto.
 - Sección SCS: `datos.json`, eje x (`SCS`, `NU_SIGF`, `k_eff`) y PNG de salida.

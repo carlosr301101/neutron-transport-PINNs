@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v3.6.0), a CLI/TUI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v3.7.0), a CLI/TUI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -343,7 +343,6 @@ uv run nts-1d-run --json outputs/inputs/inputs_1d.json
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --list-runs
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar --run manual
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual
-uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual --directions 0 1
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run manual
 
 # Legacy datos.json

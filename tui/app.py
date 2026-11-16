@@ -92,6 +92,57 @@ class NTSApp(App):
         color: $text-muted;
     }
 
+    .geometry-bar {
+        height: 11;
+        border: round $secondary;
+        padding: 0 1;
+        margin-bottom: 1;
+    }
+
+    .table-title {
+        text-style: bold;
+        color: $secondary;
+        margin-top: 1;
+    }
+
+    .table-header {
+        height: auto;
+        text-style: bold;
+        margin-top: 1;
+    }
+
+    .table-row {
+        height: auto;
+    }
+
+    .cell-id {
+        width: 5;
+        padding-top: 1;
+    }
+
+    .cell-head {
+        width: 15;
+        padding-top: 1;
+    }
+
+    .cell-input {
+        width: 13;
+    }
+
+    .cell-del {
+        width: 5;
+    }
+
+    .mode-note {
+        color: $text-muted;
+        margin: 0 0 1 0;
+    }
+
+    .fission-wrap {
+        height: auto;
+        margin-top: 1;
+    }
+
     #run-configs {
         height: 9;
         border: round $primary;

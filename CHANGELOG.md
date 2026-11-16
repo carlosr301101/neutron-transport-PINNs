@@ -2,6 +2,26 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [3.7.0] - 2026-11-16 - Geometría y materiales editables en la TUI
+
+### Added
+- Barra de geometría 1D coloreada por zona material.
+- Tabla editable de regiones: `NC`, `HR`, `IZL` y `Q`.
+- Tabla editable de zonas: `SCT` y `SCS`.
+- Tabla de fisión por zona: `NU_SIGF` y `SIGMA_F`.
+- Botones para agregar y quitar regiones y zonas.
+
+### Changed
+- `MODE` es el primer campo de la sección Physics.
+- `fixed_source` oculta fisión y guarda `NU_SIGF` en cero.
+- `eigenvalue` oculta `K_EFF`; `fixed_k` lo exige; `driven` usa `k=1`.
+- Los campos de fisión y potencia solo aparecen en modos con fisión.
+- `Q` se oculta en `eigenvalue` y se fuerza a cero.
+- Se eliminaron las listas separadas por comas para geometría, materiales,
+  fuente y fisión.
+- Las gráficas angulares muestran todas las direcciones; se quitó `--directions`
+  de la CLI y el selector de direcciones de la TUI.
+
 ## [3.6.0] - 2026-11-16 - TUI 1D
 
 ### Added
@@ -19,6 +39,8 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
   la CLI y la TUI.
 - `textual` requiere `>=8,<9`.
 - Extra opcional `images` con `textual-image` para preview inline.
+- La pestaña Plots ya no permite elegir direcciones: el flujo angular siempre
+  grafica todas sus componentes. Se eliminó `--directions` de `nts-1d-plot`.
 
 ## [3.5.0] - 2026-11-08 - Contadores de actualizaciones de flujo e iteraciones de autovalor
 

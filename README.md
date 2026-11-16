@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.6.0-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.7.0-blue)](Changelog_EN.md)
 
 CLI/TUI automation system for **SN neutron transport simulations**:
 
@@ -34,7 +34,7 @@ CLI/TUI automation system for **SN neutron transport simulations**:
 - **1D multiplicative media** (`MODE=eigenvalue|fixed_k|driven`) with `k_eff`, power iteration and optional power normalization
 - **1D manual or JSON configuration**: interactive `--manual` wizard or `--json` file, with the effective config embedded in the output
 - **1D config generator**: `nts-1d-config` writes JSON with optional `kk`/`mm` placeholders, expandable via `nts-generate --json`
-- **1D TUI**: `nts tui` / `nts-tui` manages the full 1D workflow (config wizard, runs, results, plots, sweeps, exports)
+- **1D TUI**: `nts tui` / `nts-tui` manages the full 1D workflow (config wizard with editable geometry/material tables, runs, results, plots, sweeps, exports)
 - **1D result plots**: scalar flux vs `x`, angular flux per direction on one axes, `k_history`, and legacy SCS plots
 - **Post-processing**: scalar-flux extraction, SCS/NU_SIGF/k_eff-vs-flux plots, 2D MFLUX heatmaps
 - **Structured logging** per simulation plus a global rotating log
@@ -470,7 +470,6 @@ uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind scalar --run man
 
 # Angular flux vs x: one colored line per direction on the same axes
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual
-uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run manual --directions 0 1
 
 # k_eff history (eigenvalue only)
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run manual

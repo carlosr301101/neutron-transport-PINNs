@@ -12,8 +12,9 @@ from unittest.mock import patch
 
 from core.placeholders import detect_placeholders
 from tui.models import config_from_form, form_values_from_config, parse_field
-from tui.schema import DEFAULT_CONFIG, FIELD_BY_KEY
+from tui.schema import DEFAULT_CONFIG, FIELD_BY_KEY, field_visible
 from tui.services import config_store, export, plots, sweeps, terminal
+from tui.widgets import GeometryBar
 
 
 def synthetic_payload() -> dict:
@@ -102,6 +103,15 @@ class TestConfigStore(unittest.TestCase):
         self.assertIn("Placeholders", message)
 
 
+class TestModeVisibility(unittest.TestCase):
+    def test_fission_fields_by_mode(self):
+        self.assertFalse(field_visible(FIELD_BY_KEY["NU_SIGF"], "fixed_source"))
+        self.assertTrue(field_visible(FIELD_BY_KEY["NU_SIGF"], "eigenvalue"))
+        self.assertFalse(field_visible(FIELD_BY_KEY["K_EFF"], "eigenvalue"))
+        self.assertTrue(field_visible(FIELD_BY_KEY["K_EFF"], "fixed_k"))
+        self.assertFalse(field_visible(FIELD_BY_KEY["K0"], "driven"))
+
+
 class TestSweeps(unittest.TestCase):
     def test_expand(self):
         base = copy.deepcopy(DEFAULT_CONFIG)
@@ -159,6 +169,25 @@ class TestResultsAndPlots(unittest.TestCase):
             self.assertTrue(datos.exists())
             payload = json.loads(datos.read_text())
             self.assertEqual(payload["positions"], [0, 2])
+
+
+class TestGeometryBar(unittest.TestCase):
+    def test_renders_regions_and_zones(self):
+        bar = GeometryBar()
+        bar.set_data(
+            [
+                {"cells": "10", "length": "10", "zone": "1", "q": "0"},
+                {"cells": "20", "length": "20", "zone": "2", "q": "0"},
+            ],
+            [
+                {"sct": "1.0", "scs": "0.9"},
+                {"sct": "1.0", "scs": "0.5"},
+            ],
+        )
+        self.assertIn("R1", bar.last_plain)
+        self.assertIn("R2", bar.last_plain)
+        self.assertIn("Z2", bar.last_plain)
+        self.assertIn("Sigma_t=1.0", bar.last_plain)
 
 
 class TestTerminal(unittest.TestCase):
