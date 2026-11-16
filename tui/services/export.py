@@ -51,7 +51,7 @@ def default_datos_path() -> Path:
 
 def write_excel(result_path: Path | str, output_path: Path | str | None = None) -> Path:
     """Write the Excel workbook for one consolidated result file."""
-    from utils.excel_1d import write_workbook  # noqa: PLC0415 - lazy by design
+    from utils.excel_1d import write_workbook
 
     result_path = Path(result_path)
     payload = load_payload(result_path)
@@ -70,7 +70,7 @@ def write_scs_plot(
     x_key: str,
 ) -> Path:
     """Write the legacy SCS/NU_SIGF/k_eff plot from datos.json."""
-    from utils.plot_1d_flux import plot_datos  # noqa: PLC0415 - lazy by design
+    from utils.plot_1d_flux import plot_datos
 
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)

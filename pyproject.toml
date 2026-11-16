@@ -43,3 +43,18 @@ build-backend = "setuptools.build_meta"
 include = ["cli", "core", "execution", "utils", "tui*", "solvers*"]
 
 [tool.setuptools]
+
+[tool.setuptools.package-data]
+tui = ["*.tcss"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+src = [".", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "PIE", "RUF", "BLE"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "SLF001", "SIM117", "I001", "E501", "B007", "RUF059"]

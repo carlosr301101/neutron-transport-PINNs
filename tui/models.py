@@ -18,10 +18,28 @@ def _split_list(raw: str) -> list[str]:
     ]
 
 
+_TRUE = {"1", "true", "yes", "y", "on", "t"}
+_FALSE = {"0", "false", "no", "n", "off", "f", ""}
+
+
+def _parse_bool(field: Field, raw: Any) -> bool:
+    """Accept real booleans and the usual textual spellings of true/false."""
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, (int, float)):
+        return bool(raw)
+    text = "" if raw is None else str(raw).strip().lower()
+    if text in _TRUE:
+        return True
+    if text in _FALSE:
+        return False
+    raise ValueError(f"{field.label}: invalid boolean {raw!r}")
+
+
 def parse_field(field: Field, raw: Any) -> Any:
     """Parse one form value.  Placeholders are kept as strings."""
     if field.kind == "bool":
-        return bool(raw)
+        return _parse_bool(field, raw)
     if field.kind == "select":
         text = str(raw).strip() if raw is not None else ""
         return text or None

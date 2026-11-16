@@ -88,11 +88,7 @@ class RowTable(Vertical):
         yield Horizontal(
             Label(f"{self.row_prefix}#", classes="cell-id"),
             *self._header_cells(),
-            *(
-                [Label("", classes="cell-del")]
-                if self.editable
-                else []
-            ),
+            *([Label("", classes="cell-del")] if self.editable else []),
             classes="table-header",
         )
         yield Container(id=self.container_id)
@@ -162,7 +158,7 @@ class RowTable(Vertical):
                     column.key: (
                         str(items[index]) if index < len(items) else column.default
                     )
-                    for column, items in zip(self.columns, columns_data)
+                    for column, items in zip(self.columns, columns_data, strict=False)
                 }
             )
         self.set_rows(rows)
@@ -174,7 +170,7 @@ class RowTable(Vertical):
         """Parsed column values, in declaration order."""
         parsed: list[list] = [[] for _ in self.columns]
         for index, row in enumerate(self._rows):
-            for slot, column in zip(parsed, self.columns):
+            for slot, column in zip(parsed, self.columns, strict=False):
                 slot.append(self._convert(column, row.get(column.key, ""), index))
         return tuple(parsed)
 

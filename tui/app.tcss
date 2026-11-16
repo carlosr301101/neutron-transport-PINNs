@@ -1,0 +1,156 @@
+    Screen {
+        layout: vertical;
+    }
+
+    #tabs {
+        height: 1fr;
+    }
+
+    TabPane {
+        height: 1fr;
+        padding: 1 2;
+    }
+
+    .pane {
+        height: 1fr;
+    }
+
+    .title {
+        text-style: bold;
+        color: $accent;
+        margin-bottom: 1;
+    }
+
+    .section-title {
+        text-style: bold;
+        color: $secondary;
+        margin-top: 1;
+        margin-bottom: 0;
+    }
+
+    .field-label {
+        width: 34;
+        padding-top: 1;
+    }
+
+    .field-row {
+        height: auto;
+        margin-bottom: 0;
+    }
+
+    .button-row {
+        height: auto;
+        margin: 1 0;
+    }
+
+    .button-row Button {
+        margin-right: 1;
+    }
+
+    .status {
+        margin: 1 0;
+        text-style: italic;
+    }
+
+    .detail {
+        border: round $primary;
+        padding: 1;
+        margin-top: 1;
+    }
+
+    .preview {
+        height: 22;
+        border: round $secondary;
+        margin-top: 1;
+    }
+
+    .muted {
+        color: $text-muted;
+    }
+
+    .geometry-bar {
+        height: 11;
+        border: round $secondary;
+        padding: 0 1;
+        margin-bottom: 1;
+    }
+
+    #region-table,
+    #zone-table,
+    #fission-table {
+        height: auto;
+    }
+
+    #region-rows,
+    #zone-rows,
+    #fission-rows {
+        height: auto;
+    }
+
+    .table-title {
+        text-style: bold;
+        color: $secondary;
+        margin-top: 1;
+    }
+
+    .table-header {
+        height: auto;
+        text-style: bold;
+        margin-top: 1;
+    }
+
+    .table-row {
+        height: auto;
+    }
+
+    .cell-id {
+        width: 5;
+        padding-top: 1;
+    }
+
+    .cell-head {
+        width: 15;
+        padding-top: 1;
+    }
+
+    .cell-input {
+        width: 13;
+    }
+
+    .cell-del {
+        width: 5;
+    }
+
+    .mode-note {
+        color: $text-muted;
+        margin: 0 0 1 0;
+    }
+
+    .fission-wrap {
+        height: auto;
+        margin-top: 1;
+    }
+
+    #run-configs {
+        height: 9;
+        border: round $primary;
+    }
+
+    #run-log {
+        height: 12;
+        border: round $primary;
+    }
+
+    #sweep-log {
+        height: 12;
+        border: round $primary;
+    }
+
+    #results-table {
+        height: 14;
+    }
+
+    #sweep-ranges {
+        height: auto;
+    }
+    

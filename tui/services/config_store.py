@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 from core.placeholders import detect_placeholders
-
 from utils.paths import INPUTS_DIR
 
 from .paths import numbered_path

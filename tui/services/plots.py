@@ -46,7 +46,7 @@ def generate(
     ``matplotlib`` is imported here, not at module import time, so the TUI
     starts without paying its cost.
     """
-    from utils.plot_1d_flux import (  # noqa: PLC0415 - lazy by design
+    from utils.plot_1d_flux import (
         load_output,
         plot_angular,
         plot_datos,
