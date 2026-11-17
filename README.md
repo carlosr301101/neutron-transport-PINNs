@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.8.1-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.9.1-blue)](Changelog_EN.md)
 
 CLI/TUI automation system for **SN neutron transport simulations**:
 
@@ -55,6 +55,10 @@ uv sync
 # Verify the installation
 uv run nts status
 ```
+
+Maintainers: build and publish steps are in
+[`doc/PACKAGING_EN.md`](doc/PACKAGING_EN.md) (English) and
+[`doc/PACKAGING.md`](doc/PACKAGING.md) (Spanish).
 
 `nts status` reports which solver binaries are present and how many inputs/results exist.
 
@@ -226,8 +230,8 @@ Produces `outputs/results/output_1d_###.json`:
       "iteration": 13,
       "converged": true,
       "mode": "eigenvalue",
-      "k_eff": 1.026676,
-      "k_balance": 1.026677,
+      "k_eff": 1.026661,
+      "k_balance": 1.026668,
       "k_history": [...],
       "k_converged": true,
       "outer_iterations": 25,
@@ -373,12 +377,13 @@ max_i |1 - phi_new_i / phi_old_i| < epsilon
 with an absolute fallback for cells where `phi_old = 0` (the relative
 change is undefined there). Defaults: `epsilon = 1e-5` in
 `fixed_source`/`fixed_k`/`driven`; in `eigenvalue` the inner flux uses
-`min(epsilon, TOL_K) = 1e-6` so the scattering error does not bias
-`k_eff`. The eigenvalue itself converges with `|Δk|/k < TOL_K`.
+`max(epsilon, TOL_K)`, i.e. it is never tighter than the flux tolerance the
+user asked for (with the defaults: `max(1e-5, 1e-6) = 1e-5`). The eigenvalue
+itself converges with `|Δk|/k < TOL_K`.
 
-`iteration` counts completed flux updates (one per right + left sweep and
-scalar-flux recalculation) and accumulates across power iterations in
-`eigenvalue`. `iteration_eigenvalue` reports the number of power
+`iteration` counts completed flux updates (one per right + left sweep, with the
+scalar flux computed in the same pass) and accumulates across power iterations
+in `eigenvalue`. `iteration_eigenvalue` reports the number of power
 iterations (`outer_iterations` is kept as an alias; `null` outside
 `eigenvalue`).
 
@@ -398,9 +403,12 @@ share the source, quadrature, boundary conditions and iteration loops; only
 the cell kernel changes. `ψ̄` is reconstructed from the interface values, so
 no extra state is stored.
 
-The 20 cm benchmark (S8, 100 cells) gives `k_eff = 1.026676` (DD),
-`1.026054` (SC) and `1.017843` (STEP). STEP is first order: it needs a finer
-mesh to approach DD, which is expected and not a defect.
+The 20 cm benchmark (S8, 100 cells) gives `k_eff = 1.026661` (DD),
+`1.026038` (SC) and `1.017827` (STEP) with the default tolerances. With
+`epsilon = TOL_K = 1e-6` the same runs give `1.026676`, `1.026054` and
+`1.017843` (those are the values pinned by the regression tests). STEP is
+first order: it needs a finer mesh to approach DD, which is expected and not a
+defect.
 
 Full reference: [doc/SPATIAL_SCHEMES_EN.md](doc/SPATIAL_SCHEMES_EN.md)
 (Spanish: [doc/SPATIAL_SCHEMES.md](doc/SPATIAL_SCHEMES.md)).
@@ -434,8 +442,10 @@ config_dict = {
 uv run nts-1d-run
 ```
 
-Expected S8 result: `k_eff ≈ 1.02668` (S4 ≈ 1.02651, S2 ≈ 1.02464);
-`k_inf = νΣf/(Σt−Σs) = 1.1`. The slab is slightly supercritical.
+Expected S8 result: `k_eff ≈ 1.02667` (S4 ≈ 1.02649, S2 ≈ 1.02462) with the
+default tolerances, or `1.02668` / `1.02651` / `1.02464` with
+`epsilon = TOL_K = 1e-6`; `k_inf = νΣf/(Σt−Σs) = 1.1`. The slab is slightly
+supercritical.
 
 ### Power normalization
 
@@ -750,6 +760,8 @@ multiplicative-media guide and the changelog are kept alongside them.
 | Document | Content |
 |----------|---------|
 | `doc/QUICKSTART.md` | One-page command cheatsheet |
+| `doc/PACKAGING_EN.md` | Packaging and PyPI publishing checklist (English) |
+| `doc/PACKAGING.md` | Packaging and PyPI publishing checklist (Spanish) |
 | `doc/TUI_EN.md` | 1D terminal UI guide (English) |
 | `doc/TUI.md` | 1D terminal UI guide (Spanish) |
 | `doc/NTS_DOCUMENTATION.md` | Master reference for the 5 C programs (input format, method selection, performance) |
@@ -769,6 +781,10 @@ multiplicative-media guide and the changelog are kept alongside them.
 | `doc/Notas_EN.md`, `doc/Notas_2daReunion_EN.md` | Working notes and meeting records (English) |
 | `doc/Notas.md`, `doc/Notas_2daReunion.md`, `extras/` | Original Spanish notes |
 | `doc/IMPLEMENTATION_SUMMARY.md` | Historical implementation summary (English) |
+| `extras/analisis_codigo.md` | Comparative analysis of the 1D S_N solver vs the LabSN 1D JavaScript solver (10 test cases, balance, critique) |
+| `extras/mejoras_nts.md` | 1D solver performance diagnosis (profile, iterations, before/after timings) |
+| `extras/propuesta_dsa_cmfd.md` | Proposal: DSA/CMFD convergence acceleration |
+| `extras/propuesta_barrido_vectorizado.md` | Proposal: vectorized/compiled transport sweep |
 | `doc/FIXES_APPLIED_EN.md` | Applied fixes log (English) |
 | `doc/FIXES_APPLIED.md` | Original Spanish fixes log |
 | `Changelog_EN.md` | Version history (English) |

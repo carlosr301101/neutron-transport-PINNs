@@ -1,0 +1,209 @@
+# Packaging and publishing
+
+Checklist for building a wheel/sdist with `uv` and publishing the package to
+TestPyPI or PyPI.
+
+> Scope: the PyPI package contains the CLI, the TUI and the Python 1D solver.
+> The 2D C binaries in `solvers/runners/` are **not** included in a pure-Python
+> wheel. Users who need the 2D workflow must clone the repository and compile
+> those binaries.
+
+## 1. Before the first release
+
+Review `pyproject.toml`:
+
+- `name`, `version`, `description`, `readme` and `requires-python`.
+- `license` and a `LICENSE` file.
+- `authors` / `maintainers`.
+- `[project.urls]` (repository, issues, documentation).
+- `classifiers` and `keywords`.
+- `[project.scripts]`: every installed command must work from a wheel.
+- `[tool.setuptools.packages.find]`: include only importable packages.
+- `[tool.setuptools.package-data]`: non-Python assets such as
+  `tui/app.tcss`.
+
+Known issues to resolve before publishing:
+
+1. `nts-test` and `tests` are entry points, but `tests/` is not packaged.
+   Remove them from the wheel or ship the tests intentionally.
+2. If the 2D binaries are not shipped, document that only the 1D/TUI workflow
+   is available from PyPI.
+3. Keep one source of truth for the version. Option A: keep the static version
+   in `pyproject.toml`. Option B: use a dynamic version:
+
+   ```toml
+   [project]
+   dynamic = ["version"]
+
+   [tool.setuptools.dynamic]
+   version = { attr = "tui.__version__" }
+   ```
+
+4. Confirm the package name is still available on PyPI:
+
+   ```bash
+   uv run python - <<'PY'
+   import urllib.request
+   url = "https://pypi.org/pypi/neutron-transport-pinns/json"
+   try:
+       with urllib.request.urlopen(url, timeout=10) as response:
+           print("already exists:", response.status)
+   except Exception as exc:
+       print("available:", getattr(exc, "code", type(exc).__name__))
+   PY
+   ```
+
+## 2. Version and changelog
+
+1. Update the version in `pyproject.toml` and `tui/__init__.py` (or the dynamic
+   source).
+2. Update `CHANGELOG.md` and `Changelog_EN.md`.
+3. Run the suite:
+
+   ```bash
+   uv run nts-test
+   ```
+
+4. Commit and tag only after the release build passes.
+
+## 3. Build
+
+```bash
+uv build --clear
+```
+
+The artifacts are written to `dist/`:
+
+```text
+dist/neutron_transport_pinns-<version>.tar.gz
+dist/neutron_transport_pinns-<version>-py3-none-any.whl
+```
+
+`dist/` is already in `.gitignore`.
+
+Validate the metadata:
+
+```bash
+uvx twine check dist/*
+```
+
+Inspect the wheel:
+
+```bash
+uv run python - <<'PY'
+import glob
+import zipfile
+
+wheel = glob.glob("dist/*.whl")[0]
+with zipfile.ZipFile(wheel) as archive:
+    names = archive.namelist()
+
+print(wheel)
+print(len(names), "files")
+assert any(name.endswith("tui/app.tcss") for name in names), names
+print("tui/app.tcss is packaged")
+PY
+```
+
+## 4. Clean-install smoke test
+
+```bash
+uv venv /tmp/nts-wheel
+uv pip install --python /tmp/nts-wheel/bin/python dist/*.whl
+
+/tmp/nts-wheel/bin/nts --help
+/tmp/nts-wheel/bin/nts-1d-run --help
+/tmp/nts-wheel/bin/nts-tui     # open and quit with q
+```
+
+Check the packaged CSS:
+
+```bash
+/tmp/nts-wheel/bin/python - <<'PY'
+from importlib.resources import files
+path = files("tui").joinpath("app.tcss")
+print(path, path.is_file())
+PY
+```
+
+Test the end-user install paths:
+
+```bash
+uv tool install neutron-transport-pinns
+uvx --from neutron-transport-pinns nts --help
+```
+
+## 5. TestPyPI
+
+Use a TestPyPI token:
+
+```bash
+UV_PUBLISH_TOKEN=pypi-... \
+uv publish \
+  --publish-url https://test.pypi.org/legacy/ \
+  dist/*
+```
+
+Install the published version in a clean environment:
+
+```bash
+uv venv /tmp/nts-testpypi
+uv pip install --python /tmp/nts-testpypi/bin/python \
+  --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple/ \
+  neutron-transport-pinns==<version>
+
+/tmp/nts-testpypi/bin/nts --help
+```
+
+## 6. PyPI
+
+Dry run first:
+
+```bash
+uv publish --dry-run
+```
+
+Publish with a token:
+
+```bash
+UV_PUBLISH_TOKEN=pypi-... uv publish
+```
+
+Or use trusted publishing from CI:
+
+```bash
+uv publish --trusted-publishing automatic
+```
+
+With GitHub Actions, grant `id-token: write` and use an environment protected
+by a PyPI trusted publisher.
+
+Avoid duplicate uploads:
+
+```bash
+uv publish \
+  --check-url https://pypi.org/simple/neutron-transport-pinns/ \
+  dist/*
+```
+
+## 7. Release
+
+```bash
+git tag -a v<version> -m "neutron-transport-pinns <version>"
+git push origin main --tags
+```
+
+Create the release notes from `CHANGELOG.md`.
+
+## 8. Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `twine check` complains about metadata | Add `license`, `authors`, `urls` and classifiers |
+| `tui/app.tcss` missing from wheel | Check `[tool.setuptools.package-data]` |
+| `nts-test` fails from wheel | It is a repository-only command; remove it from the wheel or ship tests |
+| `nts run` says solver missing | The 2D binaries are not in the wheel; compile them from the repo |
+| TestPyPI install cannot find dependencies | Add `--extra-index-url https://pypi.org/simple/` |
+| Version already exists | Bump the version; PyPI does not allow replacing files |
+| `uv publish` cannot authenticate | Set `UV_PUBLISH_TOKEN` or configure trusted publishing |
