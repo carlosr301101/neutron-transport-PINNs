@@ -18,8 +18,12 @@ from .screens.run_manager import RunManagerPane
 from .screens.sweep import SweepPane
 
 _TAB_PANES = {
+    "tab-config": ConfigEditorPane,
+    "tab-run": RunManagerPane,
     "tab-results": ResultsPane,
     "tab-plots": PlotStudioPane,
+    "tab-sweep": SweepPane,
+    "tab-export": ExportPane,
 }
 
 
@@ -40,27 +44,37 @@ class NTSApp(App):
             with TabPane("Dashboard", id="tab-dashboard"):
                 yield DashboardPane(classes="pane")
             with TabPane("Config", id="tab-config"):
-                yield ConfigEditorPane(classes="pane")
+                pass
             with TabPane("Run", id="tab-run"):
-                yield RunManagerPane(classes="pane")
+                pass
             with TabPane("Results", id="tab-results"):
-                yield ResultsPane(classes="pane")
+                pass
             with TabPane("Plots", id="tab-plots"):
-                yield PlotStudioPane(classes="pane")
+                pass
             with TabPane("Sweep", id="tab-sweep"):
-                yield SweepPane(classes="pane")
+                pass
             with TabPane("Export", id="tab-export"):
-                yield ExportPane(classes="pane")
+                pass
         yield Footer()
 
-    def on_tabbed_content_tab_activated(
+    async def _ensure_pane(self, tab_id: str):
+        """Mount the pane for *tab_id* on first use and return it."""
+        pane_type = _TAB_PANES[tab_id]
+        tab = self.query_one(f"#{tab_id}", TabPane)
+        if not tab.children:
+            pane = pane_type(classes="pane")
+            await tab.mount(pane)
+            return pane
+        return tab.children[0]
+
+    async def on_tabbed_content_tab_activated(
         self, event: TabbedContent.TabActivated
     ) -> None:
-        """Load data for a tab only when the user opens it."""
-        pane_type = _TAB_PANES.get(event.pane.id)
-        if pane_type is None:
+        """Mount and load a tab only when the user opens it."""
+        tab_id = event.pane.id
+        if tab_id not in _TAB_PANES:
             return
-        pane = self.query_one(pane_type)
+        pane = await self._ensure_pane(tab_id)
         ensure_loaded = getattr(pane, "ensure_loaded", None)
         if callable(ensure_loaded):
             ensure_loaded()
@@ -98,7 +112,11 @@ class NTSApp(App):
 
     def set_plot_source(self, path: Path | str) -> None:
         """Send a result file to the plot studio and switch tabs."""
-        self.query_one(PlotStudioPane).set_source(path)
+        self.call_next(self._set_plot_source, path)
+
+    async def _set_plot_source(self, path: Path | str) -> None:
+        pane = await self._ensure_pane("tab-plots")
+        pane.set_source(path)
         self.query_one("#tabs", TabbedContent).active = "tab-plots"
 
     def on_unmount(self) -> None:

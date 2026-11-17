@@ -86,6 +86,7 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
             app.query_one("#tabs", TabbedContent).active = "tab-config"
             await pilot.pause()
             pane = app.query_one(ConfigEditorPane)
+            await pilot.pause()
             pane._widgets["reflex_izq"].value = True
             pane._widgets["reflex_der"].value = True
             await pilot.pause()
@@ -99,18 +100,18 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
         app = NTSApp()
         async with app.run_test(size=(160, 60)) as pilot:
             await pilot.pause()
-            results = app.query_one(ResultsPane)
-            plots = app.query_one(PlotStudioPane)
-            self.assertFalse(results._loaded)
-            self.assertFalse(plots._loaded)
+            self.assertEqual(len(app.query(ResultsPane)), 0)
+            self.assertEqual(len(app.query(PlotStudioPane)), 0)
 
             tabs = app.query_one("#tabs", TabbedContent)
             tabs.active = "tab-results"
             await pilot.pause()
+            results = app.query_one(ResultsPane)
             self.assertTrue(results._loaded)
 
             tabs.active = "tab-plots"
             await pilot.pause()
+            plots = app.query_one(PlotStudioPane)
             self.assertTrue(plots._loaded)
 
     async def test_region_and_zone_tables_are_visible(self):
@@ -295,12 +296,19 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
         app = NTSApp()
         async with app.run_test(size=(140, 50)) as pilot:
             await pilot.pause()
+            tabs = app.query_one("#tabs", TabbedContent)
+            tabs.active = "tab-run"
+            await pilot.pause()
             self.assertTrue(app.query_one("#run-cancel", Button).disabled)
+            tabs.active = "tab-sweep"
+            await pilot.pause()
             self.assertTrue(app.query_one("#sweep-cancel", Button).disabled)
 
     async def test_unmount_cancels_a_running_solver(self):
         app = NTSApp()
         async with app.run_test(size=(140, 50)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab-run"
             await pilot.pause()
             pane = app.query_one(RunManagerPane)
             fake = _FakeRun()
