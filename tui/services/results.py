@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 import json
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
 from utils.paths import RESULTS_DIR
 
 from .paths import numbered_path
+
+# Parsed payloads are shared by Results, Plots and Export.  The key includes
+# mtime and size so a rewritten output file is never served from the cache.
+_CACHE: OrderedDict[Path, tuple[int, int, dict[str, Any]]] = OrderedDict()
+_CACHE_MAX = 8
 
 
 def list_outputs() -> list[Path]:
@@ -17,12 +23,30 @@ def list_outputs() -> list[Path]:
 
 
 def load_payload(path: Path | str) -> dict[str, Any]:
-    """Load a consolidated output payload."""
-    with Path(path).open("r") as handle:
+    """Load a consolidated output payload, caching by path, mtime and size."""
+    path = Path(path)
+    stat = path.stat()
+    key = (stat.st_mtime_ns, stat.st_size)
+    cached = _CACHE.get(path)
+    if cached is not None and cached[:2] == key:
+        _CACHE.move_to_end(path)
+        return cached[2]
+
+    with path.open("r") as handle:
         payload = json.load(handle)
     if not isinstance(payload, dict):
         raise TypeError(f"{path} does not contain a JSON object.")
+
+    _CACHE[path] = (key[0], key[1], payload)
+    _CACHE.move_to_end(path)
+    while len(_CACHE) > _CACHE_MAX:
+        _CACHE.popitem(last=False)
     return payload
+
+
+def clear_cache() -> None:
+    """Drop cached payloads (tests, or after out-of-band file edits)."""
+    _CACHE.clear()
 
 
 def summarize(payload: dict[str, Any]) -> list[dict[str, Any]]:

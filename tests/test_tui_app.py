@@ -96,6 +96,20 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(config["bound_left"], [0.0])
             self.assertEqual(config["bound_right"], [0.0])
 
+    async def test_config_preloads_once(self):
+        app = NTSApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            for _ in range(20):
+                if app.query(ConfigEditorPane):
+                    break
+                await pilot.pause(0.05)
+            panes = app.query(ConfigEditorPane)
+            self.assertEqual(len(panes), 1)
+            pane = panes.first()
+            again = await app._ensure_pane("tab-config")
+            self.assertIs(pane, again)
+
     async def test_results_and_plots_load_on_activation(self):
         app = NTSApp()
         async with app.run_test(size=(160, 60)) as pilot:

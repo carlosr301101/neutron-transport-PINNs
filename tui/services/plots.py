@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from .paths import default_plot_path
+from .results import load_payload
 
 
 def _read_runs(result_path: Path | str) -> list[dict]:
-    """Read only the ``runs`` list without importing matplotlib."""
-    with Path(result_path).open("r") as handle:
-        payload = json.load(handle)
+    """Read the cached ``runs`` list without importing matplotlib."""
+    payload = load_payload(result_path)
     runs = payload.get("runs")
     if not isinstance(runs, list) or not runs:
         raise ValueError(f"{result_path} does not contain a non-empty 'runs' list")
@@ -47,7 +46,6 @@ def generate(
     starts without paying its cost.
     """
     from utils.plot_1d_flux import (
-        load_output,
         plot_angular,
         plot_datos,
         plot_k_history,
@@ -64,7 +62,7 @@ def generate(
         plot_datos(Path(datos_path), output, x_key)
         return output
 
-    runs = load_output(Path(result_path))
+    runs = _read_runs(result_path)
     selected = select_runs(runs, run_selector, kind)
 
     if kind == "scalar":

@@ -14,6 +14,7 @@ from core.placeholders import detect_placeholders
 from tui.models import config_from_form, form_values_from_config, parse_field
 from tui.schema import DEFAULT_CONFIG, FIELD_BY_KEY, field_visible
 from tui.services import config_store, export, plots, sweeps, terminal
+from tui.services.results import clear_cache, load_payload
 from tui.widgets import GeometryBar
 
 
@@ -130,6 +131,23 @@ class TestSweeps(unittest.TestCase):
             py_path = Path(tmp) / "sweep.py"
             sweeps.save_configs([copy.deepcopy(DEFAULT_CONFIG)], py_path)
             self.assertIn("config_dict_001", py_path.read_text())
+
+
+class TestResultsCache(unittest.TestCase):
+    def test_payload_cache_hits_and_invalidates(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "output_1d_001.json"
+            path.write_text(json.dumps({"runs": []}))
+            clear_cache()
+            first = load_payload(path)
+            second = load_payload(path)
+            self.assertIs(first, second)
+
+            path.write_text(json.dumps({"runs": [{"config_name": "new"}]}))
+            third = load_payload(path)
+            self.assertIsNot(first, third)
+            self.assertEqual(third["runs"][0]["config_name"], "new")
+            clear_cache()
 
 
 class TestResultsAndPlots(unittest.TestCase):

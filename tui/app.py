@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import ClassVar
 
@@ -38,6 +39,31 @@ class NTSApp(App):
         ("q", "quit", "Quit"),
     ]
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._pane_mount_locks: dict[str, asyncio.Lock] = {}
+
+    def _pane_lock(self, tab_id: str) -> asyncio.Lock:
+        lock = self._pane_mount_locks.get(tab_id)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._pane_mount_locks[tab_id] = lock
+        return lock
+
+    def on_mount(self) -> None:
+        # Build the most-used tab after the dashboard is visible.  The mount
+        # lock in _ensure_pane makes this safe if the user clicks Config first.
+        self.call_after_refresh(self._start_preload)
+
+    def _start_preload(self) -> None:
+        self.run_worker(self._preload_config(), group="preload", exclusive=False)
+
+    async def _preload_config(self) -> None:
+        try:
+            await self._ensure_pane("tab-config")
+        except Exception:  # noqa: BLE001 - preload must never break startup
+            self.log.debug("config preload failed", exc_info=True)
+
     def compose(self) -> ComposeResult:
         yield Header()
         with TabbedContent(id="tabs"):
@@ -60,12 +86,13 @@ class NTSApp(App):
     async def _ensure_pane(self, tab_id: str):
         """Mount the pane for *tab_id* on first use and return it."""
         pane_type = _TAB_PANES[tab_id]
-        tab = self.query_one(f"#{tab_id}", TabPane)
-        if not tab.children:
-            pane = pane_type(classes="pane")
-            await tab.mount(pane)
-            return pane
-        return tab.children[0]
+        async with self._pane_lock(tab_id):
+            tab = self.query_one(f"#{tab_id}", TabPane)
+            if not tab.children:
+                pane = pane_type(classes="pane")
+                await tab.mount(pane)
+                return pane
+            return tab.children[0]
 
     async def on_tabbed_content_tab_activated(
         self, event: TabbedContent.TabActivated
