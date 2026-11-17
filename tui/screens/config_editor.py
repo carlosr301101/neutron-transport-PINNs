@@ -47,7 +47,11 @@ class ConfigEditorPane(VerticalScroll):
         self._loaded_path: Path | None = None
 
     def compose(self) -> ComposeResult:
-        yield Static("Configuration wizard", classes="title")
+        yield Horizontal(
+            Static("Configuration wizard", classes="title", id="cfg-title"),
+            Static("", id="cfg-status", classes="config-status"),
+            classes="config-header",
+        )
         yield Horizontal(
             Select([], prompt="Load config...", id="cfg-select"),
             Button("Load", id="cfg-load"),
@@ -96,8 +100,6 @@ class ConfigEditorPane(VerticalScroll):
                 if field.widget in {"table", "derived"}:
                     continue
                 yield self._build_row(field)
-
-        yield Static("", id="cfg-status", classes="status")
 
     def on_mount(self) -> None:
         self.refresh_load_options()
@@ -447,7 +449,7 @@ class ConfigEditorPane(VerticalScroll):
         if errors:
             self._status("[red]Invalid:[/] " + " | ".join(errors))
         else:
-            self._status(message)
+            self._status(f"[green]{message}[/]")
 
     def _validate(self) -> None:
         """Deprecated alias for :meth:`validate_current`."""

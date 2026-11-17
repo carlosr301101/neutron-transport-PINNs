@@ -153,4 +153,19 @@
     #sweep-ranges {
         height: auto;
     }
-    
+
+    .config-header {
+        height: auto;
+        align-vertical: middle;
+    }
+
+    #cfg-title {
+        width: 40;
+        margin-bottom: 0;
+    }
+
+    .config-status {
+        width: 1fr;
+        content-align: right middle;
+        text-style: italic;
+    }

@@ -175,8 +175,9 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
         async with app.run_test(size=(160, 60)) as pilot:
             await pilot.pause()
             app.query_one("#tabs", TabbedContent).active = "tab-config"
-            await pilot.pause()
+            await pilot.pause(0.1)
             pane = app.query_one(ConfigEditorPane)
+            await pilot.pause(0.1)
             config = {
                 "num_regions": 5,
                 "num_zones": 3,
@@ -191,7 +192,7 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                 "MODE": "eigenvalue",
             }
             pane._populate(config)
-            await pilot.pause()
+            await pilot.pause(0.1)
             out = pane._collect()
             self.assertEqual(out["num_regions"], 5)
             self.assertEqual(out["num_zones"], 3)
