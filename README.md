@@ -42,29 +42,165 @@ CLI/TUI automation system for **SN neutron transport simulations**:
 
 ## 📋 Requirements
 
-- Python **3.14+** (the codebase uses PEP 758 exception syntax)
-- [uv](https://docs.astral.sh/uv/) package manager
-- Compiled NTS binaries in `solvers/runners/` (only for the 2D workflow; the 1D solver is pure Python)
+- Python **3.14+**
+- [uv](https://docs.astral.sh/uv/) (recommended) or `pip`
+- Linux, macOS or Windows
+- 2D C binaries only for the 2D workflow; the 1D solver and TUI are pure Python
 
 ## 🔧 Installation
 
-```bash
-# Create the virtualenv and install dependencies
-uv sync
+### Install with uv (recommended)
 
-# Verify the installation
-uv run nts status
+```bash
+uv tool install neutron-transport-pinns
 ```
 
-End-user installation with `uv` or `pip`:
+With optional inline image preview in the TUI:
+
+```bash
+uv tool install "neutron-transport-pinns[images]"
+```
+
+### Install with pip
+
+```bash
+python -m pip install neutron-transport-pinns
+```
+
+On Windows, use the Python 3.14 launcher if needed:
+
+```powershell
+py -3.14 -m pip install neutron-transport-pinns
+```
+
+### Verify
+
+```bash
+nts --help
+nts status
+nts-tui
+```
+
+`nts status` is expected to report missing 2D binaries when only the PyPI wheel
+is installed. The 1D/TUI workflow does not need them.
+
+### First 1D run
+
+Create a work directory and a small eigenvalue problem:
+
+```bash
+mkdir nts-demo
+cd nts-demo
+cat > quickstart.json <<'JSON'
+{
+  "num_regions": 1,
+  "num_zones": 1,
+  "NC": [20],
+  "HR": [20.0],
+  "IZL": [1],
+  "SCT": [1.0],
+  "SCS": [0.9],
+  "NU_SIGF": [0.11],
+  "Q": [0.0],
+  "N": 8,
+  "SPATIAL_SCHEME": "DD",
+  "reflex_izq": false,
+  "reflex_der": false,
+  "bound_left": [0, 0, 0, 0],
+  "bound_right": [0, 0, 0, 0],
+  "MODE": "eigenvalue",
+  "TOL_K": 1e-6,
+  "MAX_OUTER": 200
+}
+JSON
+
+nts-1d-run --json quickstart.json -o outputs/results/quickstart.json
+```
+
+Inspect the result and generate a plot:
+
+```bash
+nts-1d-plot -r outputs/results/quickstart.json --kind k-history
+```
+
+The default plot is written to:
+
+```text
+outputs/results/plots/k_history.png
+```
+
+For this quickstart, the expected eigenvalue is approximately:
+
+```text
+k_eff ~= 1.0264
+```
+
+Use another work directory with `NTS_HOME`:
+
+```bash
+export NTS_HOME="$HOME/nts-work"     # Linux/macOS
+set NTS_HOME=%USERPROFILE%\nts-work  # Windows cmd
+```
+
+### Start the TUI
+
+```bash
+nts-tui
+```
+
+Workflow inside the TUI:
+
+1. **Config**: fill geometry, materials and physics mode.
+2. **Save**: write `outputs/inputs/config_1d_###.json`.
+3. **Run**: execute the 1D solver and watch the live log.
+4. **Results**: inspect `k_eff`, iterations and convergence.
+5. **Plots**: generate scalar, angular, `k_history` or SCS images.
+6. **Sweep/Export**: run parameter sweeps and export `datos.json` or Excel.
+
+Quit with `q`. If `nts-tui` is not on `PATH`:
+
+```bash
+python -m tui.app
+```
+
+### 2D workflow
+
+The PyPI wheel does **not** include the 2D C binaries or sources. To use
+`NTS_DD`, `NTS_LD`, `NTS_STEP`, `NTS_RM_CN` or `NTS_RM_LLN`:
+
+```bash
+git clone https://github.com/carlosr301101/neutron-transport-PINNs.git
+cd neutron-transport-PINNs
+# compile the C binaries into solvers/runners/
+export NTS_SOLVERS_DIR="$PWD/solvers/runners"
+```
+
+Then:
+
+```bash
+nts run -s NTS_DD -p 4
+```
+
+See `doc/NTS_DOCUMENTATION.md` for input format and compilation details.
+
+### Development install
+
+```bash
+git clone https://github.com/carlosr301101/neutron-transport-PINNs.git
+cd neutron-transport-PINNs
+uv sync
+uv sync --extra images       # optional inline TUI preview
+uv run python -m cli.run_tests
+uv run nts-tui
+```
+
+Full installation guide:
 [`doc/INSTALLING_EN.md`](doc/INSTALLING_EN.md) (English) and
 [`doc/installing.md`](doc/installing.md) (Spanish).
 
-Maintainers: build and publish steps are in
-[`doc/PACKAGING_EN.md`](doc/PACKAGING_EN.md) (English) and
-[`doc/PACKAGING.md`](doc/PACKAGING.md) (Spanish).
-
-`nts status` reports which solver binaries are present and how many inputs/results exist.
+Maintainers: packaging and PyPI release steps are in
+[`doc/PACKAGING_EN.md`](doc/PACKAGING_EN.md) and
+[`doc/PACKAGING.md`](doc/PACKAGING.md).
 
 ## 🖥 CLI Reference
 
