@@ -107,34 +107,95 @@ py -3.14 -m pip install neutron-transport-pinns
 
 ## Primer uso
 
-La CLI y la TUI escriben en `outputs/` dentro del directorio actual. Se puede
-elegir otro directorio:
+Crear un directorio de trabajo y un problema 1D de autovalor:
+
+```bash
+mkdir nts-demo
+cd nts-demo
+cat > quickstart.json <<'JSON'
+{
+  "num_regions": 1,
+  "num_zones": 1,
+  "NC": [20],
+  "HR": [20.0],
+  "IZL": [1],
+  "SCT": [1.0],
+  "SCS": [0.9],
+  "NU_SIGF": [0.11],
+  "Q": [0.0],
+  "N": 8,
+  "SPATIAL_SCHEME": "DD",
+  "reflex_izq": false,
+  "reflex_der": false,
+  "bound_left": [0, 0, 0, 0],
+  "bound_right": [0, 0, 0, 0],
+  "MODE": "eigenvalue",
+  "TOL_K": 1e-6,
+  "MAX_OUTER": 200
+}
+JSON
+
+nts-1d-run --json quickstart.json -o outputs/results/quickstart.json
+```
+
+El solver imprime la convergencia y escribe un JSON consolidado. Generar el
+plot de `k_eff`:
+
+```bash
+nts-1d-plot -r outputs/results/quickstart.json --kind k-history
+```
+
+Plot por defecto:
+
+```text
+outputs/results/plots/k_history.png
+```
+
+Para este quickstart, el autovalor esperado es aproximadamente:
+
+```text
+k_eff ~= 1.0264
+```
+
+Para usar otro directorio de trabajo:
 
 ```bash
 export NTS_HOME="$HOME/nts-work"     # Linux/macOS
 set NTS_HOME=%USERPROFILE%\nts-work  # Windows cmd
 ```
 
-Crear una configuración 1D:
+La CLI y la TUI crean `outputs/` dentro de `NTS_HOME`, no dentro de
+`site-packages`.
 
-```bash
-nts-1d-config -o outputs/inputs/config_1d_001.json
-```
-
-Ejecutarla:
-
-```bash
-nts-1d-run --json outputs/inputs/config_1d_001.json
-```
-
-Abrir la TUI:
+### Abrir la TUI
 
 ```bash
 nts-tui
 ```
 
-La TUI permite crear la configuración, correr el solver 1D, ver resultados,
-generar plots, hacer sweeps y exportar datos.
+Flujo típico:
+
+1. **Config**: geometría, materiales, modo, fuente y fronteras.
+2. **Save**: escribe `outputs/inputs/config_1d_###.json`.
+3. **Run**: ejecuta el solver 1D con log en vivo.
+4. **Results**: revisa `k_eff`, iteraciones y convergencia.
+5. **Plots**: scalar, angular, `k_history` o SCS.
+6. **Placeholders/Export**: sweeps paramétricos, `datos.json`, Excel.
+
+Salir con `q`. Si el comando no está en `PATH`:
+
+```bash
+python -m tui.app
+```
+
+### Salida esperada
+
+- `nts status` puede avisar que faltan los binarios 2D. Es normal en el wheel
+  de PyPI; el solver 1D y la TUI funcionan completos.
+- `nts-1d-run` escribe `outputs/results/quickstart.json`.
+- `nts-1d-plot` escribe `outputs/results/plots/k_history.png`.
+- La TUI escribe configs en `outputs/inputs/` y resultados en
+  `outputs/results/`.
 
 ## Instalación desde un wheel local
 

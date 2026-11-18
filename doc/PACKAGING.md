@@ -182,7 +182,7 @@ Environment:  pypi
 Crear el environment `pypi` en GitHub Actions y subir un tag:
 
 ```bash
-git tag -a v3.9.2 -m "neutron-transport-pinns 3.9.2"
+git tag -a v3.9.4 -m "neutron-transport-pinns 3.9.4"
 git push origin main --tags
 ```
 

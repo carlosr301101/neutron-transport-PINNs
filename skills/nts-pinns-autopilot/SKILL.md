@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v3.9.2), a CLI/TUI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v3.9.4), a CLI/TUI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -27,11 +27,119 @@ solver method selection. This file is the short, operational path.
 Installation: `doc/INSTALLING_EN.md`. Packaging and PyPI release:
 `doc/PACKAGING_EN.md`.
 
+## Installing and running
+
+### End-user install from PyPI
+
+With `uv`:
+
+```bash
+uv tool install neutron-transport-pinns
+```
+
+One-off without installing:
+
+```bash
+uvx --from neutron-transport-pinns nts --help
+uvx --from neutron-transport-pinns nts-tui
+```
+
+With `pip`:
+
+```bash
+python -m pip install neutron-transport-pinns
+```
+
+Optional inline TUI image preview:
+
+```bash
+uv tool install "neutron-transport-pinns[images]"
+# or
+python -m pip install "neutron-transport-pinns[images]"
+```
+
+Requires Python 3.14+. On Windows use `py -3.14 -m pip ...` if needed.
+
+Verify:
+
+```bash
+nts --help
+nts status
+nts-tui
+```
+
+`nts status` may report missing 2D binaries. That is expected for the PyPI
+wheel; the 1D solver and TUI are included.
+
+### Repository / agent install
+
+Inside this checkout use `uv` for everything:
+
+```bash
+uv sync
+uv sync --extra images       # optional inline preview
+uv run nts --help
+uv run nts-tui
+uv run python -m cli.run_tests
+```
+
+Do not use bare `python3` inside the repo; use `uv run python` so the project
+environment and dependencies are used.
+
+### Running the tools
+
+| Task | Installed package | Inside the repo |
+|---|---|---|
+| Main CLI | `nts` | `uv run nts` |
+| TUI | `nts-tui` or `nts tui` | `uv run nts-tui` or `uv run nts tui` |
+| 1D config wizard | `nts-1d-config` | `uv run nts-1d-config` |
+| 1D solver | `nts-1d-run` | `uv run nts-1d-run` |
+| Scalar/angular plots | `nts-1d-plot` | `uv run nts-1d-plot` |
+| Extract `datos.json` | `nts-1d-data` | `uv run nts-1d-data` |
+| Excel export | `nts-1d-excel` | `uv run nts-1d-excel` |
+| Power normalization | `nts-1d-normalize` | `uv run nts-1d-normalize` |
+| Placeholder expansion | `nts-generate` | `uv run nts-generate` |
+| 2D solver | `nts run -s NTS_DD` | `uv run nts run -s NTS_DD` |
+
+If a console script is not on `PATH`, use the module form:
+
+```bash
+python -m cli.main --help
+python -m cli.main tui
+python -m tui.app
+python -m cli.run_1d --json config.json
+python -m utils.extract_1d_flux --latest
+python -m utils.plot_1d_flux -r outputs/results/output_1d_001.json
+```
+
+### Typical first 1D run
+
+```bash
+nts-1d-config -o outputs/inputs/config_1d_001.json
+nts-1d-run --json outputs/inputs/config_1d_001.json \
+  -o outputs/results/output_1d_001.json
+nts-1d-plot -r outputs/results/output_1d_001.json --kind scalar
+nts-tui
+```
+
+In the TUI: **Config → Save → Run → Results → Plots**. Quit with `q`.
+
+### Runtime directories
+
+- `NTS_HOME` changes the work root for `outputs/`:
+  - Linux/macOS: `export NTS_HOME="$HOME/nts-work"`
+  - Windows cmd: `set NTS_HOME=%USERPROFILE%\nts-work`
+- `NTS_SOLVERS_DIR` points to compiled 2D binaries.
+- The wheel does not include the 2D C binaries or sources. Clone the repo,
+  compile them under `solvers/runners/`, or set `NTS_SOLVERS_DIR`.
+
 ## Environment rules
 
-- Every command runs through `uv`: `uv run nts …`, `uv run python …`.
-  The venv is Python 3.14 and only `uv run python` has the project deps
-  (pandas, matplotlib, pydantic). Bare `python3` will fail on imports.
+- Inside this repository every command runs through `uv`: `uv run nts …`,
+  `uv run python …`. The venv is Python 3.14 and only `uv run python` has the
+  project deps (pandas, matplotlib, pydantic). Bare `python3` will fail on
+  imports. For an installed PyPI package use the `nts*` entry points, not
+  `uv run`.
 - `outputs/` is gitignored: never commit anything inside it, and treat files
   there as regenerable except the curated `*_N*.json` datasets the sweep flow
   keeps (renamed by hand).

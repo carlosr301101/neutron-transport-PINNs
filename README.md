@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.9.2-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.9.4-blue)](Changelog_EN.md)
 
 CLI/TUI automation system for **SN neutron transport simulations**:
 
@@ -155,7 +155,7 @@ Workflow inside the TUI:
 3. **Run**: execute the 1D solver and watch the live log.
 4. **Results**: inspect `k_eff`, iterations and convergence.
 5. **Plots**: generate scalar, angular, `k_history` or SCS images.
-6. **Sweep/Export**: run parameter sweeps and export `datos.json` or Excel.
+6. **Placeholders/Export**: run parameter sweeps and export `datos.json` or Excel.
 
 Quit with `q`. If `nts-tui` is not on `PATH`:
 

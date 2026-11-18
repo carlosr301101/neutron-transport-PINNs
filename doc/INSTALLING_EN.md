@@ -180,7 +180,7 @@ Typical workflow:
 3. **Run**: execute the 1D solver with a live log.
 4. **Results**: inspect `k_eff`, iterations and convergence.
 5. **Plots**: scalar, angular, `k_history` or SCS.
-6. **Sweep/Export**: parametric sweeps, `datos.json`, Excel.
+6. **Placeholders/Export**: parametric sweeps, `datos.json`, Excel.
 
 Quit with `q`. If the command is not on `PATH`:
 

@@ -2,6 +2,18 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [3.9.4] - 2026-11-18 - Versión de release
+
+### Changed
+- Bump de versión a 3.9.4 para publicación en PyPI.
+- Sin cambios funcionales respecto a 3.9.3.
+
+## [3.9.3] - 2026-11-18 - Versión de release
+
+### Changed
+- Bump de versión a 3.9.3 para corregir el tag de release.
+- Sin cambios funcionales respecto a 3.9.2.
+
 ## [3.9.2] - 2026-11-17 - Panel Placeholders
 
 ### Changed
