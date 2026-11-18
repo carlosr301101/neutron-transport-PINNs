@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from utils.paths import PLOTS_DIR, PROJECT_ROOT
+from utils.paths import PLOTS_DIR, WORK_ROOT
 
 PLOT_NAMES = {
     "scalar": "scalar_flux.png",
@@ -19,7 +19,7 @@ PLOT_NAMES = {
 }
 
 
-def resolve_path(text: str | Path, base: Path = PROJECT_ROOT) -> Path:
+def resolve_path(text: str | Path, base: Path = WORK_ROOT) -> Path:
     """Anchor a user-supplied path to *base* when it is relative."""
     path = Path(text).expanduser()
     return path if path.is_absolute() else Path(base) / path

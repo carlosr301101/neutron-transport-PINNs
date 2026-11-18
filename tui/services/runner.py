@@ -12,9 +12,10 @@ from collections.abc import Callable
 from pathlib import Path
 
 from core.placeholders import detect_placeholders
-from utils.paths import PROJECT_ROOT
+from utils.paths import PACKAGE_ROOT, WORK_ROOT
 
-ROOT = PROJECT_ROOT
+ROOT = PACKAGE_ROOT
+WORK_DIR = WORK_ROOT
 
 LineCallback = Callable[[str], None]
 
@@ -61,6 +62,9 @@ class RunProcess:
             if isinstance(config_paths, (str, Path))
             else [Path(path) for path in config_paths]
         )
+        paths = [
+            path if path.is_absolute() else WORK_DIR / path for path in paths
+        ]
         if not paths:
             raise ValueError("Select at least one configuration.")
 
@@ -77,6 +81,8 @@ class RunProcess:
                 config["SPATIAL_SCHEME"] = scheme
 
         output_path = Path(output_path)
+        if not output_path.is_absolute():
+            output_path = WORK_DIR / output_path
         output_path.parent.mkdir(parents=True, exist_ok=True)
         temp_dir = Path(tempfile.mkdtemp(prefix="nts-tui-"))
         temp_json = temp_dir / "configs.json"
@@ -110,7 +116,7 @@ class RunProcess:
         try:
             self.process = subprocess.Popen(
                 command,
-                cwd=ROOT,
+                cwd=WORK_DIR,
                 env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,

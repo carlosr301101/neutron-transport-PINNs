@@ -1,9 +1,29 @@
 [project]
 name = "neutron-transport-pinns"
-version = "3.9.0"
+dynamic = ["version"]
 description = "Automated system for neutron transport simulations with parallel execution and TUI/CLI interfaces"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.14"
+authors = [
+    { name = "Carlos Rafael Gonzalez Alejo", email = "carlosr301101@gmail.com" },
+]
+keywords = [
+    "neutron transport",
+    "discrete ordinates",
+    "PINN",
+    "TUI",
+    "nuclear engineering",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Physics",
+]
 dependencies = [
     "textual>=8.0.0,<9",
     "pydantic>=2.6.0",
@@ -26,18 +46,24 @@ nts-1d-run-sc = "cli.run_1d:cli_sc"
 nts-1d-config = "utils.generate_1d_config:main"
 nts-tui = "tui.app:main"
 nts-generate = "cli.generate_placeholder:cli"
-nts-test = "cli.run_tests:main"
-tests = "cli.run_tests:main"
 
 [project.optional-dependencies]
 images = ["textual-image>=0.8"]
+
+[project.urls]
+Repository = "https://github.com/carlosr301101/neutron-transport-PINNs"
+Issues = "https://github.com/carlosr301101/neutron-transport-PINNs/issues"
+Documentation = "https://github.com/carlosr301101/neutron-transport-PINNs/tree/main/doc"
 
 [tool.uv]
 package = true
 
 [build-system]
-requires = ["setuptools>=68.0", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "tui._version.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["cli", "core", "execution", "utils", "tui*", "solvers*"]

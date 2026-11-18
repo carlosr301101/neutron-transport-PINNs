@@ -22,21 +22,21 @@ Review `pyproject.toml`:
 - `[tool.setuptools.package-data]`: non-Python assets such as
   `tui/app.tcss`.
 
-Known issues to resolve before publishing:
+Applied decisions:
 
-1. `nts-test` and `tests` are entry points, but `tests/` is not packaged.
-   Remove them from the wheel or ship the tests intentionally.
-2. If the 2D binaries are not shipped, document that only the 1D/TUI workflow
-   is available from PyPI.
-3. Keep one source of truth for the version. Option A: keep the static version
-   in `pyproject.toml`. Option B: use a dynamic version:
+1. License: MIT (`LICENSE`).
+2. The wheel is Python-only: CLI + TUI + 1D solver. No `.c`, `.h` or 2D
+   binaries.
+3. `tests/` is not packaged. `nts-test` and `tests` are not console scripts;
+   development uses `uv run python -m cli.run_tests`.
+4. The version comes from `tui/_version.py`:
 
    ```toml
    [project]
    dynamic = ["version"]
 
    [tool.setuptools.dynamic]
-   version = { attr = "tui.__version__" }
+   version = { attr = "tui._version.__version__" }
    ```
 
 4. Confirm the package name is still available on PyPI:
@@ -61,7 +61,7 @@ Known issues to resolve before publishing:
 3. Run the suite:
 
    ```bash
-   uv run nts-test
+   uv run python -m cli.run_tests
    ```
 
 4. Commit and tag only after the release build passes.
@@ -156,7 +156,19 @@ uv pip install --python /tmp/nts-testpypi/bin/python \
 /tmp/nts-testpypi/bin/nts --help
 ```
 
-## 6. PyPI
+## 6. CI and release workflows
+
+`.github/workflows/ci.yml` runs on Linux and Windows:
+
+- `uv sync --frozen --extra images`
+- `uv run python -m cli.run_tests`
+- `uvx ruff check --select F,E9 .`
+- a separate Ubuntu job runs `uv build` and `twine check`
+
+`.github/workflows/release.yml` runs on `v*` tags and publishes with PyPI
+trusted publishing (`id-token: write`, environment `pypi`).
+
+## 7. PyPI
 
 Dry run first:
 
@@ -187,7 +199,7 @@ uv publish \
   dist/*
 ```
 
-## 7. Release
+## 8. Release
 
 ```bash
 git tag -a v<version> -m "neutron-transport-pinns <version>"
@@ -196,13 +208,13 @@ git push origin main --tags
 
 Create the release notes from `CHANGELOG.md`.
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
 | `twine check` complains about metadata | Add `license`, `authors`, `urls` and classifiers |
 | `tui/app.tcss` missing from wheel | Check `[tool.setuptools.package-data]` |
-| `nts-test` fails from wheel | It is a repository-only command; remove it from the wheel or ship tests |
+| `nts-test` fails from wheel | It was removed; use `uv run python -m cli.run_tests` in the repo |
 | `nts run` says solver missing | The 2D binaries are not in the wheel; compile them from the repo |
 | TestPyPI install cannot find dependencies | Add `--extra-index-url https://pypi.org/simple/` |
 | Version already exists | Bump the version; PyPI does not allow replacing files |

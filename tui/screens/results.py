@@ -34,6 +34,9 @@ class ResultsPane(VerticalScroll):
         )
         yield DataTable(id="results-table", cursor_type="row")
         yield Static("", id="results-detail", classes="detail")
+        # La composición termina después de este método: programar la carga
+        # para el siguiente refresco evita consultar hijos que aún no existen.
+        self.call_after_refresh(self.ensure_loaded)
 
     def ensure_loaded(self) -> None:
         """Load the latest result only when the tab is opened."""

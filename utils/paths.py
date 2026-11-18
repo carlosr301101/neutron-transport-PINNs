@@ -1,24 +1,38 @@
 """Path management utilities for NTS automation."""
 
+from __future__ import annotations
+
+import os
 from pathlib import Path
 from typing import Optional
 
 
-# Project root directory
-PROJECT_ROOT = Path(__file__).parent.parent.absolute()
+# Location of the installed package / source checkout.
+PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 
-# Solver directories
-SOLVERS_DIR = PROJECT_ROOT / "solvers" / "runners"
+# User-facing work directory.  A wheel must not write into site-packages.
+WORK_ROOT = Path(
+    os.environ.get("NTS_HOME", Path.cwd())
+).expanduser().resolve()
 
-# Output directories
-OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+# Backwards-compatible alias for repository code that needs the package root.
+PROJECT_ROOT = PACKAGE_ROOT
+
+# Solver directories.  The 2D binaries are not part of the wheel, but this
+# lets a user point at a local build with NTS_SOLVERS_DIR.
+SOLVERS_DIR = Path(
+    os.environ.get("NTS_SOLVERS_DIR", PACKAGE_ROOT / "solvers" / "runners")
+).expanduser().resolve()
+
+# Output directories live in the user's work directory.
+OUTPUTS_DIR = WORK_ROOT / "outputs"
 INPUTS_DIR = OUTPUTS_DIR / "inputs"
 RESULTS_DIR = OUTPUTS_DIR / "results"
 PLOTS_DIR = RESULTS_DIR / "plots"
 LOGS_DIR = OUTPUTS_DIR / "logs"
 
-# Template directory
-TEMPLATES_DIR = PROJECT_ROOT / "templates"
+# Template directory (runtime/templates, not package data).
+TEMPLATES_DIR = WORK_ROOT / "templates"
 
 # Available solver names
 AVAILABLE_SOLVERS = ["NTS_DD", "NTS_LD", "NTS_RM_CN", "NTS_RM_LLN", "NTS_STEP"]

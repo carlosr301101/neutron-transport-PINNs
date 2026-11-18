@@ -308,7 +308,7 @@ uv run nts-1d-run --json outputs/inputs/inputs_1d.json
 3. Repeat for `outer = 1..MAX_OUTER`:
    1. Freeze the fission source: `S_f = ½ νΣf Φ / k`.
    2. Inner scattering iteration until
-      `max_i |1 - Φ_new_i/Φ_old_i| < min(epsilon, TOL_K)` (cells with
+      `max_i |1 - Φ_new_i/Φ_old_i| < max(epsilon, TOL_K)` (cells with
       zero old flux use an absolute difference).
    3. `P_new = ∫νΣf Φ_new dx`.
    4. `k_new = k · P_new / P_old`.
@@ -378,7 +378,7 @@ records the effective `NU` in `configuration`.
 
 Data: `L = 20 cm`, `σt = 1.0`, `σs0 = 0.9`, `νσf = 0.11`, vacuum.
 
-| Order | `k_eff` (100 cells, `TOL_K=1e-6`) |
+| Order | `k_eff` (100 cells, `epsilon = TOL_K = 1e-6`) |
 |---|---|
 | S2 | 1.024641 |
 | S4 | 1.026509 |
@@ -395,6 +395,10 @@ Mesh convergence (S8):
 | 400 | 1.026685 |
 
 With finer `epsilon`/`TOL_K`, values converge to ~`1.026689`.
+With the current defaults (`epsilon=1e-5`, `TOL_K=1e-6`) the inner iteration
+uses `max(epsilon, TOL_K)=1e-5` and the values sit ~1.5e-5 lower
+(S8/100: `1.026661`); the tables above correspond to the tight `1e-6`
+setting.
 
 Cross-checks:
 
@@ -481,7 +485,7 @@ Rules:
 ## 8. Validation
 
 ```bash
-uv run nts-test -v
+uv run python -m cli.run_tests -v
 ```
 
 Included tests:

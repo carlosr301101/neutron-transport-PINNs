@@ -34,6 +34,8 @@ from ..services.config_store import (
 from ..services.paths import resolve_path
 from ..widgets import FissionTable, GeometryBar, RegionTable, ZoneTable
 
+POWER_FIELDS: tuple[str, ...] = ("POWER_KW", "E_F_MEV", "NU", "AREA_CM2")
+
 
 class ConfigEditorPane(VerticalScroll):
     """Schema-driven form with editable tables and conditional physics fields."""
@@ -100,8 +102,9 @@ class ConfigEditorPane(VerticalScroll):
                 if field.widget in {"table", "derived"}:
                     continue
                 yield self._build_row(field)
+        self.call_after_refresh(self._after_compose)
 
-    def on_mount(self) -> None:
+    def _after_compose(self) -> None:
         self.refresh_load_options()
         self._populate(DEFAULT_CONFIG)
 
@@ -196,6 +199,9 @@ class ConfigEditorPane(VerticalScroll):
 
             mode = self._infer_mode(config)
             self._widgets["MODE"].value = mode
+            power_switch = self._widgets.get("power_normalization")
+            if isinstance(power_switch, Switch):
+                power_switch.value = config.get("POWER_KW") is not None
         finally:
             self._updating = False
         self._apply_mode(sanitize=False)
@@ -216,6 +222,7 @@ class ConfigEditorPane(VerticalScroll):
                 raw[field.key] = widget.value
 
         config = config_from_form(raw)
+        power_enabled = bool(config.pop("power_normalization", False))
         region = self.query_one(RegionTable)
         zone = self.query_one(ZoneTable)
         fission = self.query_one(FissionTable)
@@ -268,6 +275,11 @@ class ConfigEditorPane(VerticalScroll):
         elif mode == "driven":
             config["K_EFF"] = None
             config["K0"] = None
+
+        if mode == "fixed_source" or not power_enabled:
+            config["POWER_KW"] = None
+        elif config.get("POWER_KW") is None:
+            raise ValueError("Power normalization is enabled; set POWER_KW (kW).")
         return config
 
     def _apply_mode(self, sanitize: bool) -> None:
@@ -286,6 +298,7 @@ class ConfigEditorPane(VerticalScroll):
         self.query_one(RegionTable).set_source_visible(mode != "eigenvalue")
         self.query_one("#mode-note", Static).update(self._mode_note(mode))
         self._apply_reflection_visibility()
+        self._apply_power_visibility()
         if sanitize:
             self._sanitize_mode(mode)
         self._refresh_geometry()
@@ -319,6 +332,9 @@ class ConfigEditorPane(VerticalScroll):
         if mode == "fixed_source":
             fission.set_zone_count(zone.zone_count)
             fission.set_values([0.0] * zone.zone_count, None)
+            switch = self._widgets.get("power_normalization")
+            if isinstance(switch, Switch) and switch.value:
+                switch.value = False
             self._clear_input("K_EFF")
             self._clear_input("K0")
             self._clear_input("POWER_KW")
@@ -390,6 +406,8 @@ class ConfigEditorPane(VerticalScroll):
     def on_switch_changed(self, event: Switch.Changed) -> None:
         if event.switch.id in ("cfg-reflex_izq", "cfg-reflex_der"):
             self._apply_reflection_visibility()
+        elif event.switch.id == "cfg-power_normalization":
+            self._apply_power_visibility()
 
     def _apply_reflection_visibility(self) -> None:
         left = self._widgets.get("reflex_izq")
@@ -402,6 +420,16 @@ class ConfigEditorPane(VerticalScroll):
             self._rows["bound_right"].display = not (
                 isinstance(right, Switch) and right.value
             )
+
+    def _apply_power_visibility(self) -> None:
+        """Show the power-normalization inputs only when the user enables it."""
+        switch = self._widgets.get("power_normalization")
+        enabled = isinstance(switch, Switch) and switch.value
+        visible = self._mode != "fixed_source" and enabled
+        for key in POWER_FIELDS:
+            row = self._rows.get(key)
+            if row is not None:
+                row.display = visible
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if self._updating:

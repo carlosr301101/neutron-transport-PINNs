@@ -295,7 +295,7 @@ discretization, are driven by Python config dicts
 
 Interactive 1D workflow: `uv run nts tui` (or `uv run nts-tui`). The Textual
 UI covers the config wizard, geometry/material tables, runs, results, plots,
-sweeps and exports. See [TUI_EN.md](TUI_EN.md).
+placeholder ranges and exports. See [TUI_EN.md](TUI_EN.md).
 
 Quick benchmark (20 cm homogeneous slab, vacuum, `σt=1.0`, `σs0=0.9`,
 `νσf=0.11`):
@@ -313,7 +313,8 @@ uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind angular --run ma
 uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run manual
 ```
 
-Expected S8 result: `k_eff ≈ 1.02668`; `k_inf = 1.1`.
+Expected S8 result: `k_eff ≈ 1.02667` with the defaults (`epsilon=1e-5`), or
+`1.02668` with `epsilon = TOL_K = 1e-6`; `k_inf = 1.1`.
 
 Full reference: [MULTIPLICATIVE_MEDIA_EN.md](MULTIPLICATIVE_MEDIA_EN.md).
 

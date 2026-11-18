@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v3.8.1), a CLI/TUI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v3.9.2), a CLI/TUI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -23,6 +23,9 @@ Operational knowledge for the NTS Automation System in this repository.
 Full reference docs live in `README.md`, `doc/QUICKSTART.md` and
 `doc/NTS_DOCUMENTATION.md` — read them when you need background theory or
 solver method selection. This file is the short, operational path.
+
+Installation: `doc/INSTALLING_EN.md`. Packaging and PyPI release:
+`doc/PACKAGING_EN.md`.
 
 ## Environment rules
 
@@ -47,10 +50,10 @@ solver method selection. This file is the short, operational path.
 ## Running tests
 
 ```bash
-uv run nts-test
-uv run nts-test -v
-uv run nts-test --failfast
-uv run nts-test -p "test_plot_1d_flux.py"
+uv run python -m cli.run_tests
+uv run python -m cli.run_tests -v
+uv run python -m cli.run_tests --failfast
+uv run python -m cli.run_tests -p "test_plot_1d_flux.py"
 ```
 
 ## Command map
@@ -59,7 +62,7 @@ Main CLI (`cli/commands.py` via `main.py`):
 
 | Command | Purpose | Key flags |
 |---------|---------|-----------|
-| `nts tui` | Launch the 1D terminal UI (config, run, results, plots, sweep, export) | — |
+| `nts tui` | Launch the 1D terminal UI (config, run, results, plots, placeholders, export) | — |
 | `nts status` | Solver binaries + file counts | — |
 | `nts validate <config.json>` | Pydantic validation + summary | — |
 | `nts generate <config.json>` | JSON config → `input_###.txt` | `-p` preview, `--place-holder NAME START END STEP` (repeatable, nargs=4), `--json` placeholder config, `-o` output |
@@ -85,7 +88,7 @@ Shortcuts (`pyproject.toml` scripts):
 | `nts-1d-plot [-r output_1d.json \| -i datos.json] [--kind scalar\|angular\|k-history\|scs] [--run ...]` | scalar/angular flux, k_history, or legacy SCS plots |
 | `nts-1d-excel output_1d_###.json [-o out.xlsx] [--run ...]` | export the consolidated JSON to a formatted workbook |
 | `nts-1d-normalize output_1d_###.json --power-kw 10 [--nu 2.4]` | normalize an existing output to a target power |
-| `nts-test [-v] [--failfast] [-p PATTERN]` | run the unittest suite |
+| `python -m cli.run_tests [-v] [--failfast] [-p PATTERN]` | run the unittest suite |
 
 ## TUI (1D workflow)
 
@@ -93,15 +96,24 @@ Launch with `uv run nts tui` (same as `uv run nts-tui`).
 
 - **Config**: geometry bar, editable region table (`cells`, `length`, `zone`,
   `Q`), zone table (`Sigma_t`, `Sigma_s0`), fission table (`nu*Sigma_f`,
-  `Sigma_f`), plus every scalar field of the 1D config.
+  `Sigma_f`), plus every scalar field of the 1D config. Power normalization is
+  a switch: `POWER_KW`, `E_F_MEV`, `NU` and `AREA_CM2` stay hidden until it is
+  enabled, and an enabled switch with a blank `POWER_KW` is a form error.
 - **MODE rules**: `fixed_source` hides fission and stores `NU_SIGF=0`;
   `eigenvalue` hides `K_EFF` and forces `Q=0`; `fixed_k` requires `K_EFF`;
   `driven` uses `k=1`.
 - **Boundaries**: a scalar expands to `N/2` directions (`0` with S8 becomes
   `[0,0,0,0]`); a full vector is kept. Reflective sides hide the field.
-- **Run**: subprocess with live log and cancel; output JSON and Excel.
+- **Run**: subprocess with live log and cancel; output JSON and Excel. Closing
+  the TUI cancels a running solver.
 - **Results/Plots**: per-run `k_eff`; scalar, angular, `k_history`, SCS.
-- **Sweep/Export**: placeholder ranges, `datos.json`, Excel, SCS plot.
+  `Use in Plots` selects the file and switches to Plots (mounting it if its
+  tab was never opened).
+- **Placeholders/Export**: one `start:end:step` range per placeholder (e.g.
+  `MM [10:20:1]`), preview, save JSON/Python, batch run and Cancel;
+  `datos.json`, Excel and SCS plot live in Export.
+- After every finished run all tabs refresh themselves (`refresh_all`);
+  internal errors go to `outputs/logs/tui.log`.
 - Optional inline preview: `uv sync --extra images`.
 
 ## Parametric sweep recipe (1D workflow)
@@ -187,8 +199,9 @@ support fission.
 - If `MODE` is omitted: `NU_SIGF=0` -> `fixed_source`; `NU_SIGF>0` with no
   `K_EFF` -> `eigenvalue`; `NU_SIGF>0` with `K_EFF` -> `fixed_k`.
 - Convergence: `max |1 - phi_new/phi_old| < epsilon` (`epsilon = 1e-5`;
-  `eigenvalue` inner flux uses `min(epsilon, TOL_K) = 1e-6`). Cells with
-  `phi_old = 0` fall back to an absolute difference.
+  `eigenvalue` inner flux uses `max(epsilon, TOL_K)`, so with the defaults it
+  stops at `1e-5`; pass `epsilon=1e-6` to reproduce the historical `k_eff`
+  values). Cells with `phi_old = 0` fall back to an absolute difference.
 - `iteration` counts completed flux updates (one per right + left sweep
   and scalar-flux update); `iteration_eigenvalue` counts power iterations
   and is `null` outside `eigenvalue`.
@@ -213,7 +226,7 @@ support fission.
 
 | `SPATIAL_SCHEME` | Order | Notes |
 |---|---|---|
-| `DD` | 2nd | Default; bit-for-bit backward compatible |
+| `DD` | 2nd | Default; bit-for-bit backward compatible at equal tolerances |
 | `STEP` | 1st | Implicit upwind (`psi_bar = psi_out`), positive, diffusive |
 | `SC` | 2nd | Step characteristics; closest to DD on coarse meshes |
 
@@ -223,8 +236,10 @@ support fission.
   (same flags as `nts-1d-run`) and warn when the config says otherwise.
 - Only the cell kernel changes: source, quadrature, boundaries and iteration
   are shared.
-- S8/100 cells benchmark: DD `1.026676`, SC `1.026054`, STEP `1.017843`.
-  STEP's ~0.9% gap is expected (first order), not a defect.
+- S8/100 cells benchmark: DD `1.026661`, SC `1.026038`, STEP `1.017827`
+  with the defaults; with `epsilon = TOL_K = 1e-6`: `1.026676`, `1.026054`,
+  `1.017843` (the values pinned by the tests). STEP's ~0.9% gap is expected
+  (first order), not a defect.
 - No clipping or positivity constraints. DD can give negative angular fluxes
   in thick cells; report them, do not "fix" them.
 ### Solver modules
@@ -236,7 +251,7 @@ support fission.
 | `NTS_SC_1D.py` | Step Characteristic scheme (`theta` + `prepare()`) |
 | `scheme.py` | `Method`, `Scheme` protocol, dispatch |
 | `config.py` | Scheme-agnostic `Config` |
-| `runner.py` | Shared transport engine |
+| `runner.py` | Shared transport engine (single-pass sweep) |
 
 Per-method cards: `solvers/runners/NTS_DD_1D.md`, `NTS_STEP_1D.md`,
 `NTS_SC_1D.md`. Full reference: `doc/SPATIAL_SCHEMES_EN.md`.
@@ -246,16 +261,37 @@ Per-method cards: `solvers/runners/NTS_DD_1D.md`, `NTS_STEP_1D.md`,
 `L=20 cm`, `Sigma_t=1.0`, `Sigma_s0=0.9`, `nu*Sigma_f=0.11`,
 `NC=[100]`, `N=8`, vacuum:
 
-| Order | `k_eff` |
-|---|---|
-| S2 | 1.02464 |
-| S4 | 1.02651 |
-| S8 | 1.02668 |
+| Order | `k_eff` (defaults) | `k_eff` (`epsilon = TOL_K = 1e-6`) |
+|---|---|---|
+| S2 | 1.02462 | 1.02464 |
+| S4 | 1.02649 | 1.02651 |
+| S8 | 1.02667 | 1.02668 |
 
-`k_inf = 1.1` is the upper bound. Mesh convergence at S8 (default
-`TOL_K=1e-6`): 25 -> 1.026539, 50 -> 1.026649, 100 -> 1.026676,
-200 -> 1.026683, 400 -> 1.026685. Tighter tolerances converge to ~1.026689. The slab is slightly supercritical. The exact test is a
-reflective slab: `k_eff = nu*Sigma_f / Sigma_a` (e.g. 0.3/0.5 = 0.6).
+`k_inf = 1.1` is the upper bound. Mesh convergence at S8 with
+`epsilon = TOL_K = 1e-6`: 25 -> 1.026539, 50 -> 1.026649, 100 -> 1.026676,
+200 -> 1.026683, 400 -> 1.026685 (defaults, `epsilon=1e-5`, give ~1.5e-5
+less: 100 -> 1.026661, 200 -> 1.026667). Tighter tolerances converge to
+~1.026689. The slab is slightly supercritical. The exact test is a reflective
+slab: `k_eff = nu*Sigma_f / Sigma_a` (e.g. 0.3/0.5 = 0.6).
+
+### Solver performance (1D)
+
+- The engine is a **single-pass sweep**: `Runner.sweep()` computes the cell
+  averages and the scalar/angular flux in the same traversal.
+  `calculo_flujo()` is kept as a public, NumPy-vectorized API but is no longer
+  used by the iteration.
+- Sweep invariants (`dx`, `Σt`, `μ`, `|μ|`, `ω`, `θ`) are precomputed as Python
+  floats; do not reintroduce attribute lookups or `abs()` in the inner loop.
+- Inner scattering tolerance is `max(epsilon, TOL_K)`.
+- Measured on this repo (Python 3.14, 20 cm, S8, I=200): eigenvalue ~0.8 s
+  (618 sweeps) after the optimization, ~2.1 s before; fixed source ~0.13 s.
+  The 5-zone S4 case is dominated by the dominance ratio (~11k sweeps).
+- Details and before/after tables: `extras/mejoras_nts.md`.
+- Pending (medium risk, not implemented): `extras/propuesta_dsa_cmfd.md`
+  (convergence acceleration) and `extras/propuesta_barrido_vectorizado.md`
+  (vectorized/compiled sweep).
+- Comparison with the LabSN 1D JavaScript teaching solver (10 cases, balance,
+  critique): `extras/analisis_codigo.md`.
 
 ### Multiplicative sweep
 
@@ -288,7 +324,7 @@ x-axes. `sweep_kpis.py` prints a `k_eff` table when the runs contain it.
 ### Validation
 
 ```bash
-uv run nts-test -v
+uv run python -m cli.run_tests -v
 ```
 
 Covers: reflective infinite medium (exact), 20 cm benchmark, `fixed_k` at
@@ -408,10 +444,10 @@ N=2/4/8 rows all follow them):
   "
   ```
 - **The silent trap**: a config with an N that has no row does not error —
-  the 1D solver prints `Advertencia: No hay datos para S{N}, usando S2.` and
-  runs S2 anyway. When a user asks for an order not in the table, either add
-  the rows first or surface the warning loudly instead of reporting S2
-  results as S{N}.
+  the 1D solver prints `Warning: no data for S{N}, falling back to S2.` and
+  runs S2 anyway, while `Config.N` still reports the requested order. When a
+  user asks for an order not in the table, either add the rows first or
+  surface the warning loudly instead of reporting S2 results as S{N}.
 - Boundary vectors in the config must have length N/2:
   `bound_left=[1]*int(N/2)`, `bound_right=[0]*int(N/2)` for the standard
   isotropic-in / vacuum-out problem (`reflex_*` = False).
@@ -420,9 +456,12 @@ N=2/4/8 rows all follow them):
 
 ## Validation gates and coordinates
 
-- Zone physics: `σs < σt` per zone; `N` even; `ZMAP` values in `[1, NZ]`;
-  `TOL ∈ [1e-7, 1e-2]` (defaults: ε=1e-5 relative, max_iter=2000 in the 1D
-  solver).
+- Zone physics: the **2D Pydantic config** enforces `σs < σt`; the 1D
+  `Config` does **not** validate it (only `HR > 0`, `IZL` in range, `N` even).
+  Check `σs ≤ σt` by hand for 1D configs: `σs > σt` gives negative absorption
+  and unphysical amplification.
+- 2D gates: `N` even; `ZMAP` values in `[1, NZ]`; `TOL ∈ [1e-7, 1e-2]`
+  (1D defaults: ε=1e-5 relative, `max_iter=2000`).
 - 1D multiplicative: `NU_SIGF >= 0`; `K_EFF > 0` for `fixed_k`;
   `eigenvalue` requires `Q=0` and zero incoming flux; `driven` requires
   `Q != 0` or incoming flux and forces `k=1`; `POWER_KW` requires

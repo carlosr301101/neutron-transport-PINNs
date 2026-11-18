@@ -158,7 +158,7 @@ dibuja una línea por dirección.
 ## 8. Resultados de referencia
 
 Placa homogénea de 20 cm, vacío, `σt = 1.0`, `σs0 = 0.9`, `νσf = 0.11`,
-`TOL_K = 1e-6`:
+`epsilon = TOL_K = 1e-6`:
 
 | N | DD | STEP | SC |
 |---|---|---|---|
@@ -174,6 +174,10 @@ Convergencia de malla (S8):
 | 50 | 1.026649 | 1.009516 | 1.024237 |
 | 100 | 1.026676 | 1.017843 | 1.026054 |
 | 200 | 1.026683 | 1.022198 | 1.026526 |
+
+Con los defaults actuales (`epsilon=1e-5`) las mismas corridas quedan ~1.5e-5
+por debajo (S8/100: DD `1.026661`, SC `1.026038`, STEP `1.017827`); las tablas
+usan la tolerancia fina `1e-6`.
 
 DD y SC convergen a `≈1.026689`; STEP converge al mismo límite pero en primer
 orden, así que en mallas prácticas queda ~0.9 % (100 celdas) o ~0.45 %
@@ -227,7 +231,7 @@ flujos. Cada esquema muestra su comportamiento natural:
 - fronteras de vacío y reflexivas para los tres.
 
 ```bash
-uv run nts-test
+uv run python -m cli.run_tests
 ```
 
 ## 11. Referencias internas

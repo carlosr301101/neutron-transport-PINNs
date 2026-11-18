@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import tempfile
 import unittest
@@ -12,9 +13,11 @@ from textual.widgets import Button, Input, Select, Static, TabbedContent
 
 from tui.app import NTSApp
 from tui.screens.config_editor import ConfigEditorPane
+from tui.screens.placeholders import PlaceholdersPane
 from tui.screens.plot_studio import PlotStudioPane
 from tui.screens.results import ResultsPane
 from tui.screens.run_manager import RunManagerPane
+from tui.schema import DEFAULT_CONFIG
 from tui.widgets.image_preview import ImagePreview
 
 
@@ -30,7 +33,7 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                 "tab-run",
                 "tab-results",
                 "tab-plots",
-                "tab-sweep",
+                "tab-placeholders",
                 "tab-export",
             ):
                 tabs.active = tab
@@ -228,7 +231,7 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                 "tui.widgets.image_preview.detect_image_protocol",
                 return_value=None,
             ):
-                preview.show("/tmp/does-not-exist.png")
+                preview.show(Path(tempfile.gettempdir()) / "does-not-exist.png")
                 await pilot.pause()
             self.assertIn(
                 "not supported",
@@ -307,7 +310,7 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                     text = str(app.query_one("#dash-status", Static).render())
                     self.assertIn("Result files  1", text)
 
-    async def test_run_and_sweep_expose_cancel(self):
+    async def test_run_and_placeholders_expose_cancel(self):
         app = NTSApp()
         async with app.run_test(size=(140, 50)) as pilot:
             await pilot.pause()
@@ -315,9 +318,9 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
             tabs.active = "tab-run"
             await pilot.pause()
             self.assertTrue(app.query_one("#run-cancel", Button).disabled)
-            tabs.active = "tab-sweep"
+            tabs.active = "tab-placeholders"
             await pilot.pause()
-            self.assertTrue(app.query_one("#sweep-cancel", Button).disabled)
+            self.assertTrue(app.query_one("#ph-cancel", Button).disabled)
 
     async def test_unmount_cancels_a_running_solver(self):
         app = NTSApp()
@@ -351,6 +354,129 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                     pane.on_data_table_row_selected(_FakeRowSelected(1))
                     detail = str(pane.query_one("#results-detail", Static).render())
                     self.assertIn("beta", detail)
+
+
+    async def test_use_in_plots_switches_tab_and_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "output_1d_001.json"
+            source.write_text(
+                json.dumps(
+                    {"runs": [{"config_name": "run_a", "mode": "eigenvalue",
+                               "scalar_flux": [1.0, 2.0, 3.0]}]}
+                )
+            )
+            with (
+                patch("tui.screens.results.list_outputs", return_value=[source]),
+                patch("tui.screens.plot_studio.list_outputs", return_value=[source]),
+            ):
+                app = NTSApp()
+                async with app.run_test(size=(140, 50)) as pilot:
+                    await pilot.pause()
+                    tabs = app.query_one("#tabs", TabbedContent)
+                    tabs.active = "tab-results"
+                    for _ in range(10):
+                        await pilot.pause()
+                        if app.query("#results-to-plots"):
+                            break
+                    await pilot.click("#results-to-plots")
+                    for _ in range(8):
+                        await pilot.pause()
+                    self.assertEqual(tabs.active, "tab-plots")
+                    pane = app.query_one(PlotStudioPane)
+                    self.assertEqual(
+                        str(pane.query_one("#plot-result", Select).value),
+                        str(source),
+                    )
+
+    async def test_placeholders_range_preview(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config = Path(tmp) / "config_1d_001.json"
+            config.write_text(json.dumps({"SCS": ["QQ"], "NC": [1]}))
+            with patch(
+                "tui.screens.placeholders.list_configs", return_value=[config]
+            ):
+                app = NTSApp()
+                async with app.run_test(size=(140, 50)) as pilot:
+                    await pilot.pause()
+                    tabs = app.query_one("#tabs", TabbedContent)
+                    tabs.active = "tab-placeholders"
+                    for _ in range(3):
+                        await pilot.pause()
+                    pane = app.query_one(PlaceholdersPane)
+                    select = pane.query_one("#ph-file", Select)
+                    select.set_options([(config.name, str(config))])
+                    select.value = str(config)
+                    await pilot.pause()
+                    pane._load()
+                    await pilot.pause()
+                    self.assertEqual(pane._placeholders, ["QQ"])
+
+                    pane.query_one("#ph-range-QQ", Input).value = "10:20:1"
+                    pane._preview()
+                    await pilot.pause()
+                    status = str(pane.query_one("#ph-status", Static).content)
+                    self.assertIn("11 configuration(s)", status)
+
+                    pane.query_one("#ph-range-QQ", Input).value = "20:10:1"
+                    pane._preview()
+                    await pilot.pause()
+                    status = str(pane.query_one("#ph-status", Static).content)
+                    self.assertIn("End must be", status)
+
+    async def test_power_normalization_fields_are_conditional(self):
+        power_fields = ("POWER_KW", "E_F_MEV", "NU", "AREA_CM2")
+        app = NTSApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab-config"
+            for _ in range(3):
+                await pilot.pause()
+            pane = app.query_one(ConfigEditorPane)
+            switch = pane._widgets["power_normalization"]
+
+            # fixed_source: todo oculto
+            self.assertFalse(pane._rows["power_normalization"].display)
+            for key in power_fields:
+                self.assertFalse(pane._rows[key].display)
+
+            # eigenvalue: switch visible, campos aún ocultos
+            pane._widgets["MODE"].value = "eigenvalue"
+            await pilot.pause()
+            self.assertTrue(pane._rows["power_normalization"].display)
+            for key in power_fields:
+                self.assertFalse(pane._rows[key].display)
+
+            # encendido: aparecen los cuatro campos
+            switch.value = True
+            await pilot.pause()
+            for key in power_fields:
+                self.assertTrue(pane._rows[key].display)
+
+            # encendido sin POWER_KW -> error de formulario
+            with self.assertRaises(ValueError):
+                pane.collect_config()
+
+            pane._widgets["POWER_KW"].value = "10"
+            config = pane.collect_config()
+            self.assertEqual(config["POWER_KW"], 10.0)
+            self.assertNotIn("power_normalization", config)
+
+            # apagado: se oculta y no se normaliza
+            switch.value = False
+            await pilot.pause()
+            for key in power_fields:
+                self.assertFalse(pane._rows[key].display)
+            self.assertIsNone(pane.collect_config()["POWER_KW"])
+
+            # cargar un config con POWER_KW enciende el switch
+            config = copy.deepcopy(DEFAULT_CONFIG)
+            config.update({"MODE": "eigenvalue", "POWER_KW": 5.0,
+                           "NU_SIGF": [0.1]})
+            pane._populate(config)
+            await pilot.pause()
+            self.assertTrue(switch.value)
+            for key in power_fields:
+                self.assertTrue(pane._rows[key].display)
 
 
 class _FakeRun:

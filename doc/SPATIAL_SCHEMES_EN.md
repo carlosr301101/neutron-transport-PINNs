@@ -158,7 +158,7 @@ draws one line per direction.
 ## 8. Reference results
 
 20 cm homogeneous slab, vacuum, `σt = 1.0`, `σs0 = 0.9`, `νσf = 0.11`,
-`TOL_K = 1e-6`:
+`epsilon = TOL_K = 1e-6`:
 
 | N | DD | STEP | SC |
 |---|---|---|---|
@@ -174,6 +174,10 @@ Mesh convergence (S8):
 | 50 | 1.026649 | 1.009516 | 1.024237 |
 | 100 | 1.026676 | 1.017843 | 1.026054 |
 | 200 | 1.026683 | 1.022198 | 1.026526 |
+
+With the current defaults (`epsilon=1e-5`) the same runs are ~1.5e-5 lower
+(S8/100: DD `1.026661`, SC `1.026038`, STEP `1.017827`); the tables use the
+tight `1e-6` setting.
 
 DD and SC converge to `≈1.026689`; STEP converges to the same limit but at
 first order, so at practical meshes it sits ~0.9% (100 cells) or ~0.45%
@@ -226,7 +230,7 @@ the fluxes. Each scheme shows its natural behaviour:
 - vacuum and reflective boundaries for all three.
 
 ```bash
-uv run nts-test
+uv run python -m cli.run_tests
 ```
 
 ## 11. Internal references

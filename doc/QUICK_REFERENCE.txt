@@ -2,7 +2,7 @@
 ║                    NTS PROGRAMS - QUICK REFERENCE                     ║
 ╚════════════════════════════════════════════════════════════════════════╝
 
-1D TUI: uv run nts tui  (config, runs, results, plots, sweeps, export)
+1D TUI: uv run nts tui  (config, runs, results, plots, placeholders, export)
 
 PROGRAM OVERVIEW
 ═══════════════════════════════════════════════════════════════════════════
@@ -235,7 +235,8 @@ Mode rules:
   fixed_k    : imposes k; without source it is a mode-shape problem
 
 Benchmark (20 cm, vacuum, Sigma_t=1.0, Sigma_s=0.9, nu*Sf=0.11):
-  S2 k_eff ≈ 1.02465 | S4 ≈ 1.02652 | S8 ≈ 1.02668
+  S2 k_eff ≈ 1.02462 | S4 ≈ 1.02649 | S8 ≈ 1.02667 (defaults)
+  Tight (epsilon=TOL_K=1e-6): 1.02464 | 1.02651 | 1.02668
   k_inf = 1.1 (upper bound); system is slightly supercritical.
 
 Commands:
@@ -250,7 +251,7 @@ Commands:
   uv run nts-1d-plot -r output_1d_016.json --kind angular --run manual
   uv run nts-1d-plot -r output_1d_016.json --kind k-history --run manual
   uv run nts-1d-plot -i datos.json --x k_eff        # modo legado
-  uv run nts-test -v
+  uv run python -m cli.run_tests -v
 
 Full reference: MULTIPLICATIVE_MEDIA_EN.md
 

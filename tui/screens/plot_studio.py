@@ -6,6 +6,7 @@ from pathlib import Path
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal, VerticalScroll
+from textual.css.query import NoMatches
 from textual.widgets import Button, Input, Label, Select, Static
 
 from ..services import export, plots, terminal
@@ -20,6 +21,7 @@ class PlotStudioPane(VerticalScroll):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._loaded = False
+        self._pending_source: str | None = None
 
     def compose(self) -> ComposeResult:
         yield Static("Plot studio", classes="title")
@@ -92,6 +94,14 @@ class PlotStudioPane(VerticalScroll):
             classes="field-row",
         )
         yield Button("Generate SCS", id="scs-generate", variant="primary")
+        self.call_after_refresh(self._after_compose)
+
+    def _after_compose(self) -> None:
+        """Carga los resultados y aplica un origen pedido antes de componer."""
+        self.ensure_loaded()
+        if self._pending_source is not None:
+            target, self._pending_source = self._pending_source, None
+            self._apply_source(target)
 
     def ensure_loaded(self) -> None:
         """Load result files only when the tab is opened."""
@@ -133,19 +143,28 @@ class PlotStudioPane(VerticalScroll):
                 run_select.value = options[0][1]
 
     def set_source(self, path: Path | str) -> None:
+        """Selecciona *path*, esperando a la composición si hace falta."""
         self._loaded = True
-        target = str(Path(path))
+        self._pending_source = str(Path(path))
+        try:
+            self.query_one("#plot-result", Select)
+        except NoMatches:
+            return  # `_after_compose` lo aplicará
+        target, self._pending_source = self._pending_source, None
+        self._apply_source(target)
+
+    def _apply_source(self, target: str) -> None:
         options = [(item.name, str(item)) for item in list_outputs()]
         if target not in {value for _, value in options}:
-            if not Path(path).exists():
-                self._status(f"Result not found: {path}")
+            if not Path(target).exists():
+                self._status(f"Result not found: {target}")
                 return
-            options.append((Path(path).name, target))
+            options.append((Path(target).name, target))
         select = self.query_one("#plot-result", Select)
         select.set_options(options)
         select.value = target
         self.refresh_runs()
-        self._status(f"Ready to plot {Path(path).name}.")
+        self._status(f"Ready to plot {Path(target).name}.")
 
     def on_select_changed(self, event: Select.Changed) -> None:
         if event.select.id == "plot-result":

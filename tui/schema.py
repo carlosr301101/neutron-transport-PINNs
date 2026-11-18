@@ -168,12 +168,24 @@ FIELDS: tuple[Field, ...] = (
         visible_in=("eigenvalue",),
     ),
     Field(
+        "power_normalization",
+        "Power normalization",
+        "bool",
+        "Physics mode",
+        False,
+        help=(
+            "Enable POWER_KW normalization; the energy/NU/area inputs are hidden "
+            "otherwise."
+        ),
+        visible_in=FISSION_MODES,
+    ),
+    Field(
         "POWER_KW",
         "Power [kW]",
         "optional_float",
         "Physics mode",
         None,
-        help="Blank disables power normalization.",
+        help="Required when power normalization is enabled.",
         visible_in=FISSION_MODES,
     ),
     Field(

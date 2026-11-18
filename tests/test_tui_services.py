@@ -121,6 +121,19 @@ class TestSweeps(unittest.TestCase):
         self.assertEqual(len(configs), 3)
         self.assertEqual([config["SCS"] for config in configs], [[0.8], [0.85], [0.9]])
 
+    def test_parse_range(self):
+        self.assertEqual(sweeps.parse_range("10:20:1"), ("10", "20", "1"))
+        self.assertEqual(sweeps.parse_range("[10:20:1]"), ("10", "20", "1"))
+        self.assertEqual(
+            sweeps.parse_range(" 0.1 : 0.5 : 0.05 "), ("0.1", "0.5", "0.05")
+        )
+        self.assertEqual(
+            sweeps.range_values("10:20:2"), [10, 12, 14, 16, 18, 20]
+        )
+        for bad in ("10-20-1", "10:20", "10:20:0", "20:10:1"):
+            with self.assertRaises(ValueError):
+                sweeps.parse_range(bad)
+
     def test_save_json_and_python(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "sweep.json"

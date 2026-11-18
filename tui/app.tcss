@@ -141,7 +141,7 @@
         border: round $primary;
     }
 
-    #sweep-log {
+    #ph-log {
         height: 12;
         border: round $primary;
     }
@@ -150,7 +150,7 @@
         height: 14;
     }
 
-    #sweep-ranges {
+    #ph-ranges {
         height: auto;
     }
 

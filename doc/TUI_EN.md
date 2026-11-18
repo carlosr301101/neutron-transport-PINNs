@@ -1,7 +1,7 @@
 # NTS 1D TUI
 
 Terminal UI for the complete 1D workflow: configuration, runs, results,
-plots, sweeps and exports.
+plots, placeholders and exports.
 
 > Scope: 1D only. The 2D C solvers remain CLI-only.
 >
@@ -41,7 +41,7 @@ desktop default application.
 | Run | Select configs, optional scheme override, output JSON, Excel, live log, cancel |
 | Results | Runs table with `k_eff`, `k_balance`, iterations and convergence |
 | Plots | Scalar, angular, `k_history` and SCS plots with optional inline preview |
-| Sweep | Placeholder ranges, preview, save JSON/Python, batch run |
+| Placeholders | `start:end:step` ranges, preview, save JSON/Python, batch run |
 | Export | `datos.json`, Excel workbook, SCS plot |
 
 ## Config tab
@@ -56,12 +56,16 @@ The form mirrors `Config.manual_input` and `nts-1d-config`:
 - **Physics mode**: `MODE` is the first field.
   - `fixed_source`: fission fields and the fission table are hidden; `NU_SIGF`
     is saved as zero.
-  - `eigenvalue`: shows the fission table, `TOL_K`, `MAX_OUTER`, `K0` and the
-    power fields; `K_EFF` is hidden.
-  - `fixed_k`: shows the fission table, `K_EFF`, `TOL_K`, `MAX_OUTER` and the
-    power fields.
-  - `driven`: shows the fission table and power fields; `K_EFF` is hidden
-    because the solver uses `k = 1`.
+  - `eigenvalue`: shows the fission table, `TOL_K`, `MAX_OUTER` and `K0`;
+    `K_EFF` is hidden.
+  - `fixed_k`: shows the fission table, `K_EFF`, `TOL_K` and `MAX_OUTER`.
+  - `driven`: shows the fission table; `K_EFF` is hidden because the solver
+    uses `k = 1`.
+- **Power normalization**: a `Power normalization` switch. When off (default)
+  `POWER_KW`, `E_F_MEV`, `NU` and `AREA_CM2` stay hidden and `POWER_KW` is
+  saved as `null`. When on, the four fields appear and `POWER_KW` is required;
+  if it is blank, `Validate`/`Save` reports a form error. Loading a JSON with
+  `POWER_KW` turns the switch on automatically.
 - **Fission per zone**: editable `nu*Sigma_f` and optional `Sigma_f` table.
 - **Angular**: `N`, `SPATIAL_SCHEME`.
 - **Source and boundaries**: `Q` is part of the region table; the rest are
@@ -72,7 +76,7 @@ The form mirrors `Config.manual_input` and `nts-1d-config`:
 - **Convergence**: `epsilon`, `max_iter`.
 
 Only boundary arrays use comma-separated values. Numeric fields accept
-placeholder names (`kk`, `mm`, ...) for later expansion in the Sweep tab.
+placeholder names (`kk`, `mm`, ...) for later expansion in the Placeholders tab.
 
 Actions:
 
@@ -91,14 +95,17 @@ Actions:
   waits for it and escalates to `kill` if it does not exit.
 - After a run finishes every tab refreshes itself (`refresh_all`). Closing the
   TUI cancels any solver still running.
+- Internal errors are logged to `outputs/logs/tui.log`.
 
-Configs with unresolved placeholders are rejected; expand them in Sweep first.
+Configs with unresolved placeholders are rejected; expand them in Placeholders
+first.
 
 ## Results tab
 
 The table lists one row per run. Select a row to see mode, scheme, `k_eff`,
 `k_balance`, outer iterations, flux updates, convergence and flux range.
-`Use in Plots` sends the file to the Plot tab.
+`Use in Plots` sends the file to the Plot tab and switches to it, even if
+Plots has not been opened yet.
 
 ## Plots tab
 
@@ -109,13 +116,17 @@ The table lists one row per run. Select a row to see mode, scheme, `k_eff`,
 - `Open` opens the PNG with the desktop default application.
 - SCS section: `datos.json`, x-axis (`SCS`, `NU_SIGF`, `k_eff`) and output PNG.
 
-## Sweep tab
+## Placeholders tab
 
-1. Load a config containing placeholders.
-2. Fill `start`, `end` and `step` for each placeholder.
-3. `Preview` shows the number of configs and the first one.
+1. Load a config containing placeholders (`Refresh` reloads the list).
+2. Type one range per placeholder as `start:end:step`, e.g. `10:20:1`
+   (brackets are also accepted: `[10:20:1]`). The step must be greater than
+   zero and the end must be greater than or equal to the start.
+3. `Preview` shows the per-range summary (`MM: 10 -> 20 (step 1) = 11
+   value(s)`), the number of configs and the first one.
 4. `Save` writes a JSON list or a `.py` file (`config_dict_###`).
-5. `Run` executes the batch and writes one consolidated result file.
+5. `Run batch` executes the batch and writes one consolidated result file;
+   `Cancel` stops the run in progress.
 
 ## Export tab
 
@@ -126,5 +137,5 @@ The table lists one row per run. Select a row to see mode, scheme, `k_eff`,
 ## Tests
 
 ```bash
-uv run nts-test -p "test_tui_*.py" -v
+uv run python -m cli.run_tests -p "test_tui_*.py" -v
 ```

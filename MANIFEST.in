@@ -1,0 +1,22 @@
+include LICENSE
+include README.md
+
+# TUI stylesheet (also declared as package data).
+recursive-include tui *.tcss
+
+# Python-only distribution: keep C sources and 2D binaries out.
+prune tests
+prune extras
+prune outputs
+prune doc
+prune skills
+prune .github
+
+exclude solvers/runners/NTS_DD
+exclude solvers/runners/NTS_LD
+exclude solvers/runners/NTS_STEP
+exclude solvers/runners/NTS_RM_CN
+exclude solvers/runners/NTS_RM_LLN
+
+global-exclude *.c
+global-exclude *.h

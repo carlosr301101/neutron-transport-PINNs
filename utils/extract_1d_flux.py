@@ -6,6 +6,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+from utils.paths import WORK_ROOT
+
 
 def load_configs(inputs_path: Path) -> dict[str, dict]:
     if not inputs_path.exists():
@@ -165,7 +167,7 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    root = Path(__file__).resolve().parent.parent
+    root = WORK_ROOT
 
     if args.latest:
         source_path = find_latest(root / "outputs" / "results")

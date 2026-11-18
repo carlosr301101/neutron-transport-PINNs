@@ -27,7 +27,7 @@ class DashboardPane(VerticalScroll):
             classes="button-row",
         )
         yield Static(
-            "Tabs: Config wizard, Run, Results, Plots, Sweep, Export.",
+            "Tabs: Config wizard, Run, Results, Plots, Placeholders, Export.",
             classes="muted",
         )
 

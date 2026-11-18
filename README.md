@@ -1,6 +1,6 @@
 # Neutron Transport PINNs — NTS Automation System
 
-[![Version](https://img.shields.io/badge/version-3.9.1-blue)](Changelog_EN.md)
+[![Version](https://img.shields.io/badge/version-3.9.2-blue)](Changelog_EN.md)
 
 CLI/TUI automation system for **SN neutron transport simulations**:
 
@@ -34,7 +34,7 @@ CLI/TUI automation system for **SN neutron transport simulations**:
 - **1D multiplicative media** (`MODE=eigenvalue|fixed_k|driven`) with `k_eff`, power iteration and optional power normalization
 - **1D manual or JSON configuration**: interactive `--manual` wizard or `--json` file, with the effective config embedded in the output
 - **1D config generator**: `nts-1d-config` writes JSON with optional `kk`/`mm` placeholders, expandable via `nts-generate --json`
-- **1D TUI**: `nts tui` / `nts-tui` manages the full 1D workflow (config wizard with editable geometry/material tables, runs, results, plots, sweeps, exports)
+- **1D TUI**: `nts tui` / `nts-tui` manages the full 1D workflow (config wizard with editable geometry/material tables, runs, results, plots, placeholders, exports)
 - **1D result plots**: scalar flux vs `x`, angular flux per direction on one axes, `k_history`, and legacy SCS plots
 - **Post-processing**: scalar-flux extraction, SCS/NU_SIGF/k_eff-vs-flux plots, 2D MFLUX heatmaps
 - **Structured logging** per simulation plus a global rotating log
@@ -55,6 +55,10 @@ uv sync
 # Verify the installation
 uv run nts status
 ```
+
+End-user installation with `uv` or `pip`:
+[`doc/INSTALLING_EN.md`](doc/INSTALLING_EN.md) (English) and
+[`doc/installing.md`](doc/installing.md) (Spanish).
 
 Maintainers: build and publish steps are in
 [`doc/PACKAGING_EN.md`](doc/PACKAGING_EN.md) (English) and
@@ -81,7 +85,7 @@ Main entry point: `uv run nts <command>` (implemented in `cli/main.py` → `cli/
 | `nts plot [-r result.json] [-o out.png] [--show]` | Plot the `MFLUX` heatmap of a 2D result |
 | `nts-1d-plot -r output_1d.json [--kind scalar\|angular\|k-history] [--run ...]` | Plot 1D scalar/angular flux or `k_eff` history from a raw output |
 | `nts-1d-plot -i datos.json [--x SCS\|NU_SIGF\|k_eff]` | Legacy SCS/NU_SIGF/k_eff vs flux from `datos.json` |
-| `nts-test [-v] [--failfast] [-p PATTERN]` | Run the repository unittest suite |
+| `python -m cli.run_tests [-v] [--failfast] [-p PATTERN]` | Run the repository unittest suite |
 
 Extra shortcuts (independent entry points, see `pyproject.toml`):
 
@@ -94,7 +98,7 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 | `nts-1d-run-dd` / `-step` / `-sc` | Same flags, but forces the spatial scheme |
 | `nts-1d-excel output_1d_###.json [-o out.xlsx] [--run ...]` | Export a consolidated 1D output to a formatted Excel workbook |
 | `nts-1d-normalize output_1d_###.json --power-kw 10 [--nu 2.4]` | Normalize an existing output to a target power |
-| `nts-test` | Run the unittest suite (`-v`, `--failfast`, `-p PATTERN`) |
+| `python -m cli.run_tests` | Run the unittest suite (`-v`, `--failfast`, `-p PATTERN`) |
 | `nts-1d-data [--latest] [--positions 0 100] [--inputs inputs.py]` | Extract scalar fluxes + `NU_SIGF`/`mode`/`k_eff` (uses embedded config when available) |
 | `nts-1d-plot -r output_1d.json [--kind scalar\|angular\|k-history] [--run ...]` | Scalar/angular flux or `k_history` from a raw output |
 | `nts-1d-plot -i datos.json [--x SCS\|NU_SIGF\|k_eff]` | Legacy SCS/NU_SIGF/k_eff vs flux, one subplot per position |
@@ -116,7 +120,8 @@ The TUI covers the 1D workflow end to end:
   output JSON and Excel.
 - **Results**: per-run `k_eff`, `k_balance`, iterations and convergence.
 - **Plots**: scalar, angular, `k_history` and SCS; optional inline preview.
-- **Sweep**: placeholder ranges, preview, save JSON/Python, batch run.
+- **Placeholders**: `start:end:step` ranges (e.g. `MM [10:20:1]`), preview,
+  save JSON/Python, batch run.
 - **Export**: `datos.json`, Excel and SCS plots.
 
 Inline image preview is optional:
@@ -622,7 +627,7 @@ neutron-transport-PINNs/
 ├── tui/                         # Textual 1D UI (nts tui / nts-tui)
 │   ├── app.py                   # NTSApp and tab layout
 │   ├── schema.py                # Form field metadata
-│   ├── screens/                 # Dashboard, Config, Run, Results, Plots, Sweep, Export
+│   ├── screens/                 # Dashboard, Config, Run, Results, Plots, Placeholders, Export
 │   ├── widgets/                 # Region/zone/fission tables, geometry bar, preview
 │   └── services/                # Config store, runner, plots, sweeps, export
 ├── core/                        # Config generation and validation
@@ -742,13 +747,13 @@ Common issues:
 ## 🧪 Tests
 
 ```bash
-uv run nts-test                         # whole suite
-uv run nts-test -v                      # verbose
-uv run nts-test --failfast              # stop on first failure
-uv run nts-test -p "test_plot_1d_flux.py"  # one file
+uv run python -m cli.run_tests                         # whole suite
+uv run python -m cli.run_tests -v                      # verbose
+uv run python -m cli.run_tests --failfast              # stop on first failure
+uv run python -m cli.run_tests -p "test_plot_1d_flux.py"  # one file
 ```
 
-`nts-test` uses `unittest` and discovers `tests/test_*.py` from the
+`python -m cli.run_tests` uses `unittest` and discovers `tests/test_*.py` from the
 repository root, so it works from any current directory.
 
 All generated figures, tables and CLI messages use English labels. The main
@@ -760,6 +765,8 @@ multiplicative-media guide and the changelog are kept alongside them.
 | Document | Content |
 |----------|---------|
 | `doc/QUICKSTART.md` | One-page command cheatsheet |
+| `doc/INSTALLING_EN.md` | End-user installation with uv and pip (English) |
+| `doc/installing.md` | End-user installation with uv and pip (Spanish) |
 | `doc/PACKAGING_EN.md` | Packaging and PyPI publishing checklist (English) |
 | `doc/PACKAGING.md` | Packaging and PyPI publishing checklist (Spanish) |
 | `doc/TUI_EN.md` | 1D terminal UI guide (English) |

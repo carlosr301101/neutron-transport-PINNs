@@ -73,8 +73,9 @@ class ExportPane(VerticalScroll):
         )
         yield Button("Write SCS plot", id="export-scs", variant="primary")
         yield Static("", id="export-status", classes="status")
+        self.call_after_refresh(self._after_compose)
 
-    def on_mount(self) -> None:
+    def _after_compose(self) -> None:
         self.refresh_outputs()
 
     def refresh_outputs(self) -> None:

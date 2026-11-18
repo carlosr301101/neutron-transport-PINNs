@@ -13,17 +13,17 @@ from .log import configure_logging
 from .screens.config_editor import ConfigEditorPane
 from .screens.dashboard import DashboardPane
 from .screens.export import ExportPane
+from .screens.placeholders import PlaceholdersPane
 from .screens.plot_studio import PlotStudioPane
 from .screens.results import ResultsPane
 from .screens.run_manager import RunManagerPane
-from .screens.sweep import SweepPane
 
 _TAB_PANES = {
     "tab-config": ConfigEditorPane,
     "tab-run": RunManagerPane,
     "tab-results": ResultsPane,
     "tab-plots": PlotStudioPane,
-    "tab-sweep": SweepPane,
+    "tab-placeholders": PlaceholdersPane,
     "tab-export": ExportPane,
 }
 
@@ -42,6 +42,7 @@ class NTSApp(App):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._pane_mount_locks: dict[str, asyncio.Lock] = {}
+        self._pending_plot_source: str | None = None
 
     def _pane_lock(self, tab_id: str) -> asyncio.Lock:
         lock = self._pane_mount_locks.get(tab_id)
@@ -61,7 +62,7 @@ class NTSApp(App):
     async def _preload_config(self) -> None:
         try:
             await self._ensure_pane("tab-config")
-        except Exception:  # noqa: BLE001 - preload must never break startup
+        except Exception:
             self.log.debug("config preload failed", exc_info=True)
 
     def compose(self) -> ComposeResult:
@@ -77,7 +78,7 @@ class NTSApp(App):
                 pass
             with TabPane("Plots", id="tab-plots"):
                 pass
-            with TabPane("Sweep", id="tab-sweep"):
+            with TabPane("Placeholders", id="tab-placeholders"):
                 pass
             with TabPane("Export", id="tab-export"):
                 pass
@@ -97,14 +98,17 @@ class NTSApp(App):
     async def on_tabbed_content_tab_activated(
         self, event: TabbedContent.TabActivated
     ) -> None:
-        """Mount and load a tab only when the user opens it."""
+        """Mount the pane for a tab the first time it is opened.
+
+        Cada panel programa su propia carga desde ``compose`` con
+        ``call_after_refresh``: así los hijos ya existen cuando se consultan.
+        """
         tab_id = event.pane.id
         if tab_id not in _TAB_PANES:
             return
-        pane = await self._ensure_pane(tab_id)
-        ensure_loaded = getattr(pane, "ensure_loaded", None)
-        if callable(ensure_loaded):
-            ensure_loaded()
+        await self._ensure_pane(tab_id)
+        if tab_id == "tab-plots":
+            self._apply_pending_plot_source()
 
     def refresh_all(self) -> None:
         """Refresh every pane that shows filesystem data.
@@ -118,7 +122,7 @@ class NTSApp(App):
             (RunManagerPane, "refresh_configs"),
             (ResultsPane, "refresh_outputs"),
             (PlotStudioPane, "refresh_results"),
-            (SweepPane, "refresh_configs"),
+            (PlaceholdersPane, "refresh_configs"),
             (ExportPane, "refresh_outputs"),
         )
         for pane_type, method_name in refreshers:
@@ -138,17 +142,37 @@ class NTSApp(App):
         self.refresh_all()
 
     def set_plot_source(self, path: Path | str) -> None:
-        """Send a result file to the plot studio and switch tabs."""
-        self.call_next(self._set_plot_source, path)
+        """Send a result file to the plot studio and switch tabs.
 
-    async def _set_plot_source(self, path: Path | str) -> None:
+        Primero monta el panel y después activa la pestaña: Textual revierte
+        la activación si el ``TabPane`` todavía está vacío.  La carga del
+        archivo se aplica cuando el panel está compuesto (o de inmediato si
+        ya lo estaba).
+        """
+        self._pending_plot_source = str(path)
+        self.call_next(self._show_plots)
+
+    async def _show_plots(self) -> None:
         pane = await self._ensure_pane("tab-plots")
-        pane.set_source(path)
         self.query_one("#tabs", TabbedContent).active = "tab-plots"
+        # Mover el foco al panel evita que TabbedContent reactive la pestaña
+        # anterior al recibir el DescendantFocus del botón que se acaba de usar.
+        self.set_focus(pane)
+        self._apply_pending_plot_source()
+
+    def _apply_pending_plot_source(self) -> None:
+        path = self._pending_plot_source
+        self._pending_plot_source = None
+        if not path:
+            return
+        try:
+            self.query_one(PlotStudioPane).set_source(path)
+        except Exception:
+            self.log.debug("plot source failed", exc_info=True)
 
     def on_unmount(self) -> None:
         """Stop any solver still running when the app closes."""
-        for pane_type in (RunManagerPane, SweepPane):
+        for pane_type in (RunManagerPane, PlaceholdersPane):
             try:
                 self.query_one(pane_type).cancel_run()
             except Exception:  # noqa: BLE001 - shutdown must not raise

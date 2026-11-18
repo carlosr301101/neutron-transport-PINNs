@@ -1,5 +1,5 @@
 """NTS terminal user interface (1D workflow)."""
 
-__all__ = ["__version__"]
+from ._version import __version__
 
-__version__ = "3.9.0"
+__all__ = ["__version__"]

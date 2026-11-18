@@ -68,8 +68,9 @@ class RunManagerPane(RunPanel, VerticalScroll):
         )
         yield Static("", id="run-status", classes="status")
         yield RichLog(id="run-log", markup=False, wrap=True)
+        self.call_after_refresh(self._after_compose)
 
-    def on_mount(self) -> None:
+    def _after_compose(self) -> None:
         self.init_run_panel()
         self.refresh_configs()
 

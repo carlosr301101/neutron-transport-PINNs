@@ -1,7 +1,7 @@
 # TUI 1D de NTS
 
 Interfaz de terminal para el flujo 1D completo: configuración, corridas,
-resultados, gráficas, sweeps y exportación.
+resultados, gráficas, placeholders y exportación.
 
 > Alcance: solo 1D. Los solvers 2D en C siguen siendo exclusivos de la CLI.
 >
@@ -42,7 +42,7 @@ El preview usa el protocolo de imagen de la terminal cuando está disponible
 | Run | Selección de configs, esquema opcional, JSON de salida, Excel, log en vivo y cancelar |
 | Results | Tabla de runs con `k_eff`, `k_balance`, iteraciones y convergencia |
 | Plots | Gráficas scalar, angular, `k_history` y SCS con preview inline opcional |
-| Sweep | Rangos de placeholders, preview, guardar JSON/Python y corrida por lote |
+| Placeholders | Rangos `inicio:fin:paso`, preview, guardar JSON/Python y corrida por lote |
 | Export | `datos.json`, Excel y gráfica SCS |
 
 ## Pestaña Config
@@ -57,12 +57,16 @@ El formulario refleja `Config.manual_input` y `nts-1d-config`:
 - **Physics mode**: `MODE` es el primer campo.
   - `fixed_source`: oculta fisión y la tabla de fisión; `NU_SIGF` se guarda
     como cero.
-  - `eigenvalue`: muestra tabla de fisión, `TOL_K`, `MAX_OUTER`, `K0` y los
-    campos de potencia; `K_EFF` queda oculto.
-  - `fixed_k`: muestra tabla de fisión, `K_EFF`, `TOL_K`, `MAX_OUTER` y los
-    campos de potencia.
-  - `driven`: muestra tabla de fisión y potencia; `K_EFF` queda oculto porque
-    el solver usa `k = 1`.
+  - `eigenvalue`: muestra tabla de fisión, `TOL_K`, `MAX_OUTER` y `K0`;
+    `K_EFF` queda oculto.
+  - `fixed_k`: muestra tabla de fisión, `K_EFF`, `TOL_K` y `MAX_OUTER`.
+  - `driven`: muestra tabla de fisión; `K_EFF` queda oculto porque el solver
+    usa `k = 1`.
+- **Normalización de potencia**: switch `Power normalization`. Apagado (default)
+  oculta `POWER_KW`, `E_F_MEV`, `NU` y `AREA_CM2` y guarda `POWER_KW = null`.
+  Encendido muestra los cuatro campos y exige `POWER_KW`; si queda vacío,
+  `Validate`/`Save` reportan un error de formulario. Al cargar un JSON con
+  `POWER_KW` el switch se enciende solo.
 - **Fisión por zona**: tabla editable de `nu*Sigma_f` y `Sigma_f` opcional.
 - **Angular**: `N`, `SPATIAL_SCHEME`.
 - **Fuente y fronteras**: `Q` va en la tabla de regiones; el resto son
@@ -74,7 +78,7 @@ El formulario refleja `Config.manual_input` y `nts-1d-config`:
 - **Convergencia**: `epsilon`, `max_iter`.
 
 Solo los arreglos de frontera usan valores separados por comas. Los campos
-numéricos aceptan placeholders (`kk`, `mm`, ...) para expandirlos en Sweep.
+numéricos aceptan placeholders (`kk`, `mm`, ...) para expandirlos en Placeholders.
 
 Acciones:
 
@@ -93,15 +97,17 @@ Acciones:
   espera su salida y escala a `kill` si no responde.
 - Al terminar, todas las pestañas se refrescan solas (`refresh_all`). Cerrar la
   TUI cancela cualquier corrida en curso.
+- Los errores internos se registran en `outputs/logs/tui.log`.
 
 Los configs con placeholders sin resolver se rechazan; hay que expandirlos en
-Sweep.
+Placeholders.
 
 ## Pestaña Results
 
 La tabla muestra una fila por run. Al seleccionar una fila se ven modo,
 esquema, `k_eff`, `k_balance`, iteraciones externas, actualizaciones de flujo,
-convergencia y rango del flujo. `Use in Plots` manda el archivo a Plots.
+convergencia y rango del flujo. `Use in Plots` manda el archivo a Plots y
+cambia de pestaña, aunque Plots no se haya abierto todavía.
 
 ## Pestaña Plots
 
@@ -112,13 +118,16 @@ convergencia y rango del flujo. `Use in Plots` manda el archivo a Plots.
 - `Open` abre el PNG con la aplicación por defecto.
 - Sección SCS: `datos.json`, eje x (`SCS`, `NU_SIGF`, `k_eff`) y PNG de salida.
 
-## Pestaña Sweep
+## Pestaña Placeholders
 
-1. Cargar un config con placeholders.
-2. Completar `start`, `end` y `step` para cada placeholder.
-3. `Preview` muestra la cantidad de configs y el primero.
+1. Cargar un config con placeholders (botón `Refresh` recarga la lista).
+2. Escribir un rango por placeholder con el formato `inicio:fin:paso`, por
+   ejemplo `10:20:1` (también acepta corchetes: `[10:20:1]`). El paso debe ser
+   mayor que cero y el fin mayor o igual que el inicio.
+3. `Preview` muestra el resumen de cada rango (`MM: 10 -> 20 (step 1) = 11
+   value(s)`), la cantidad de configs y el primero.
 4. `Save` escribe una lista JSON o un `.py` (`config_dict_###`).
-5. `Run sweep` ejecuta el lote y escribe un único archivo de resultados;
+5. `Run batch` ejecuta el lote y escribe un único archivo de resultados;
    `Cancel` detiene la corrida en curso.
 
 ## Pestaña Export
@@ -130,5 +139,5 @@ convergencia y rango del flujo. `Use in Plots` manda el archivo a Plots.
 ## Tests
 
 ```bash
-uv run nts-test -p "test_tui_*.py" -v
+uv run python -m cli.run_tests -p "test_tui_*.py" -v
 ```

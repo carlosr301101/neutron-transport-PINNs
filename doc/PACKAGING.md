@@ -22,21 +22,21 @@ Revisar `pyproject.toml`:
 - `[tool.setuptools.package-data]`: assets que no son Python, como
   `tui/app.tcss`.
 
-Problemas conocidos a resolver antes de publicar:
+Decisiones aplicadas:
 
-1. `nts-test` y `tests` son entry points, pero `tests/` no se empaqueta.
-   Quitarlos del wheel o empaquetar los tests de forma intencional.
-2. Si no se distribuyen los binarios 2D, documentar que desde PyPI solo está
-   disponible el flujo 1D/TUI.
-3. Mantener una sola fuente de versión. Opción A: versión estática en
-   `pyproject.toml`. Opción B: versión dinámica:
+1. Licencia: MIT (`LICENSE`).
+2. El wheel es Python puro: CLI + TUI + solver 1D. Sin `.c`, `.h` ni binarios
+   2D.
+3. `tests/` no se empaqueta. `nts-test` y `tests` ya no son console scripts;
+   en desarrollo se usa `uv run python -m cli.run_tests`.
+4. La versión sale de `tui/_version.py`:
 
    ```toml
    [project]
    dynamic = ["version"]
 
    [tool.setuptools.dynamic]
-   version = { attr = "tui.__version__" }
+   version = { attr = "tui._version.__version__" }
    ```
 
 4. Confirmar que el nombre sigue libre en PyPI:
@@ -61,7 +61,7 @@ Problemas conocidos a resolver antes de publicar:
 3. Correr la suite:
 
    ```bash
-   uv run nts-test
+   uv run python -m cli.run_tests
    ```
 
 4. Commit y tag solo cuando el build de release pase.
@@ -156,7 +156,19 @@ uv pip install --python /tmp/nts-testpypi/bin/python \
 /tmp/nts-testpypi/bin/nts --help
 ```
 
-## 6. PyPI
+## 6. Workflows de CI y release
+
+`.github/workflows/ci.yml` corre en Linux y Windows:
+
+- `uv sync --frozen --extra images`
+- `uv run python -m cli.run_tests`
+- `uvx ruff check --select F,E9 .`
+- un job separado en Ubuntu ejecuta `uv build` y `twine check`
+
+`.github/workflows/release.yml` corre con tags `v*` y publica con trusted
+publishing de PyPI (`id-token: write`, environment `pypi`).
+
+## 7. PyPI
 
 Primero un dry run:
 
@@ -187,7 +199,7 @@ uv publish \
   dist/*
 ```
 
-## 7. Release
+## 8. Release
 
 ```bash
 git tag -a v<version> -m "neutron-transport-pinns <version>"
@@ -196,13 +208,13 @@ git push origin main --tags
 
 Crear las notas de release desde `CHANGELOG.md`.
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 | Síntoma | Solución |
 |---|---|
 | `twine check` se queja de metadata | Agregar `license`, `authors`, `urls` y classifiers |
 | Falta `tui/app.tcss` en el wheel | Revisar `[tool.setuptools.package-data]` |
-| `nts-test` falla desde el wheel | Es un comando solo del repo; quitarlo del wheel o empaquetar tests |
+| `nts-test` falla desde el wheel | Fue eliminado; usar `uv run python -m cli.run_tests` en el repo |
 | `nts run` dice solver missing | Los binarios 2D no van en el wheel; compilarlos desde el repo |
 | TestPyPI no encuentra dependencias | Agregar `--extra-index-url https://pypi.org/simple/` |
 | La versión ya existe | Subir la versión; PyPI no permite reemplazar archivos |

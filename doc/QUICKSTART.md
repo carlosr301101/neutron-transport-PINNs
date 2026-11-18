@@ -30,7 +30,7 @@ uv run nts --help
 
 ```bash
 uv run nts status                       # System overview
-uv run nts tui                          # 1D TUI (config, run, plots, sweep)
+uv run nts tui                          # 1D TUI (config, run, results, plots, placeholders)
 uv run nts validate <config.json>       # Validate JSON config (Pydantic)
 uv run nts generate <config.json>       # Generate input_###.txt
 uv run nts generate <config.json> -p    # Preview the 11-line input
@@ -39,8 +39,8 @@ uv run nts show <output_###.json>       # Show result summary
 uv run nts run -s NTS_DD -p 4           # Run all inputs, 4 processes
 uv run nts plot -r <output_###.json>    # Plot MFLUX heatmap
 uv run nts run-1d                       # Run the Python 1D solver
-uv run nts-test                         # Run the unittest suite
-uv run nts-test -v                      # Verbose tests
+uv run python -m cli.run_tests                         # Run the unittest suite
+uv run python -m cli.run_tests -v                      # Verbose tests
 ```
 
 ## 🎯 Available Solvers
@@ -236,7 +236,7 @@ Expected S8 result: `k_eff ≈ 1.02668` (`k_inf = 1.1`).
 
 The flux iteration stops when `max |1 - phi_new/phi_old| < epsilon`
 (`epsilon = 1e-5`; in `eigenvalue` the inner flux uses
-`min(epsilon, TOL_K) = 1e-6`). Cells with `phi_old = 0` use an absolute
+`max(epsilon, TOL_K) = 1e-5` with the defaults). Cells with `phi_old = 0` use an absolute
 difference.
 
 Optional power normalization:

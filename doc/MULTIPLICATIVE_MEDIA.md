@@ -309,7 +309,7 @@ uv run nts-1d-run --json outputs/inputs/inputs_1d.json
    1. Congelar la fuente de fisión:
       `S_f = ½ νΣf Φ / k`.
    2. Iteración interna de scattering hasta
-      `max_i |1 - Φ_new_i/Φ_old_i| < min(epsilon, TOL_K)` (celdas con
+      `max_i |1 - Φ_new_i/Φ_old_i| < max(epsilon, TOL_K)` (celdas con
       flujo viejo nulo usan diferencia absoluta).
    3. `P_new = ∫νΣf Φ_new dx`.
    4. `k_new = k · P_new / P_old`.
@@ -379,7 +379,7 @@ efectivo en `configuration`.
 
 Datos: `L = 20 cm`, `σt = 1.0`, `σs0 = 0.9`, `νσf = 0.11`, vacío.
 
-| Orden | `k_eff` (100 celdas, `TOL_K=1e-6`) |
+| Orden | `k_eff` (100 celdas, `epsilon = TOL_K = 1e-6`) |
 |---|---|
 | S2 | 1.024641 |
 | S4 | 1.026509 |
@@ -396,6 +396,10 @@ Convergencia en malla (S8):
 | 400 | 1.026685 |
 
 Con `epsilon`/`TOL_K` más finos los valores convergen a ~`1.026689`.
+Con los defaults actuales (`epsilon=1e-5`, `TOL_K=1e-6`) la iteración interna
+usa `max(epsilon, TOL_K)=1e-5` y los valores quedan ~1.5e-5 por debajo
+(S8/100: `1.026661`); las tablas de arriba corresponden a la tolerancia fina
+`1e-6`.
 
 Contrastes:
 
@@ -482,7 +486,7 @@ Reglas:
 ## 8. Validación
 
 ```bash
-uv run nts-test -v
+uv run python -m cli.run_tests -v
 ```
 
 Tests incluidos:

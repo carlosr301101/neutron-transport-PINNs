@@ -56,15 +56,15 @@ class TestUniquePath(unittest.TestCase):
 
 class TestResolvePath(unittest.TestCase):
     def test_relative_path_uses_the_base(self):
-        base = Path("/tmp/nts-base")
+        base = Path(tempfile.gettempdir()) / "nts-base"
         self.assertEqual(
             resolve_path("outputs/results/a.json", base),
             base / "outputs/results/a.json",
         )
 
     def test_absolute_path_is_kept(self):
-        absolute = Path("/var/tmp/a.json")
-        self.assertEqual(resolve_path(absolute, Path("/tmp")), absolute)
+        absolute = Path(tempfile.gettempdir()) / "a.json"
+        self.assertEqual(resolve_path(absolute, Path(tempfile.gettempdir())), absolute)
 
 
 if __name__ == "__main__":

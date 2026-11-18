@@ -1,4 +1,4 @@
-"""Placeholder sweep builder and batch runner."""
+"""Placeholder range builder and batch runner."""
 
 from __future__ import annotations
 
@@ -18,24 +18,29 @@ from textual.widgets import (
     Switch,
 )
 
-from core.placeholders import detect_placeholders
+from core.placeholders import build_placeholder_values, detect_placeholders
 
 from ..services.config_store import list_configs, load_config
 from ..services.paths import resolve_path
 from ..services.results import next_result_path
-from ..services.sweeps import expand_configs, save_configs
+from ..services.sweeps import expand_configs, parse_range, save_configs
 from ..widgets.run_panel import RunPanel
 
+RANGE_HINT = (
+    "Format: name [start:end:step]  ·  example: MM [10:20:1] generates "
+    "10, 11, …, 20."
+)
 
-class SweepPane(RunPanel, VerticalScroll):
-    """Expand placeholders and run the resulting configurations."""
 
-    log_id = "sweep-log"
-    status_id = "sweep-status"
-    start_id = "sweep-run"
-    cancel_id = "sweep-cancel"
-    loading_id = "sweep-loading"
-    failure_label = "Sweep failed"
+class PlaceholdersPane(RunPanel, VerticalScroll):
+    """Expand placeholders over a range and run the resulting configs."""
+
+    log_id = "ph-log"
+    status_id = "ph-status"
+    start_id = "ph-run"
+    cancel_id = "ph-cancel"
+    loading_id = "ph-loading"
+    failure_label = "Batch failed"
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -43,64 +48,69 @@ class SweepPane(RunPanel, VerticalScroll):
         self._placeholders: list[str] = []
 
     def compose(self) -> ComposeResult:
-        yield Static("Sweep builder", classes="title")
+        yield Static("Placeholder ranges", classes="title")
+        yield Static(RANGE_HINT, classes="muted")
         yield Horizontal(
-            Select([], prompt="Select config with placeholders...", id="sweep-file"),
-            Button("Load", id="sweep-load"),
-            Button("Preview", id="sweep-preview"),
-            Button("Save", id="sweep-save", variant="primary"),
+            Select([], prompt="Select config with placeholders...", id="ph-file"),
+            Button("Refresh", id="ph-refresh"),
+            Button("Load", id="ph-load"),
+            Button("Preview", id="ph-preview"),
+            Button("Save", id="ph-save", variant="primary"),
             classes="button-row",
         )
         yield Horizontal(
             Label("Output configs", classes="field-label"),
             Input(
                 value="outputs/inputs/inputs_1d.json",
-                id="sweep-output",
+                id="ph-output",
             ),
             classes="field-row",
         )
         yield Horizontal(
             Label("Excel", classes="field-label"),
-            Switch(value=False, id="sweep-excel"),
+            Switch(value=False, id="ph-excel"),
             classes="field-row",
         )
         yield Horizontal(
-            Button("Run sweep", id="sweep-run", variant="success"),
-            Button("Cancel", id="sweep-cancel", variant="error"),
-            LoadingIndicator(id="sweep-loading"),
+            Button("Run batch", id="ph-run", variant="success"),
+            Button("Cancel", id="ph-cancel", variant="error"),
+            LoadingIndicator(id="ph-loading"),
             classes="button-row",
         )
         yield Static("Ranges", classes="section-title")
-        yield Container(id="sweep-ranges")
-        yield Static("", id="sweep-status", classes="status")
-        yield RichLog(id="sweep-log", markup=False, wrap=True)
+        yield Container(id="ph-ranges")
+        yield Static("", id="ph-status", classes="status")
+        yield RichLog(id="ph-log", markup=False, wrap=True)
+        self.call_after_refresh(self._after_compose)
 
-    def on_mount(self) -> None:
+    def _after_compose(self) -> None:
         self.init_run_panel()
         self.refresh_configs()
 
     def refresh_configs(self) -> None:
         options = [(path.name, str(path)) for path in list_configs()]
-        select = self.query_one("#sweep-file", Select)
+        select = self.query_one("#ph-file", Select)
         select.set_options(options)
         if options:
             select.value = options[-1][1]
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button = event.button.id
-        if button == "sweep-load":
+        if button == "ph-refresh":
+            self.refresh_configs()
+        elif button == "ph-load":
             self._load()
-        elif button == "sweep-preview":
+        elif button == "ph-preview":
             self._preview()
-        elif button == "sweep-save":
+        elif button == "ph-save":
             self._save()
-        elif button == "sweep-run":
+        elif button == "ph-run":
             self._run()
-        elif button == "sweep-cancel":
+        elif button == "ph-cancel":
             self.cancel_run()
 
     def _load(self) -> None:
-        select = self.query_one("#sweep-file", Select)
+        select = self.query_one("#ph-file", Select)
         if select.is_blank():
             self._set_status("Select a configuration first.")
             return
@@ -111,7 +121,7 @@ class SweepPane(RunPanel, VerticalScroll):
             return
 
         self._placeholders = sorted(detect_placeholders(self._config))
-        container = self.query_one("#sweep-ranges", Container)
+        container = self.query_one("#ph-ranges", Container)
         container.remove_children()
         if not self._placeholders:
             self._set_status("No placeholders in this configuration.")
@@ -121,24 +131,39 @@ class SweepPane(RunPanel, VerticalScroll):
             container.mount(
                 Horizontal(
                     Label(name, classes="field-label"),
-                    Input(placeholder="start", id=f"sweep-start-{name}"),
-                    Input(placeholder="end", id=f"sweep-end-{name}"),
-                    Input(placeholder="step", id=f"sweep-step-{name}"),
+                    Input(placeholder="10:20:1", id=f"ph-range-{name}"),
                     classes="field-row",
                 )
             )
-        self._set_status("Placeholders: " + ", ".join(self._placeholders))
+        self._set_status(
+            f"{len(self._placeholders)} placeholder(s): "
+            + ", ".join(self._placeholders)
+            + ". Fill a range like 10:20:1."
+        )
+
+    def _range_texts(self) -> dict[str, str]:
+        texts: dict[str, str] = {}
+        for name in self._placeholders:
+            text = self.query_one(f"#ph-range-{name}", Input).value.strip()
+            if not text:
+                raise ValueError(f"Set a range for {name!r}, e.g. 10:20:1.")
+            texts[name] = text
+        return texts
 
     def _ranges(self) -> dict[str, tuple[str, str, str]]:
-        ranges: dict[str, tuple[str, str, str]] = {}
-        for name in self._placeholders:
-            start = self.query_one(f"#sweep-start-{name}", Input).value.strip()
-            end = self.query_one(f"#sweep-end-{name}", Input).value.strip()
-            step = self.query_one(f"#sweep-step-{name}", Input).value.strip()
-            if not start or not end or not step:
-                raise ValueError(f"Fill start, end and step for {name!r}.")
-            ranges[name] = (start, end, step)
-        return ranges
+        return {name: parse_range(text) for name, text in self._range_texts().items()}
+
+    @staticmethod
+    def _describe(ranges: dict[str, tuple[str, str, str]]) -> str:
+        lines = []
+        for name, (start, end, step) in ranges.items():
+            count = len(
+                build_placeholder_values(float(start), float(end), float(step))
+            )
+            lines.append(
+                f"{name}: {start} -> {end} (step {step}) = {count} value(s)"
+            )
+        return "\n".join(lines)
 
     def _expanded(self) -> list[dict]:
         if not self._placeholders:
@@ -146,17 +171,22 @@ class SweepPane(RunPanel, VerticalScroll):
         return expand_configs(self._config, self._ranges())
 
     def _output_path(self) -> Path:
-        text = self.query_one("#sweep-output", Input).value.strip()
+        text = self.query_one("#ph-output", Input).value.strip()
         return resolve_path(text or "outputs/inputs/inputs_1d.json")
 
     def _preview(self) -> None:
         try:
-            configs = self._expanded()
+            ranges = self._ranges()
+            configs = expand_configs(self._config, ranges) if self._placeholders else []
         except Exception as exc:  # noqa: BLE001
             self._set_status(f"[red]Preview failed:[/] {exc}")
             return
-        self.query_one("#sweep-log", RichLog).write(
-            f"{len(configs)} configuration(s). First:\n"
+        if not configs:
+            self._set_status("Load a configuration with placeholders first.")
+            return
+        self.query_one("#ph-log", RichLog).write(
+            self._describe(ranges)
+            + f"\n\n{len(configs)} configuration(s). First:\n"
             + json.dumps(configs[0], indent=2)
         )
         self._set_status(f"{len(configs)} configuration(s) ready.")
@@ -185,18 +215,18 @@ class SweepPane(RunPanel, VerticalScroll):
             else:
                 run_path = save_configs(configs, saved.with_suffix(".json"))
         except Exception as exc:  # noqa: BLE001
-            self._set_status(f"[red]Cannot save sweep:[/] {exc}")
+            self._set_status(f"[red]Cannot save batch:[/] {exc}")
             return
 
         output = next_result_path()
-        excel = self.query_one("#sweep-excel", Switch).value
+        excel = self.query_one("#ph-excel", Switch).value
         self.start_run(run_path, output, excel=excel)
 
     def on_run_complete(self, result: dict) -> None:
         code = result.get("returncode")
         output = result.get("output_path")
         if result.get("cancelled"):
-            self._set_status(f"Sweep cancelled (code {code}). Partial output: {output}")
+            self._set_status(f"Batch cancelled (code {code}). Partial output: {output}")
         else:
-            self._set_status(f"Sweep finished (code {code}). Output: {output}")
+            self._set_status(f"Batch finished (code {code}). Output: {output}")
         self.app.refresh_all()
