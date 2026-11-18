@@ -7,19 +7,26 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: pypi-release
   cancel-in-progress: false
 
 jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
   publish:
     name: Publish to PyPI
+    needs: ci
     runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/project/neutron-transport-pinns/
+    permissions:
+      contents: read
+      id-token: write
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +41,7 @@ jobs:
       - name: Check tag matches package version
         shell: bash
         run: |
-          version="$(uv run --frozen python -c 'from tui._version import __version__; print(__version__)')"
+          version="$(uv run --frozen --quiet python -c 'from tui._version import __version__; print(__version__)')"
           test "v${version}" = "${GITHUB_REF_NAME}"
 
       - name: Build distributions
