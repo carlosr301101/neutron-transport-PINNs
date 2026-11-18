@@ -217,6 +217,9 @@ uv publish \
 
 ## 8. Release
 
+Step-by-step version bump, tag and workflow guide: [RELEASING_EN.md](RELEASING_EN.md).
+
+
 ```bash
 git tag -a v<version> -m "neutron-transport-pinns <version>"
 git push origin main --tags

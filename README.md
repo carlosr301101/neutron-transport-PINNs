@@ -904,6 +904,8 @@ multiplicative-media guide and the changelog are kept alongside them.
 | `doc/INSTALLING_EN.md` | End-user installation with uv and pip (English) |
 | `doc/installing.md` | End-user installation with uv and pip (Spanish) |
 | `doc/PACKAGING_EN.md` | Packaging and PyPI publishing checklist (English) |
+| `doc/RELEASING_EN.md` | Version bump, tag and PyPI release workflow (English) |
+| `doc/RELEASING.md` | Version bump, tag and PyPI release workflow (Spanish) |
 | `doc/PACKAGING.md` | Packaging and PyPI publishing checklist (Spanish) |
 | `doc/TUI_EN.md` | 1D terminal UI guide (English) |
 | `doc/TUI.md` | 1D terminal UI guide (Spanish) |
