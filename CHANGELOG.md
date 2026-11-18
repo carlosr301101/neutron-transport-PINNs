@@ -2,7 +2,7 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
-## [Unreleased]
+## [3.9.5] - 2026-11-18 - Consola Windows compatible
 
 ### Fixed
 - `Validate` en la TUI ya no bloquea la interfaz: la validación corre en un
@@ -17,6 +17,9 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
 ### Added
 - `NTS_UNICODE=1` fuerza los glifos Unicode y `NTS_ASCII=1` fuerza ASCII.
 - CI en Windows con una prueba de regresión en `cp1252`.
+
+### Changed
+- Bump de versión a 3.9.5.
 
 ## [3.9.4] - 2026-11-18 - Versión de release
 
