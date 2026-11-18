@@ -158,7 +158,7 @@ uv pip install --python /tmp/nts-testpypi/bin/python \
 
 ## 6. CI and release workflows
 
-`.github/workflows/ci.yml` runs on Linux and Windows:
+`.github/workflows/ci.yml` runs on Linux:
 
 - `uv sync --frozen --extra images`
 - `uv run python -m cli.run_tests`

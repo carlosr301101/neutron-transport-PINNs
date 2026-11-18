@@ -19,14 +19,6 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
 ### Added
 - `parse_range()` y `range_values()` en `tui/services/sweeps.py`, con
   validación de formato, paso > 0 y fin >= inicio.
-- `utils/console.py`: `configure_stdio()` reemplaza caracteres no
-  representables en consolas Windows (cp1252), evitando `UnicodeEncodeError`
-  con `✓`, `→` o `Δ`. Se usa en los `main()` de `utils/*` y en los entry
-  points de `cli`.
-
-### Fixed
-- La suite y los CLIs ya no fallan en Windows por la codificación de la
-  consola (los símbolos se muestran como `?` en vez de lanzar excepción).
 
 ## [3.9.1] - 2026-11-17 - Rendimiento del solver 1D y análisis comparativo
 

@@ -2,8 +2,6 @@
 """Main entry point for NTS Automation System - CLI Interface."""
 
 import sys
-
-from utils.console import configure_stdio
 from utils.logger import setup_logging, get_logger
 from utils.paths import ensure_directories, get_missing_solvers
 
@@ -34,8 +32,7 @@ def check_prerequisites():
 
 def main():
     """Main entry point for CLI."""
-    configure_stdio()
-
+    
     # Setup logging first (less verbose)
     import logging
     setup_logging(console_level=logging.WARNING)

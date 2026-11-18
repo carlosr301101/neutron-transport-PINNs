@@ -38,10 +38,6 @@ Installation: `doc/INSTALLING_EN.md`. Packaging and PyPI release:
 - The 2D solvers are compiled binaries in `solvers/runners/` (checked with
   `uv run nts status`, which lists all five: NTS_DD, NTS_LD, NTS_STEP,
   NTS_RM_CN, NTS_RM_LLN).
-- Windows consoles use cp1252 and cannot encode `✓`, `→` or `Δ`: every CLI
-  `main()` calls `utils.console.configure_stdio()` (or an equivalent local
-  helper) before printing. Keep that call when adding entry points, and do not
-  print non-ASCII from a library module.
 
 ## Language
 

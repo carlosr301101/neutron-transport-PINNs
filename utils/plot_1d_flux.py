@@ -26,7 +26,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from utils.console import configure_stdio
 
 
 DEFAULT_DATOS = Path("outputs/results/datos.json")
@@ -379,7 +378,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    configure_stdio()
     parser = build_parser()
     args = parser.parse_args(argv)
 

@@ -23,7 +23,6 @@ if str(ROOT) not in sys.path:
 
 from solvers.runners.NTS_DD_1D import Config
 from utils.paths import INPUTS_DIR
-from utils.console import configure_stdio
 
 
 def next_config_path(base: Path | None = None) -> Path:
@@ -51,7 +50,6 @@ def _expansion_hint(conf: Config, output: Path) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    configure_stdio()
     parser = argparse.ArgumentParser(
         prog="nts-1d-config",
         description=(

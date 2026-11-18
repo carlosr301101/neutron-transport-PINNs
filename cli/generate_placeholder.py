@@ -11,7 +11,6 @@ if str(ROOT) not in sys.path:
 
 
 def cli() -> int:
-    configure_stdio()
     from cli.commands import cmd_generate
 
     parser = argparse.ArgumentParser(prog="nts-generate", add_help=True)
