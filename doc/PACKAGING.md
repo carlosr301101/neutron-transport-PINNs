@@ -158,16 +158,18 @@ uv pip install --python /tmp/nts-testpypi/bin/python \
 
 ## 6. Workflows de CI y release
 
-`.github/workflows/ci.yml` corre en Linux:
+`.github/workflows/ci.yml` corre en Ubuntu y Windows:
 
 - `uv sync --frozen --extra images`
 - `uv run python -m cli.run_tests`
-- `uvx ruff check --select F,E9 .`
+- `uvx ruff check --select F,E9 .` (solo Linux)
+- una prueba de consola `cp1252` en Windows
 - un job separado en Ubuntu ejecuta `uv build` y `twine check`
 
-`.github/workflows/release.yml` corre con tags `v*` y publica con trusted
-publishing de PyPI (`id-token: write`, environment `pypi`). También verifica
-que el tag coincida con `tui/_version.py`.
+`.github/workflows/release.yml` corre con tags `v*`, ejecuta `ci.yml` y solo
+publica si los tests de Ubuntu y Windows pasan. También verifica que el tag
+coincida con `tui/_version.py` y usa trusted publishing de PyPI
+(`id-token: write`, environment `pypi`).
 
 Configurar el pending publisher en PyPI antes del primer tag:
 

@@ -2,6 +2,12 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [Unreleased]
+
+### Changed
+- The release workflow runs CI on Ubuntu and Windows and only publishes to
+  PyPI when both pass.
+
 ## [3.9.5] - 2026-11-18 - Windows console support
 
 ### Fixed

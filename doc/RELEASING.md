@@ -10,7 +10,8 @@ cambio de versión -> tests -> build -> commit -> push main -> tag vX.Y.Z
 -> GitHub Actions -> PyPI
 ```
 
-El workflow se dispara únicamente con tags `v*`.
+El workflow se dispara únicamente con tags `v*`. Antes de publicar ejecuta
+`ci.yml` completo: si los tests de Ubuntu o Windows fallan, `publish` no corre.
 
 ## 0. Antes de empezar
 
@@ -169,14 +170,18 @@ Pero es más seguro subir solo el tag nuevo.
 
 Al subir `v3.9.6`:
 
-1. Verifica `v3.9.6 == tui/_version.py`.
-2. Ejecuta `uv build --clear`.
-3. Ejecuta `uvx twine check dist/*`.
-4. Publica con:
+1. Ejecuta CI en Ubuntu y Windows (`ci.yml`), incluida la prueba de consola
+   `cp1252`.
+2. Si ambos pasan, verifica `v3.9.6 == tui/_version.py`.
+3. Ejecuta `uv build --clear`.
+4. Ejecuta `uvx twine check dist/*`.
+5. Publica con:
 
 ```bash
 uv publish --trusted-publishing automatic
 ```
+
+Si cualquier job de CI falla, `publish` no se ejecuta.
 
 No usa `PYPI_TOKEN`.
 

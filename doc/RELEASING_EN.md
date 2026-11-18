@@ -10,7 +10,8 @@ version bump -> tests -> build -> commit -> push main -> tag vX.Y.Z
 -> GitHub Actions -> PyPI
 ```
 
-The workflow triggers only on `v*` tags.
+The workflow triggers only on `v*` tags. Before publishing it runs the full
+`ci.yml`: if the Ubuntu or Windows tests fail, `publish` does not run.
 
 ## 0. Before you start
 
@@ -169,14 +170,18 @@ Pushing only the new tag is safer.
 
 On `v3.9.6`:
 
-1. Checks `v3.9.6 == tui/_version.py`.
-2. Runs `uv build --clear`.
-3. Runs `uvx twine check dist/*`.
-4. Publishes with:
+1. Runs CI on Ubuntu and Windows (`ci.yml`), including the `cp1252` console
+   test.
+2. If both pass, checks `v3.9.6 == tui/_version.py`.
+3. Runs `uv build --clear`.
+4. Runs `uvx twine check dist/*`.
+5. Publishes with:
 
 ```bash
 uv publish --trusted-publishing automatic
 ```
+
+If any CI job fails, `publish` does not run.
 
 It does not use `PYPI_TOKEN`.
 
