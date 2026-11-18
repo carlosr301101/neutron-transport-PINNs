@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 
 from solvers.runners.power import DEFAULT_NU, power_watts
+from utils.console import emit
 
 
 def _as_list(value) -> list:
@@ -232,7 +233,7 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
-    print(f"✓ Normalized output: {output}")
+    emit(f"✓ Normalized output: {output}")
     return 0
 
 

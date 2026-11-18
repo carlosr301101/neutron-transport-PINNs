@@ -16,6 +16,8 @@ import json
 
 import matplotlib
 
+from utils.console import emit
+
 
 DEFAULT_INPUT = Path("outputs/results/datos.json")
 DEFAULT_OUTPUT = Path("outputs/results/plots/scs_flux.png")
@@ -112,7 +114,7 @@ def main() -> int:
     fig.savefig(plot_path, bbox_inches="tight")
     plt.close(fig)
 
-    print(f"✓ Plot saved: {plot_path}")
+    emit(f"✓ Plot saved: {plot_path}")
     return 0
 
 

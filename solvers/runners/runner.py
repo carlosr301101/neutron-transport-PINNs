@@ -16,6 +16,8 @@ from .config import Config
 from .power import power_watts
 from .scheme import Method, Scheme, get_scheme
 
+from utils.console import emit
+
 logger = logging.getLogger(__name__)
 
 
@@ -608,7 +610,7 @@ class Runner:
         self._scale_state(self.power_scale)
         self.power_w = target_w
 
-        print(
+        emit(
             f"✓ Power normalized to {cfg.POWER_KW:.6g} kW "
             f"(scale factor = {self.power_scale:.6e})"
         )

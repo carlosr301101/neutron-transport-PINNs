@@ -11,6 +11,8 @@ import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from utils.console import emit
+
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
 HEADER_FONT = Font(bold=True, color="FFFFFF")
 K_FORMAT = "0.0000000000"
@@ -341,7 +343,7 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
-    print(f"✓ Excel saved: {output}")
+    emit(f"✓ Excel saved: {output}")
     return 0
 
 

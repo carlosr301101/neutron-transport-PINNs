@@ -9,7 +9,7 @@ from datetime import datetime
 import importlib.util
 import pprint
 
-from rich.console import Console
+from rich import box as rich_box
 from rich.table import Table
 from rich.progress import (
     Progress,
@@ -40,13 +40,14 @@ from utils.paths import (
     PLOTS_DIR,
     RESULTS_DIR,
 )
+from utils.console import console_uses_ascii, get_console
 from utils.logger import get_logger
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-console = Console()
+console = get_console()
 
 
 def cmd_generate(args):
@@ -171,9 +172,11 @@ def cmd_run(args):
         output_file = RESULTS_DIR / f"output_{i:03d}.json"
         tasks.append((solver, input_file, str(output_file)))
 
-    # Run with progress bar
+    # Run with progress bar.  Legacy Windows consoles cannot encode Rich's
+    # braille spinner, so fall back to the ASCII "line" animation.
+    spinner = SpinnerColumn("line") if console_uses_ascii(console) else SpinnerColumn()
     with Progress(
-        SpinnerColumn(),
+        spinner,
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
@@ -209,7 +212,10 @@ def cmd_list(args):
         console.print(f"[yellow]No {args.type} found[/]")
         return 0
 
-    table = Table(title=title)
+    table = Table(
+        title=title,
+        box=rich_box.ASCII if console_uses_ascii(console) else rich_box.HEAVY_HEAD,
+    )
     table.add_column("Index", style="cyan", no_wrap=True)
     table.add_column("Filename", style="green")
     table.add_column("Size", justify="right", style="yellow")

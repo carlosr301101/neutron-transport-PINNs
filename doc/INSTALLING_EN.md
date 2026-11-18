@@ -197,6 +197,30 @@ python -m tui.app
 - The TUI writes configs under `outputs/inputs/` and results under
   `outputs/results/`.
 
+### Windows console
+
+On Windows the CLI prints ASCII output so legacy PowerShell code pages
+(`cp1252`/`cp850`) cannot break it. The final checkmark is printed as `OK`:
+
+```text
+OK Completed 3 run(s). Output: outputs/results/output_1d_003.json
+```
+
+To restore the Unicode glyphs (`✓`, `✗`, `•`) in a modern terminal:
+
+```powershell
+chcp 65001
+$env:NTS_UNICODE = "1"
+```
+
+To force ASCII on any system:
+
+```powershell
+$env:NTS_ASCII = "1"
+```
+
+The TUI is not affected: Textual writes through its own driver.
+
 ## Install from a local wheel
 
 ```bash

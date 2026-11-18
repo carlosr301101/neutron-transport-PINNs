@@ -27,6 +27,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from utils.console import emit
+
 
 DEFAULT_DATOS = Path("outputs/results/datos.json")
 DEFAULT_OUTPUTS = {
@@ -402,7 +404,7 @@ def main(argv: list[str] | None = None) -> int:
         except (ValueError, KeyError, OSError) as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 1
-        print(f"✓ Plot saved: {output}")
+        emit(f"✓ Plot saved: {output}")
         return 0
 
     if args.result is None:
@@ -437,7 +439,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    print(f"✓ Plot saved: {output}")
+    emit(f"✓ Plot saved: {output}")
     return 0
 
 

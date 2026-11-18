@@ -2,6 +2,18 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [Unreleased]
+
+### Fixed
+- La CLI ya no falla con `UnicodeEncodeError` en PowerShell ni en consolas
+  con code page heredada (`cp1252`/`cp850`).
+- Los símbolos `✓`, `✗` y `•` se imprimen como `OK`, `X` y `-` en Windows.
+- El spinner y las barras de progreso usan ASCII cuando la consola no es UTF-8.
+
+### Added
+- `NTS_UNICODE=1` fuerza los glifos Unicode y `NTS_ASCII=1` fuerza ASCII.
+- CI en Windows con una prueba de regresión en `cp1252`.
+
 ## [3.9.4] - 2026-11-18 - Versión de release
 
 ### Changed

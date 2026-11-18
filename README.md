@@ -862,6 +862,7 @@ Common issues:
 | Symptom | Fix |
 |---------|-----|
 | Solver "missing" in `nts status` | Rebuild the binaries (see `doc/NTS_DOCUMENTATION.md`) |
+| `✓`/`✗` look broken in PowerShell | The CLI prints ASCII (`OK`/`X`) on Windows; use `chcp 65001` and `$env:NTS_UNICODE="1"` for glyphs |
 | `STATUS != 0` in result JSON | Check the 11-line input format and `doc/NTS_DOCUMENTATION.md` constraints |
 | `nts-1d-data` finds no `SCS` | Make sure the config dicts in `inputs.py` define `SCS` |
 | Placeholder variables error when loading `inputs.py` | Regenerate with `uv run nts-generate` |

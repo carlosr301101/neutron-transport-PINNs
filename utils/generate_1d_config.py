@@ -22,6 +22,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from solvers.runners.NTS_DD_1D import Config
+from utils.console import emit
 from utils.paths import INPUTS_DIR
 
 
@@ -99,7 +100,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error writing {output}: {exc}", file=sys.stderr)
         return 1
 
-    print(f"✓ Configuration saved: {output}")
+    emit(f"✓ Configuration saved: {output}")
 
     if conf.has_placeholders:
         print(

@@ -16,6 +16,8 @@ from .cuadraturas import DATA
 from .power import DEFAULT_NU
 from .scheme import Method, method_from_name
 
+from utils.console import emit
+
 logger = logging.getLogger(__name__)
 
 
@@ -360,7 +362,7 @@ class Config:
         # Cálculos preliminares
         self.prelim_calculations()
 
-        print("✓ Configuration loaded successfully from dictionary")
+        emit("✓ Configuration loaded successfully from dictionary")
         logger.info(f"Configuration loaded from dictionary.\n{self}")
 
     def _validate_fission_config(self):

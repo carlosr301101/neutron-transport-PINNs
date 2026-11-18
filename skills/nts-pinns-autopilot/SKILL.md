@@ -146,6 +146,10 @@ In the TUI: **Config → Save → Run → Results → Plots**. Quit with `q`.
 - The 2D solvers are compiled binaries in `solvers/runners/` (checked with
   `uv run nts status`, which lists all five: NTS_DD, NTS_LD, NTS_STEP,
   NTS_RM_CN, NTS_RM_LLN).
+- Console output is ASCII on Windows because legacy PowerShell code pages
+  (`cp1252`/`cp850`) cannot encode `✓`/`✗`; the CLI prints `OK`/`X` instead
+  (for example `OK Completed 3 run(s).`). Set `NTS_UNICODE=1` (after
+  `chcp 65001`) to keep the glyphs, or `NTS_ASCII=1` to force ASCII anywhere.
 
 ## Language
 

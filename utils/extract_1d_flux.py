@@ -6,6 +6,7 @@ import importlib.util
 import json
 from pathlib import Path
 
+from utils.console import emit
 from utils.paths import WORK_ROOT
 
 
@@ -195,7 +196,7 @@ def main() -> int:
     with output_path.open("w") as f:
         json.dump(payload, f, indent=2)
 
-    print(f"✓ Data extracted: {output_path}")
+    emit(f"✓ Data extracted: {output_path}")
     return 0
 
 
