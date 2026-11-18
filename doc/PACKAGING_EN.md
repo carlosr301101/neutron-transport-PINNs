@@ -166,7 +166,27 @@ uv pip install --python /tmp/nts-testpypi/bin/python \
 - a separate Ubuntu job runs `uv build` and `twine check`
 
 `.github/workflows/release.yml` runs on `v*` tags and publishes with PyPI
-trusted publishing (`id-token: write`, environment `pypi`).
+trusted publishing (`id-token: write`, environment `pypi`). It also checks that
+the tag matches `tui/_version.py`.
+
+Configure the pending publisher in PyPI before the first tag:
+
+```text
+Project name: neutron-transport-pinns
+Owner:        carlosr301101
+Repository:   neutron-transport-PINNs
+Workflow:     release.yml
+Environment:  pypi
+```
+
+Create the `pypi` environment in GitHub Actions, then push a tag:
+
+```bash
+git tag -a v3.9.2 -m "neutron-transport-pinns 3.9.2"
+git push origin main --tags
+```
+
+No `PYPI_TOKEN` secret is needed for this path.
 
 ## 7. PyPI
 
@@ -176,20 +196,16 @@ Dry run first:
 uv publish --dry-run
 ```
 
-Publish with a token:
+Preferred path: let the `release.yml` workflow publish from a `v*` tag using
+trusted publishing. For a manual fallback only:
 
 ```bash
 UV_PUBLISH_TOKEN=pypi-... uv publish
 ```
 
-Or use trusted publishing from CI:
-
-```bash
-uv publish --trusted-publishing automatic
-```
-
 With GitHub Actions, grant `id-token: write` and use an environment protected
-by a PyPI trusted publisher.
+by a PyPI trusted publisher. The token path is a fallback, not the recommended
+release path.
 
 Avoid duplicate uploads:
 
