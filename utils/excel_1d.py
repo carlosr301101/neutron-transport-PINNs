@@ -323,7 +323,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        payload = json.loads(args.source.read_text())
+        payload = json.loads(args.source.read_text(encoding="utf-8"))
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import io
 import json
 import os
@@ -147,6 +148,44 @@ class TestCliUnderCp1252(unittest.TestCase):
             self.assertIn(b"OK Completed 1 run(s).", proc.stdout)
             self.assertNotIn(b"? Completed", proc.stdout)
             self.assertNotIn("✓".encode(), proc.stdout)
+
+
+RUNTIME_DIRS = ("cli", "utils", "solvers", "core", "skills")
+
+
+def _string_constants(node: ast.AST):
+    """Yield every string literal inside *node*, including f-string parts."""
+    for child in ast.walk(node):
+        if isinstance(child, ast.Constant) and isinstance(child.value, str):
+            yield child.value
+
+
+class TestNoRawPrintWithNonAscii(unittest.TestCase):
+    """Guard against print("✓ ...") bypassing the ASCII fallback."""
+
+    def test_runtime_print_calls_are_ascii(self):
+        offenders = []
+        for directory in RUNTIME_DIRS:
+            for path in (ROOT / directory).rglob("*.py"):
+                if "__pycache__" in path.parts:
+                    continue
+                tree = ast.parse(
+                    path.read_text(encoding="utf-8"), filename=str(path)
+                )
+                for node in ast.walk(tree):
+                    if not (
+                        isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Name)
+                        and node.func.id == "print"
+                    ):
+                        continue
+                    for arg in node.args:
+                        for text in _string_constants(arg):
+                            if any(ord(char) > 127 for char in text):
+                                offenders.append(
+                                    f"{path.relative_to(ROOT)}:{node.lineno}"
+                                )
+        self.assertEqual(offenders, [], f"non-ASCII print(): {offenders}")
 
 
 if __name__ == "__main__":

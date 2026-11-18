@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -40,6 +41,7 @@ class TestSweepKpisReport(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "output_1d_N4.json"
             source.write_text(json.dumps(payload))
+            env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
             result = subprocess.run(
                 [
                     sys.executable,
@@ -49,8 +51,10 @@ class TestSweepKpisReport(unittest.TestCase):
                     "0",
                 ],
                 cwd=ROOT,
+                env=env,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
                 check=False,
             )
         self.assertEqual(result.returncode, 0, result.stderr)

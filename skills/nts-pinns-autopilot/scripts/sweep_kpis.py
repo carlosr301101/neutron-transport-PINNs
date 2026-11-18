@@ -35,7 +35,7 @@ def order_name(path: Path) -> str:
 
 def load_sweep(path: Path, positions: list[int]) -> list[dict]:
     """Extract one row per config run, aligned by its SCS value."""
-    data = json.load(path.open())
+    data = json.load(path.open(encoding="utf-8"))
     rows = []
     for run in data.get("runs", []):
         if "error" in run:
@@ -102,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         iters = [r["iters"] for r in rows]
         print(
             f"- **{label}** (`{sources[label]}`): {len(rows)} runs, "
-            f"{n_ok} converged | iterations {min(iters)} → {max(iters)}"
+            f"{n_ok} converged | iterations {min(iters)} -> {max(iters)}"
         )
     print()
 
@@ -130,7 +130,7 @@ def main(argv: list[str] | None = None) -> int:
                 (
                     f"{sweeps[l][i]['k_eff']:.8f}"
                     if sweeps[l][i].get("k_eff") is not None
-                    else "—"
+                    else "-"
                 )
                 for l in labels
             )
@@ -154,8 +154,8 @@ def main(argv: list[str] | None = None) -> int:
         print()
 
     # Quadrature-convergence KPI vs reference
-    print(f"## Quadrature convergence (Δ vs {ref_label}, position {positions[0]})\n")
-    print("| " + " | ".join(f"max Δ({l} − {ref_label})" for l in labels[:-1]) + " |")
+    print(f"## Quadrature convergence (Delta vs {ref_label}, position {positions[0]})\n")
+    print("| " + " | ".join(f"max Delta({l} - {ref_label})" for l in labels[:-1]) + " |")
     print("|" + "------|" * (len(labels) - 1))
     for pos in [positions[0]]:
         deltas = []

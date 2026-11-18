@@ -180,7 +180,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        payload = json.loads(args.source.read_text())
+        payload = json.loads(args.source.read_text(encoding="utf-8"))
     except Exception as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -212,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"! {name}: {exc}", file=sys.stderr)
             continue
         normalized += 1
-        print(
+        emit(
             f"✓ {name}: P~={power_unnormalized:.6e} W, C_N={c_n:.6e}, "
             f"P={args.power_kw:g} kW"
         )

@@ -321,7 +321,7 @@ class TestEnglishLabelsAndMessages(unittest.TestCase):
             re.IGNORECASE,
         )
         accented = re.compile(r"[áéíóúüñÁÉÍÓÚÜÑ¿¡]")
-        source = Path(plot.__file__).read_text()
+        source = Path(plot.__file__).read_text(encoding="utf-8")
         offenders = []
         for node in ast.walk(ast.parse(source)):
             if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
