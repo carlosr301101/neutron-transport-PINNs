@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from utils.paths import WORK_ROOT
+from utils.console import configure_stdio
 
 
 def load_configs(inputs_path: Path) -> dict[str, dict]:
@@ -131,6 +132,7 @@ def extract_flux(
 
 
 def main() -> int:
+    configure_stdio()
     parser = argparse.ArgumentParser(
         description="Extract scalar flux at given positions from a 1D output JSON"
     )

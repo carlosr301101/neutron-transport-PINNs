@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 
 from solvers.runners.power import DEFAULT_NU, power_watts
+from utils.console import configure_stdio
 
 
 def _as_list(value) -> list:
@@ -138,6 +139,7 @@ def _positive_float(text: str) -> float:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_stdio()
     parser = argparse.ArgumentParser(
         prog="nts-1d-normalize",
         description="Normalize a consolidated 1D output to a target power",

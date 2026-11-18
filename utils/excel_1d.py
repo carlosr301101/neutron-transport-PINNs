@@ -10,6 +10,7 @@ from pathlib import Path
 import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
+from utils.console import configure_stdio
 
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
 HEADER_FONT = Font(bold=True, color="FFFFFF")
@@ -301,6 +302,7 @@ def _select_runs(runs: list[dict], selectors: list[str] | None) -> list[dict]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_stdio()
     parser = argparse.ArgumentParser(
         prog="nts-1d-excel",
         description="Export a consolidated 1D JSON output to a formatted Excel workbook",

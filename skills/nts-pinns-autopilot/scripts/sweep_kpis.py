@@ -21,10 +21,18 @@ pasted directly into reports (e.g. a Resume.md).
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import re
 import sys
 from pathlib import Path
+
+
+def _configure_stdio() -> None:
+    """Keep symbols such as ✓/→/Δ from crashing on legacy Windows codepages."""
+    for stream in (sys.stdout, sys.stderr):
+        with contextlib.suppress(AttributeError, OSError, ValueError):
+            stream.reconfigure(errors="replace")
 
 
 def order_name(path: Path) -> str:
@@ -63,6 +71,7 @@ def load_sweep(path: Path, positions: list[int]) -> list[dict]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    _configure_stdio()
     parser = argparse.ArgumentParser(
         description="Comparative KPI tables from NTS 1D sweep outputs"
     )

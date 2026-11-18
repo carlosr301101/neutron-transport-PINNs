@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from utils.console import configure_stdio  # noqa: E402 - after sys.path setup
+
 
 def build_parser(
     prog: str = "nts-1d-run", forced_scheme: str | None = None
@@ -55,6 +57,7 @@ def build_parser(
 
 
 def _run(prog: str, forced_scheme: str | None) -> int:
+    configure_stdio()
     from cli.commands import cmd_run_1d
 
     args = build_parser(prog, forced_scheme).parse_args()

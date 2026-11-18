@@ -14,6 +14,8 @@ from pathlib import Path
 import argparse
 import json
 
+from utils.console import configure_stdio
+
 import matplotlib
 
 
@@ -27,6 +29,7 @@ def load_data(path: Path) -> dict:
 
 
 def main() -> int:
+    configure_stdio()
     parser = argparse.ArgumentParser(
         prog="nts-1d-plot",
         description="Plot SCS vs scalar flux from datos.json",
