@@ -126,7 +126,7 @@ class TestCliUnderCp1252(unittest.TestCase):
             proc = self._run(home, "status")
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertNotIn(b"UnicodeEncodeError", proc.stderr)
-        self.assertNotIn("✓".encode("utf-8"), proc.stdout)
+        self.assertNotIn("✓".encode(), proc.stdout)
         self.assertIn(b"Solvers:", proc.stdout)
 
     def test_run_1d_completed_line_is_ascii(self):
@@ -146,7 +146,7 @@ class TestCliUnderCp1252(unittest.TestCase):
             self.assertNotIn(b"UnicodeEncodeError", proc.stderr)
             self.assertIn(b"OK Completed 1 run(s).", proc.stdout)
             self.assertNotIn(b"? Completed", proc.stdout)
-            self.assertNotIn("✓".encode("utf-8"), proc.stdout)
+            self.assertNotIn("✓".encode(), proc.stdout)
 
 
 if __name__ == "__main__":

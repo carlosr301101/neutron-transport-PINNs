@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
 from pathlib import Path
 
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.css.query import NoMatches
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, Select, Static, Switch
 
@@ -46,6 +49,7 @@ class ConfigEditorPane(VerticalScroll):
         self._rows: dict[str, Horizontal] = {}
         self._mode = "fixed_source"
         self._updating = False
+        self._validating = False
         self._loaded_path: Path | None = None
 
     def compose(self) -> ComposeResult:
@@ -107,6 +111,16 @@ class ConfigEditorPane(VerticalScroll):
     def _after_compose(self) -> None:
         self.refresh_load_options()
         self._populate(DEFAULT_CONFIG)
+        self._warm_solver()
+
+    @work(thread=True, exclusive=False, group="warm")
+    def _warm_solver(self) -> None:
+        """Import the solver stack off the UI thread.
+
+        The first import pulls numpy/pandas, which can take seconds on
+        Windows; doing it here keeps the first Validate instant.
+        """
+        import solvers.runners.NTS_DD_1D  # noqa: F401
 
     def _build_row(self, field: Field) -> Horizontal:
         widget = self._build_widget(field)
@@ -467,13 +481,37 @@ class ConfigEditorPane(VerticalScroll):
         self._status(f"Loaded {path}.")
 
     def validate_current(self) -> None:
-        """Validate the form and report the result in the status line."""
+        """Validate the form in a worker so the UI keeps responding."""
+        if self._validating:
+            return
         try:
             config = self.collect_config()
         except Exception as exc:  # noqa: BLE001
             self._status(f"[red]Form error:[/] {exc}")
             return
-        errors, message = validate_config(config)
+        self._validating = True
+        self._set_validate_enabled(False)
+        self._status("Validating...")
+        self._validate_worker(config)
+
+    def _set_validate_enabled(self, enabled: bool) -> None:
+        with contextlib.suppress(NoMatches):
+            self.query_one("#cfg-validate", Button).disabled = not enabled
+
+    @work(thread=True, exclusive=True, group="validate")
+    def _validate_worker(self, config: dict) -> None:
+        try:
+            errors, message = validate_config(config)
+        except Exception as exc:  # noqa: BLE001 - show it in the status line
+            errors, message = [str(exc)], "Invalid configuration."
+        with contextlib.suppress(RuntimeError):
+            self.app.call_from_thread(self._show_validation, errors, message)
+
+    def _show_validation(self, errors: list[str], message: str) -> None:
+        self._validating = False
+        if not self.is_mounted:
+            return
+        self._set_validate_enabled(True)
         if errors:
             self._status("[red]Invalid:[/] " + " | ".join(errors))
         else:

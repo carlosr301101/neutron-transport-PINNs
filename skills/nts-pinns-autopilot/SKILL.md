@@ -211,6 +211,8 @@ Launch with `uv run nts tui` (same as `uv run nts-tui`).
   `Sigma_f`), plus every scalar field of the 1D config. Power normalization is
   a switch: `POWER_KW`, `E_F_MEV`, `NU` and `AREA_CM2` stay hidden until it is
   enabled, and an enabled switch with a blank `POWER_KW` is a form error.
+  `Validate` runs in a worker (never block the UI with solver imports); the
+  solver stack is warmed in the background when the pane mounts.
 - **MODE rules**: `fixed_source` hides fission and stores `NU_SIGF=0`;
   `eigenvalue` hides `K_EFF` and forces `Q=0`; `fixed_k` requires `K_EFF`;
   `driven` uses `k=1`.

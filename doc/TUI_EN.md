@@ -61,6 +61,9 @@ The form mirrors `Config.manual_input` and `nts-1d-config`:
   - `fixed_k`: shows the fission table, `K_EFF`, `TOL_K` and `MAX_OUTER`.
   - `driven`: shows the fission table; `K_EFF` is hidden because the solver
     uses `k = 1`.
+- **Validate**: runs in the background (`Validating...` status, button
+  disabled); the solver import is warmed when Config opens, so the first
+  validation does not freeze the UI.
 - **Power normalization**: a `Power normalization` switch. When off (default)
   `POWER_KW`, `E_F_MEV`, `NU` and `AREA_CM2` stay hidden and `POWER_KW` is
   saved as `null`. When on, the four fields appear and `POWER_KW` is required;

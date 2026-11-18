@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -48,6 +49,8 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
             await pilot.pause()
             pane = app.query_one(ConfigEditorPane)
             pane._validate()
+            await app.workers.wait_for_complete()
+            await pilot.pause()
             self.assertIn(
                 "valid", pane.query_one("#cfg-status", Static).content.lower()
             )
@@ -60,6 +63,45 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                 self.assertIn(
                     "saved", pane.query_one("#cfg-status", Static).content.lower()
                 )
+
+    async def test_validate_does_not_block_the_ui(self):
+        app = NTSApp()
+        async with app.run_test(size=(140, 50)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab-config"
+            await pilot.pause()
+            pane = app.query_one(ConfigEditorPane)
+            await app.workers.wait_for_complete()
+            await pilot.pause()
+
+            def slow_validate(config):
+                time.sleep(0.4)
+                return [], "Configuration is valid."
+
+            with patch(
+                "tui.screens.config_editor.validate_config",
+                side_effect=slow_validate,
+            ):
+                started = time.perf_counter()
+                pane._validate()
+                await pilot.pause()
+                elapsed = time.perf_counter() - started
+                self.assertLess(elapsed, 0.3)
+                self.assertIn(
+                    "Validating",
+                    str(pane.query_one("#cfg-status", Static).content),
+                )
+                self.assertTrue(
+                    pane.query_one("#cfg-validate", Button).disabled
+                )
+                await app.workers.wait_for_complete()
+                await pilot.pause()
+
+            status = str(pane.query_one("#cfg-status", Static).content).lower()
+            self.assertIn("valid", status)
+            self.assertFalse(
+                pane.query_one("#cfg-validate", Button).disabled
+            )
 
     async def test_boundary_scalar_and_vector(self):
         app = NTSApp()

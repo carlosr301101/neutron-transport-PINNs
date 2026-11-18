@@ -5,6 +5,10 @@ Record of all notable changes in the NTS Automation System project.
 ## [Unreleased]
 
 ### Fixed
+- `Validate` in the TUI no longer blocks the interface: validation runs in a
+  worker and the button shows `Validating...` until it finishes. The solver
+  import (numpy/pandas) is warmed in the background when Config opens, so the
+  first validation is almost instant.
 - The CLI no longer raises `UnicodeEncodeError` in PowerShell or on consoles
   using a legacy code page (`cp1252`/`cp850`).
 - `✓`, `✗` and `•` are printed as `OK`, `X` and `-` on Windows.
