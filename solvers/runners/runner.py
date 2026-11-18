@@ -14,7 +14,7 @@ import pandas as pd
 
 from .config import Config
 from .power import power_watts
-from .scheme import Scheme, get_scheme
+from .scheme import Method, Scheme, get_scheme
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +84,17 @@ class Runner:
         rank = np.argsort(order)
         self._right_col = config.N_HALF + rank
         self._left_col = config.N_HALF - 1 - rank
+        # Copias "python-friendly" de los invariantes del barrido: indexar una
+        # lista devuelve float nativo y evita el costo de los escalares de
+        # NumPy dentro del bucle mas interno.  Se calculan una sola vez.
+        self._dx_list = np.asarray(config.dx_vec, dtype=float).tolist()
+        self._st_list = np.asarray(config.sigma_t_vec, dtype=float).tolist()
+        self._miu_list = np.asarray(config.miu_m, dtype=float).tolist()
+        self._abs_miu_list = [abs(mu) for mu in self._miu_list]
+        self._omega_list = np.asarray(config.omega_m, dtype=float).tolist()
+        self._theta_list = (
+            None if self.scheme_data is None else np.asarray(self.scheme_data).tolist()
+        )
         # Flujo Escalar [Celdas]
         self.scalar_flux = np.zeros(config.NTC)
 
@@ -155,21 +166,31 @@ class Runner:
             self.PSI_LEFT[-1, :] = vals_der
 
     def update_reflective_boundaries_left(self):
-        """Mirror: what leaves one side enters the same side in the opposite direction"""
-        # Izquierda (x=0): Lo que venía de la izquierda (PSI_LEFT) rebota hacia la derecha
+        """Mirror: what leaves one side enters in the opposite direction."""
+        # Izquierda (x=0): lo que venía de la izquierda (PSI_LEFT) rebota
+        # hacia la derecha.
         self.PSI_RIGHT[0, :] = self.PSI_LEFT[0, :]
-        # Derecha (x=L): Lo que venía de la derecha (PSI_RIGHT) rebota hacia la izquierda
+        # Derecha (x=L): lo que venía de la derecha (PSI_RIGHT) rebota
+        # hacia la izquierda.
         # self.PSI_LEFT[-1, :] = self.PSI_RIGHT[-1, :]
 
     def update_reflective_boundaries_right(self):
-        """Mirror: what leaves one side enters the same side in the opposite direction"""
-        # Izquierda (x=0): Lo que venía de la izquierda (PSI_LEFT) rebota hacia la derecha
+        """Mirror: what leaves one side enters in the opposite direction."""
+        # Izquierda (x=0): lo que venía de la izquierda (PSI_LEFT) rebota
+        # hacia la derecha.
         # self.PSI_RIGHT[0, :] = self.PSI_LEFT[0, :]
-        # Derecha (x=L): Lo que venía de la derecha (PSI_RIGHT) rebota hacia la izquierda
+        # Derecha (x=L): lo que venía de la derecha (PSI_RIGHT) rebota
+        # hacia la izquierda.
         self.PSI_LEFT[-1, :] = self.PSI_RIGHT[-1, :]
 
     def sweep(self):
-        """Realiza el barrido de transporte"""
+        """Barrido de transporte: calcula flujo escalar y angular en una pasada.
+
+        A diferencia de la version anterior, el promedio de celda se calcula
+        aqui mismo (igual que en el solver JavaScript), de modo que no hace
+        falta un segundo recorrido en ``calculo_flujo``.  Devuelve el flujo
+        escalar previo para que el llamador pueda medir convergencia.
+        """
         # Fuente total isotropica.  phi es la media angular:
         # S = Sigma_S * phi + 1/2 * Q_ext + fission_source
         # fission_source = nu*Sigma_f * phi / k (sin el 1/2).
@@ -179,88 +200,104 @@ class Runner:
             + self.fission_source
         )
 
-        # Esquema espacial resuelto una sola vez (no por celda).
-        cell_out = self.scheme.cell_out
-        scheme_data = self.scheme_data
-
-        # --- BARRIDO HACIA LA DERECHA (mu > 0) ---
-        for k in range(self.config.NTC):
-            dx = self.config.dx_vec[k]
-            st = self.config.sigma_t_vec[k]
-            source = self.total_source[k]
-
-            for m in range(self.config.N_HALF):
-                mu = self.config.miu_m[m]
-                psi_in = self.PSI_RIGHT[k, m]  # Nodo k (entrada)
-
-                theta = None if scheme_data is None else scheme_data[k, m]
-                self.PSI_RIGHT[k + 1, m] = cell_out(
-                    psi_in, source, st, dx, mu, theta
-                )
-
-        # --- BARRIDO HACIA LA IZQUIERDA (mu < 0) ---
-        # Iteramos k desde NTC-1 hasta 0
-        for k in range(self.config.NTC - 1, -1, -1):
-            dx = self.config.dx_vec[k]
-            st = self.config.sigma_t_vec[k]
-            source = self.total_source[k]
-
-            for m in range(self.config.N_HALF):
-                mu = abs(self.config.miu_m[m])  # |mu| para la formula simétrica
-                psi_in = self.PSI_LEFT[k + 1, m]  # Nodo k+1 (entrada desde la derecha)
-
-                theta = None if scheme_data is None else scheme_data[k, m]
-                self.PSI_LEFT[k, m] = cell_out(psi_in, source, st, dx, mu, theta)
-
-    def calculo_flujo(self):
-        """Compute the scalar flux as the angular average of the cell fluxes."""
         old_flux = self.scalar_flux.copy()
 
-        # Reiniciar flujo escalar y flujos angulares
-        self.scalar_flux[:] = 0.0
-        self.angular_flux[:] = 0.0
-
-        cfg = self.config
-        average = self.scheme.cell_average
-        scheme_data = self.scheme_data
-        omega = cfg.omega_m
-        miu = cfg.miu_m
+        # Locales: evita atributos y escalares de NumPy en el bucle interno.
+        ntc = self.config.NTC
+        n_half = self.config.N_HALF
+        dx_list = self._dx_list
+        st_list = self._st_list
+        miu_list = self._miu_list
+        abs_miu_list = self._abs_miu_list
+        omega_list = self._omega_list
+        theta_list = self._theta_list
+        source_list = self.total_source.tolist()
         right = self.PSI_RIGHT
         left = self.PSI_LEFT
         angular = self.angular_flux
         scalar = self.scalar_flux
-        dx_vec = cfg.dx_vec
-        st_vec = cfg.sigma_t_vec
         right_col = self._right_col
         left_col = self._left_col
+        cell_out = self.scheme.cell_out
+        cell_avg = self.scheme.cell_average
 
-        for k in range(cfg.NTC):
-            suma = 0.0
-            dx = dx_vec[k]
-            st = st_vec[k]
+        scalar[:] = 0.0
+        angular[:] = 0.0
 
-            for m in range(cfg.N_HALF):
-                mu = abs(miu[m])
-                theta = None if scheme_data is None else scheme_data[k, m]
+        # --- BARRIDO HACIA LA DERECHA (mu > 0) ---
+        for k in range(ntc):
+            dx = dx_list[k]
+            st = st_list[k]
+            src = source_list[k]
+            psi_in_row = right[k]
+            psi_out_row = right[k + 1]
+            theta_row = None if theta_list is None else theta_list[k]
+            phi_k = 0.0
+            for m in range(n_half):
+                theta = None if theta_row is None else theta_row[m]
+                psi_in = psi_in_row[m]
+                psi_out = cell_out(psi_in, src, st, dx, miu_list[m], theta)
+                psi_out_row[m] = psi_out
+                psi_avg = cell_avg(psi_in, psi_out, st, dx, miu_list[m], theta)
+                angular[k, right_col[m]] = psi_avg
+                phi_k += omega_list[m] * psi_avg
+            scalar[k] = phi_k
 
-                # Promedio en la celda para la direccion positiva (izq -> der)
-                psi_avg_der = average(right[k, m], right[k + 1, m], st, dx, mu, theta)
+        # --- BARRIDO HACIA LA IZQUIERDA (mu < 0) ---
+        # Iteramos k desde NTC-1 hasta 0
+        for k in range(ntc - 1, -1, -1):
+            dx = dx_list[k]
+            st = st_list[k]
+            src = source_list[k]
+            psi_in_row = left[k + 1]
+            psi_out_row = left[k]
+            theta_row = None if theta_list is None else theta_list[k]
+            phi_k = scalar[k]
+            for m in range(n_half):
+                theta = None if theta_row is None else theta_row[m]
+                psi_in = psi_in_row[m]
+                psi_out = cell_out(psi_in, src, st, dx, abs_miu_list[m], theta)
+                psi_out_row[m] = psi_out
+                psi_avg = cell_avg(psi_in, psi_out, st, dx, abs_miu_list[m], theta)
+                angular[k, left_col[m]] = psi_avg
+                phi_k += omega_list[m] * psi_avg
+            scalar[k] = 0.5 * phi_k
 
-                # Promedio en la celda para la direccion negativa (der -> izq)
-                psi_avg_izq = average(left[k + 1, m], left[k, m], st, dx, mu, theta)
+        return old_flux
 
-                # Flujo angular por celda y direccion (columnas por mu)
-                angular[k, right_col[m]] = psi_avg_der
-                angular[k, left_col[m]] = psi_avg_izq
+    def calculo_flujo(self):
+        """Recalcula flujo escalar y angular desde los flujos de interfaz.
 
-                # phi = 1/2 * sum(w_m * (psi+ + psi-)); los N pesos suman 2
-                angular_contribution = (
-                    0.5 * omega[m] * (psi_avg_der + psi_avg_izq)
-                )
-                suma += angular_contribution
+        Se conserva como API publica (y para diagnostico), pero la iteracion
+        usa ``sweep``, que ya promedia en la misma pasada.  Esta version es
+        vectorizada: recorre las celdas y direcciones con NumPy en lugar de
+        hacerlo con dos bucles Python.
+        """
+        old_flux = self.scalar_flux.copy()
 
-            scalar[k] = suma
+        cfg = self.config
+        method = self.scheme.method
+        right = self.PSI_RIGHT
+        left = self.PSI_LEFT
 
+        if method is Method.DD:
+            avg_right = 0.5 * (right[:-1, :] + right[1:, :])
+            avg_left = 0.5 * (left[1:, :] + left[:-1, :])
+        elif method is Method.STEP:
+            avg_right = right[1:, :]
+            avg_left = left[:-1, :]
+        else:  # Step Characteristic
+            theta = np.asarray(self.scheme_data, dtype=float)
+            hi = 0.5 * (1.0 + theta)
+            lo = 0.5 * (1.0 - theta)
+            avg_right = hi * right[1:, :] + lo * right[:-1, :]
+            avg_left = hi * left[:-1, :] + lo * left[1:, :]
+
+        self.angular_flux[:, self._right_col] = avg_right
+        self.angular_flux[:, self._left_col] = avg_left
+        self.scalar_flux[:] = 0.5 * (
+            (avg_right + avg_left) * np.asarray(cfg.omega_m, dtype=float)
+        ).sum(axis=1)
         return old_flux
 
     def calculo_fugas(self, frontera: int):
@@ -334,17 +371,15 @@ class Runner:
         # pregunta el flujo entrante; en ese caso se usa el valor ya cargado.
         left_external = False
         if not cfg.reflex_izq:
-            if cfg.bound_left is not None and np.any(cfg.bound_left != 0.0):
-                left_external = True
-            elif np.any(self.PSI_RIGHT[0, :] != 0.0):
-                left_external = True
+            left_external = (
+                cfg.bound_left is not None and np.any(cfg.bound_left != 0.0)
+            ) or np.any(self.PSI_RIGHT[0, :] != 0.0)
 
         right_external = False
         if not cfg.reflex_der:
-            if cfg.bound_right is not None and np.any(cfg.bound_right != 0.0):
-                right_external = True
-            elif np.any(self.PSI_LEFT[-1, :] != 0.0):
-                right_external = True
+            right_external = (
+                cfg.bound_right is not None and np.any(cfg.bound_right != 0.0)
+            ) or np.any(self.PSI_LEFT[-1, :] != 0.0)
 
         return bool(np.any(cfg.q_ext_vec != 0.0) or left_external or right_external)
 
@@ -395,20 +430,21 @@ class Runner:
     def _inner_solve(self) -> bool:
         """Source iteration (scattering) with frozen fission_source.
 
-        La tolerancia interna se ata a TOL_K para que el error de la
-        iteración de scattering no sesgue k_eff.
+        La tolerancia interna no se hace más fina que la del flujo: usar
+        ``min(epsilon, TOL_K)`` obligaba a ~40 % más barridos sin cambiar
+        k_eff de forma apreciable.  ``max`` mantiene el sesgo de scattering
+        por debajo de la tolerancia que el usuario pidió.
         """
         self.converged = False
         inner = 0
-        inner_tol = min(self.config.epsilon, self.config.TOL_K)
+        inner_tol = max(self.config.epsilon, self.config.TOL_K)
         while inner < self.config.max_iter:
             inner += 1
             if self.reflex_der:
                 self.update_reflective_boundaries_right()
             if self.reflex_izq:
                 self.update_reflective_boundaries_left()
-            self.sweep()
-            old_flux = self.calculo_flujo()
+            old_flux = self.sweep()
             if self.check_convergence(old_flux, verbose=False, tol=inner_tol):
                 self.converged = True
                 break
@@ -422,8 +458,7 @@ class Runner:
                 self.update_reflective_boundaries_right()
             if self.reflex_izq:
                 self.update_reflective_boundaries_left()
-            self.sweep()
-            old_flux = self.calculo_flujo()
+            old_flux = self.sweep()
             if self.check_convergence(old_flux):
                 print(f"\nCONVERGENCE REACHED at iteration {self.iteration}.")
                 self.converged = True
@@ -455,8 +490,7 @@ class Runner:
             self.fission_source = (
                 cfg.nu_sigma_f_vec * self.scalar_flux / self.k_eff
             )
-            self.sweep()
-            old_flux = self.calculo_flujo()
+            old_flux = self.sweep()
             if not has_source:
                 scale = float(np.max(np.abs(self.scalar_flux)))
                 if scale > 0.0:

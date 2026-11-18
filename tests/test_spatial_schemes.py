@@ -312,7 +312,10 @@ class TestSchemeRegistry(unittest.TestCase):
         self.assertEqual(theta.shape, (conf.NTC, conf.N_HALF))
 
     def test_injected_scheme_wins(self):
-        conf = build_config(SPATIAL_SCHEME="DD")
+        # epsilon=1e-6 fija la tolerancia interna histórica
+        # (max(epsilon, TOL_K)); con el default 1e-5 la iteración interna
+        # converge antes y k_eff cambia ~1.6e-5.
+        conf = build_config(SPATIAL_SCHEME="DD", epsilon=1e-6)
         with contextlib.redirect_stdout(io.StringIO()):
             result = Runner(
                 conf, scheme=get_scheme(Method.STEP_CHARACTERISTIC)
@@ -354,8 +357,13 @@ class TestSolverIntegration(unittest.TestCase):
         )
 
     def test_dd_regression_benchmark(self):
-        """DD must reproduce the pre-refactor results (1.0266764379)."""
-        result = run_config()
+        """DD must reproduce the pre-refactor results (1.0266764379).
+
+        ``epsilon=1e-6`` mantiene la tolerancia interna histórica
+        (``max(epsilon, TOL_K)``).  Con el default 1e-5 el solver converge
+        antes (623 en vez de 999 actualizaciones) y k_eff cambia ~7e-7.
+        """
+        result = run_config(epsilon=1e-6)
         self.assertTrue(result["k_converged"])
         self.assertEqual(result["iteration"], 999)
         self.assertEqual(result["iteration_eigenvalue"], 25)

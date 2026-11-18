@@ -2,6 +2,61 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [3.9.2] - 2026-11-17 - Placeholders panel
+
+### Changed
+- The **Sweep** tab is now **Placeholders** and the panel is titled
+  "Placeholder ranges".
+- Each placeholder uses a single `start:end:step` range (e.g. `MM [10:20:1]`)
+  instead of three separate fields; brackets and spaces are optional.
+- `Preview` shows the per-range summary
+  (`MM: 10 -> 20 (step 1) = 11 value(s)`), the number of configs and the first.
+- `Refresh` button reloads the config list.
+- Internal ids renamed: `tab-placeholders` and `ph-*`; the module is
+  `tui/screens/placeholders.py`.
+
+### Added
+- `parse_range()` and `range_values()` in `tui/services/sweeps.py`, with format,
+  step > 0 and end >= start validation.
+
+## [3.9.1] - 2026-11-17 - 1D solver performance and comparative analysis
+
+### Changed
+- `Runner.sweep()` computes the scalar and angular flux in the same pass; the
+  second per-iteration traversal (`calculo_flujo`) was removed.
+- `Runner.calculo_flujo()` is kept as a public API and is now vectorized with
+  NumPy; it matches the single-pass result to 5.6 × 10⁻¹⁷.
+- Sweep invariants (`dx`, `σt`, `μ`, `|μ|`, `ω`, `θ`) are precomputed and no
+  longer looked up per cell; `abs()` is no longer called in the inner loop.
+- The inner scattering tolerance is `max(epsilon, TOL_K)`; with the default
+  `epsilon=1e-5` this removes ~40 % of the sweeps with a negligible `k_eff`
+  change (≈1.6 × 10⁻⁵ on the 20 cm benchmark).
+- Regression tests pin `epsilon=1e-6` to preserve the historical `k_eff` and
+  iteration-count references.
+
+### Added
+- **Power normalization** switch in the Config tab: `POWER_KW`, `E_F_MEV`,
+  `NU` and `AREA_CM2` stay hidden until it is enabled; when enabled,
+  `POWER_KW` is required, and loading a JSON with `POWER_KW` turns it on.
+- `extras/analisis_codigo.md`: comparison of the 1D S_N solver with the LabSN 1D
+  JavaScript solver, with 10 test cases and a particle balance.
+- `extras/mejoras_nts.md`: performance diagnosis (profile, iterations,
+  before/after timings).
+- `extras/propuesta_dsa_cmfd.md` and
+  `extras/propuesta_barrido_vectorizado.md`: convergence-acceleration and
+  vectorized/compiled-sweep proposals.
+
+### Fixed
+- `Use in Plots` always switches to the Plots tab, even when the pane is being
+  mounted for the first time; the source is applied after composition and
+  navigation no longer depends on reading the JSON.
+- Panes load their data with `call_after_refresh` from `compose`, removing the
+  `NoMatches` errors when querying children that were not composed yet.
+
+### Performance
+- 20 cm S8 I=200 eigenvalue: 2136 ms → 820 ms (2.6×).
+- Other cases: 1.4–1.7× at equal tolerances.
+
 ## [3.9.0] - 2026-11-16 - TUI: global refresh, cancellation and structure
 
 ### Added

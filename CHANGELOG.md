@@ -2,6 +2,63 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
+## [3.9.2] - 2026-11-17 - Panel Placeholders
+
+### Changed
+- La pestaña **Sweep** pasa a llamarse **Placeholders** y el panel
+  "Placeholder ranges".
+- Cada placeholder usa un único rango `inicio:fin:paso` (por ejemplo
+  `MM [10:20:1]`) en lugar de tres campos separados; los corchetes y los
+  espacios son opcionales.
+- `Preview` muestra el resumen por rango
+  (`MM: 10 -> 20 (step 1) = 11 value(s)`), la cantidad de configs y la primera.
+- Botón `Refresh` para recargar la lista de configs.
+- Ids internos renombrados: `tab-placeholders` y `ph-*`; el módulo es
+  `tui/screens/placeholders.py`.
+
+### Added
+- `parse_range()` y `range_values()` en `tui/services/sweeps.py`, con
+  validación de formato, paso > 0 y fin >= inicio.
+
+## [3.9.1] - 2026-11-17 - Rendimiento del solver 1D y análisis comparativo
+
+### Changed
+- `Runner.sweep()` calcula el flujo escalar y angular en la misma pasada; se
+  eliminó el segundo recorrido por iteración (`calculo_flujo`).
+- `Runner.calculo_flujo()` se conserva como API pública y quedó vectorizada
+  con NumPy; coincide con la pasada única a 5.6 × 10⁻¹⁷.
+- Los invariantes del barrido (`dx`, `σt`, `μ`, `|μ|`, `ω`, `θ`) se precalculan
+  y ya no se consultan atributos ni `abs()` dentro del bucle interno.
+- La tolerancia interna de scattering es `max(epsilon, TOL_K)`; con el default
+  `epsilon=1e-5` reduce ~40 % los barridos sin cambiar `k_eff` de forma
+  apreciable (≈1.6 × 10⁻⁵ en el benchmark de 20 cm).
+- Las pruebas de regresión fijan `epsilon=1e-6` para conservar las referencias
+  históricas de `k_eff` y de conteo de iteraciones.
+
+### Added
+- Switch **Power normalization** en la pestaña Config: `POWER_KW`, `E_F_MEV`,
+  `NU` y `AREA_CM2` permanecen ocultos hasta activarlo; al activarlo
+  `POWER_KW` es obligatorio y al cargar un JSON con `POWER_KW` se enciende
+  solo.
+- `extras/analisis_codigo.md`: comparación del solver S_N 1D con el solver
+  JavaScript LabSN 1D, con 10 casos de prueba y balance de partículas.
+- `extras/mejoras_nts.md`: diagnóstico de rendimiento (perfil, iteraciones,
+  tiempos antes/después).
+- `extras/propuesta_dsa_cmfd.md` y
+  `extras/propuesta_barrido_vectorizado.md`: propuestas de aceleración de
+  convergencia y de barrido vectorizado/compilado.
+
+### Fixed
+- `Use in Plots` cambia siempre a la pestaña Plots, aunque el panel se monte
+  por primera vez; el archivo se aplica después de la composición y la
+  navegación ya no depende de leer el JSON.
+- Los paneles cargan sus datos con `call_after_refresh` desde `compose`, lo
+  que elimina los `NoMatches` al consultar hijos todavía no compuestos.
+
+### Performance
+- Autovalor 20 cm S8 I=200: 2136 ms → 820 ms (2.6×).
+- Resto de los casos: 1.4–1.7× con las mismas tolerancias.
+
 ## [3.9.0] - 2026-11-16 - TUI: refresco global, cancelación y estructura
 
 ### Added

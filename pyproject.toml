@@ -51,6 +51,7 @@ nts-generate = "cli.generate_placeholder:cli"
 images = ["textual-image>=0.8"]
 
 [project.urls]
+Homepage = "https://carlosr301101.is-a.dev"
 Repository = "https://github.com/carlosr301101/neutron-transport-PINNs"
 Issues = "https://github.com/carlosr301101/neutron-transport-PINNs/issues"
 Documentation = "https://github.com/carlosr301101/neutron-transport-PINNs/tree/main/doc"
