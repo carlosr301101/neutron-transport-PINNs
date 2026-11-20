@@ -13,8 +13,11 @@ description: >-
   k_eff, medio multiplicativo, eigenvalue, fixed_k, driven, nts-1d-config,
   inputs_placeholder.py, inputs.py, cuadraturas.py, output_1d_*.json, datos.json,
   N=4/N=6/N=8, nts tui, nts-tui, TUI, quadrature orders, or asks to
-  run/compare/plot DD simulations or prepare KPI summaries — even if they
-  never name the system.
+  run/compare/plot DD simulations, prepare KPI summaries, or guide the creation
+  of a new neutron transport problem ("Quiero crear un problema de transporte
+  de neutrones", "configurar un problema de transporte", "ayúdame a crear el
+  config.json", "I want to set up a neutron transport problem", "help me build
+  config.json") — even if they never name the system.
 ---
 
 # NTS PINNs Autopilot
@@ -132,6 +135,199 @@ In the TUI: **Config → Save → Run → Results → Plots**. Quit with `q`.
 - `NTS_SOLVERS_DIR` points to compiled 2D binaries.
 - The wheel does not include the 2D C binaries or sources. Clone the repo,
   compile them under `solvers/runners/`, or set `NTS_SOLVERS_DIR`.
+
+## Guided setup of a new 1D problem
+
+Trigger this workflow when the user wants to create or configure a new
+problem, for example:
+
+- ES: "Quiero crear un problema de transporte de neutrones", "configurar un
+  problema de transporte", "ayúdame a crear el config.json", "nuevo caso 1D".
+- EN: "I want to set up a neutron transport problem", "help me configure a
+  neutron transport case", "build config.json", "create a new 1D problem".
+
+Do not start it for questions about an existing config/run, or for 2D-only
+work. If the intent is ambiguous, ask whether they want a new 1D config or to
+run an existing one.
+
+The goal is a validated `config_1d_*.json` for `nts-1d-run --json`, produced
+by asking the user, not by guessing.
+
+### Rules
+
+- Ask in the user's language. Keep JSON keys and enum values exactly as shown
+  (`MODE`, `NU_SIGF`, `SPATIAL_SCHEME`, ...).
+- Ask in batches of 4-6 answers, with defaults in brackets. Do not dump the
+  whole form at once.
+- Never invent cross sections. If the user does not know a value, propose a
+  default and label it as an assumption to confirm.
+- Keep an accumulated table in the conversation and show it before writing.
+- Validate with `tui.services.config_store.validate_config` (see below).
+- Write `outputs/inputs/config_1d_<slug>.json` (or the path the user gives).
+- Do not run the solver without confirmation.
+- `nts-1d-config` is the fallback if the user prefers the terminal wizard;
+  otherwise the agent collects the answers and writes the JSON.
+
+### Questions to ask, in this order
+
+**1. Geometry**
+
+- Number of regions `num_regions` [1].
+- Number of material zones `num_zones` [1]; must be `<= num_regions`.
+- Per region: `NC` cells [1], `HR` thickness in cm [10.0], `IZL` zone [1].
+  The three lists must have `num_regions` entries.
+
+**2. Materials (per zone)**
+
+- `SCT` = `Sigma_t` [1.0] cm^-1.
+- `SCS` = `Sigma_s0` [0.9] cm^-1; it must satisfy `SCS <= SCT` (the 1D
+  validator does not enforce this).
+- `SIGMA_F` only when power normalization is requested; it must be `<= SCT`.
+
+**3. Angular discretization**
+
+- `N` in {2, 4, 6, 8} [8]. Other even orders fall back to S2 with a warning.
+- `SPATIAL_SCHEME` in {`DD`, `STEP`, `SC`} [`DD`].
+
+**4. Fission and mode**
+
+Ask "Is the medium multiplying (fission)?"
+
+- No: `MODE = fixed_source`, `NU_SIGF = 0` per zone.
+- Yes: ask `NU_SIGF` per zone (= `nu*Sigma_f`, cm^-1; do **not** multiply by
+  `4*pi`), then the intent:
+
+| User intent | `MODE` | Requirements |
+|---|---|---|
+| Compute `k_eff` | `eigenvalue` | `NU_SIGF > 0`, `Q = 0`, zero incoming flux |
+| Impose `k_eff` | `fixed_k` | `NU_SIGF > 0`, `K_EFF > 0` |
+| Source-driven subcritical | `driven` | `NU_SIGF > 0`, `K_EFF = 1`, `Q` or incoming flux |
+
+- `TOL_K` [1e-6], `MAX_OUTER` [200], `K0` [automatic; eigenvalue only].
+- Power normalization optional: `POWER_KW`, `E_F_MEV` [200], `AREA_CM2` [1],
+  and either `NU` [2.49] or `SIGMA_F` per zone. `POWER_KW` requires fission.
+
+**5. Source**
+
+- `Q` per region [0.0]; it must have `num_regions` entries.
+- `eigenvalue` forces `Q = 0`; `fixed_source` and `driven` require `Q != 0`
+  or a non-zero incoming flux.
+
+**6. Boundaries**
+
+- `reflex_izq`, `reflex_der` [false].
+- `bound_left`, `bound_right`: one scalar expands to `N/2` equal values, or
+  provide exactly `N/2` values.
+- Reflective sides and `eigenvalue` use zero incoming flux.
+
+**7. Convergence (optional)**
+
+- `epsilon` [1e-5] relative flux tolerance.
+- `max_iter` [2000].
+
+**8. Placeholders (optional)**
+
+If the user wants a sweep, numeric fields may be placeholder names (`kk`,
+`mm`, ...): `SCS`, `NC` and `HR` accept them. `N`, `IZL` and `MAX_OUTER` must
+stay numeric. Expand later with `nts-generate --json`.
+
+### Minimal valid JSON
+
+Fixed source, no fission:
+
+```json
+{
+  "num_regions": 1,
+  "num_zones": 1,
+  "NC": [100],
+  "HR": [10.0],
+  "IZL": [1],
+  "SCT": [1.0],
+  "SCS": [0.9],
+  "Q": [1.0],
+  "N": 8,
+  "SPATIAL_SCHEME": "DD",
+  "MODE": "fixed_source",
+  "NU_SIGF": [0.0],
+  "reflex_izq": false,
+  "reflex_der": false,
+  "bound_left": [0.0],
+  "bound_right": [0.0],
+  "epsilon": 1e-5,
+  "max_iter": 2000
+}
+```
+
+Eigenvalue (the 20 cm quickstart):
+
+```json
+{
+  "num_regions": 1,
+  "num_zones": 1,
+  "NC": [20],
+  "HR": [20.0],
+  "IZL": [1],
+  "SCT": [1.0],
+  "SCS": [0.9],
+  "NU_SIGF": [0.11],
+  "Q": [0.0],
+  "N": 8,
+  "SPATIAL_SCHEME": "DD",
+  "MODE": "eigenvalue",
+  "TOL_K": 1e-6,
+  "MAX_OUTER": 200,
+  "reflex_izq": false,
+  "reflex_der": false,
+  "bound_left": [0.0],
+  "bound_right": [0.0],
+  "epsilon": 1e-5,
+  "max_iter": 2000
+}
+```
+
+Expected `k_eff ≈ 1.0264`.
+
+### Validate before running
+
+```bash
+uv run python - <<'PY'
+import json
+import os
+import tempfile
+from pathlib import Path
+from tui.services.config_store import validate_config
+
+path = Path("outputs/inputs/config_1d_001.json").resolve()
+cfg = json.loads(path.read_text())
+with tempfile.TemporaryDirectory() as tmp:
+    os.chdir(tmp)  # Config writes Config.log in the current directory
+    errors, message = validate_config(cfg)
+print(message)
+for error in errors:
+    print("ERROR:", error)
+raise SystemExit(bool(errors))
+PY
+```
+
+Then, only with confirmation:
+
+```bash
+uv run nts-1d-run --json outputs/inputs/config_1d_001.json
+uv run nts-1d-plot -r outputs/results/output_1d_001.json --kind scalar
+```
+
+### Mistakes this workflow must prevent
+
+- `Q` and `bound_*` lengths: `Q` has `num_regions` entries; `bound_*` has
+  `N/2` (or one scalar).
+- `SCT`/`SCS`/`NU_SIGF`/`SIGMA_F` have `num_zones` entries; `NC`/`HR`/`IZL`
+  have `num_regions` entries.
+- `SCS > SCT` is not rejected by the 1D validator: reject it in the dialogue.
+- `NU_SIGF` is `nu*Sigma_f`; do not apply the spectral skill's `4*pi`.
+- `eigenvalue` with `Q != 0` or incoming flux is rejected by design.
+- `driven` forces `k = 1`; use `fixed_k` to scale fission.
+- `fixed_k` with a source at `k = k*` is singular; do not combine them.
+- Do not write the TUI-only `power_normalization` key to the JSON.
 
 ## Environment rules
 
@@ -446,6 +642,9 @@ Covers: reflective infinite medium (exact), 20 cm benchmark, `fixed_k` at
 regression, invalid mode combinations.
 
 ## Manual and JSON configuration (1D)
+
+For an agent-led questionnaire that ends in a validated JSON, see
+[Guided setup of a new 1D problem](#guided-setup-of-a-new-1d-problem).
 
 Besides `-c inputs.py`, the 1D runner accepts:
 
