@@ -65,6 +65,17 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                     "saved", pane.query_one("#cfg-status", Static).content.lower()
                 )
 
+    async def test_default_cells_is_ten(self):
+        app = NTSApp()
+        async with app.run_test(size=(140, 50)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab-config"
+            await pilot.pause()
+            pane = app.query_one(ConfigEditorPane)
+            self.assertEqual(
+                pane.query_one("#region-0-cells", Input).value, "10"
+            )
+
     async def test_zone_names_save_and_load(self):
         app = NTSApp()
         async with app.run_test(size=(160, 60)) as pilot:

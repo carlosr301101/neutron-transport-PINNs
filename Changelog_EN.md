@@ -12,6 +12,7 @@ Record of all notable changes in the NTS Automation System project.
 ### Changed
 - Scalar and angular plots shade each region, draw dashed interfaces and
   label `R1..Rn` with the zone name.
+- The TUI starts new configurations with 10 cells in region 1.
 - The release workflow runs CI on Ubuntu and Windows and only publishes to
   PyPI when both pass.
 

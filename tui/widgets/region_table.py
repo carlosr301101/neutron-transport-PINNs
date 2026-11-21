@@ -19,7 +19,7 @@ class RegionTable(RowTable):
     row_name = "region"
     add_label = "+ Region"
     columns: ClassVar[tuple[Column, ...]] = (
-        Column("cells", "Cells", "1", kind="int"),
+        Column("cells", "Cells", "10", kind="int"),
         Column("length", "Length [cm]", "10.0", kind="float"),
         Column("zone", "Zone", "1", kind="int"),
         Column("q", "Q", "0.0", kind="float", head_id="region-q-head"),

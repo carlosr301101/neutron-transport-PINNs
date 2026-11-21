@@ -59,7 +59,7 @@ class TestFormModels(unittest.TestCase):
         values = form_values_from_config(copy.deepcopy(DEFAULT_CONFIG))
         config = config_from_form(values)
         self.assertEqual(config["num_regions"], 1)
-        self.assertEqual(config["NC"], [1])
+        self.assertEqual(config["NC"], [10])
         self.assertEqual(config["SPATIAL_SCHEME"], "DD")
 
     def test_placeholder_in_list(self):

@@ -63,7 +63,7 @@ FIELDS: tuple[Field, ...] = (
         "Cells per region",
         "list_int",
         "Geometry and materials",
-        [1],
+        [10],
         help="Edited in the region table.",
         widget="table",
     ),
