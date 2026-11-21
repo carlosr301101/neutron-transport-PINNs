@@ -50,7 +50,7 @@ The form mirrors `Config.manual_input` and `nts-1d-config`:
 
 - **Geometry and materials**: a geometry bar coloured by zone, an editable
   region table (`cells`, `length`, `zone`, `Q`) and an editable zone table
-  (`Sigma_t`, `Sigma_s0`). Add or remove rows with the table buttons. `Q` is
+  (`name`, `Sigma_t`, `Sigma_s0`). Add or remove rows with the table buttons. `Q` is
   the external source per region (`0` = none); it is hidden and forced to zero
   in `eigenvalue`.
 - **Physics mode**: `MODE` is the first field.

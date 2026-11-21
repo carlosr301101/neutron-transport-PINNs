@@ -44,7 +44,7 @@ DEFAULT_OUTPUTS = {
 # ---------------------------------------------------------------------------
 def load_output(path: Path) -> list[dict]:
     """Load a raw output_1d_*.json and return its runs."""
-    with path.open("r") as f:
+    with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     runs = data.get("runs")
     if not isinstance(runs, list) or not runs:
@@ -112,6 +112,112 @@ def cell_centers(config: dict) -> np.ndarray:
     return np.cumsum(dx) - 0.5 * dx
 
 
+_ZONE_COLORS = (
+    "#d9d9d9",
+    "#f4a582",
+    "#fddbc7",
+    "#c7e9c0",
+    "#c6dbef",
+    "#dadaeb",
+    "#fdd0a2",
+)
+
+
+def region_edges(config: dict) -> list[float]:
+    """Region boundaries from configuration.HR."""
+    hr = config.get("HR")
+    if not isinstance(hr, list) or not hr:
+        return []
+    edges = [0.0]
+    for thickness in hr:
+        edges.append(edges[-1] + float(thickness))
+    return edges
+
+
+def zone_count(config: dict) -> int:
+    """Number of material zones, inferred from the configuration."""
+    zones = config.get("num_zones")
+    if isinstance(zones, int) and zones > 0:
+        return zones
+    sct = config.get("SCT")
+    if isinstance(sct, list) and sct:
+        return len(sct)
+    izl = config.get("IZL")
+    if isinstance(izl, list) and izl:
+        return max(int(zone) for zone in izl)
+    return 0
+
+
+def resolve_zone_names(
+    config: dict, override: list[str] | None = None
+) -> list[str]:
+    """Zone labels from the CLI override, the config, or ``Zone N``."""
+    count = zone_count(config)
+    names = override if override is not None else config.get("ZONE_NAMES")
+    if names is not None:
+        if isinstance(names, str) or not isinstance(names, (list, tuple)):
+            raise ValueError("ZONE_NAMES must be a list of strings.")
+        names = [str(name).strip() for name in names]
+        if count and len(names) != count:
+            raise ValueError(f"ZONE_NAMES must have {count} elements")
+        if any(not name for name in names):
+            raise ValueError("ZONE_NAMES cannot contain empty names.")
+        return names
+    return [f"Zone {index}" for index in range(1, count + 1)]
+
+
+def decorate_regions(
+    ax, config: dict, zone_names: list[str] | None = None
+) -> None:
+    """Shade material zones, draw interfaces and label each region."""
+    izl = config.get("IZL")
+    edges = region_edges(config)
+    if not isinstance(izl, list) or not edges or len(izl) != len(edges) - 1:
+        return
+
+    names = resolve_zone_names(config, zone_names) if zone_count(config) else []
+    for index, zone in enumerate(izl):
+        zone_id = int(zone)
+        color = _ZONE_COLORS[(zone_id - 1) % len(_ZONE_COLORS)]
+        ax.axvspan(
+            edges[index],
+            edges[index + 1],
+            color=color,
+            alpha=0.55,
+            lw=0,
+            zorder=0,
+        )
+        if 0 < zone_id <= len(names):
+            label = names[zone_id - 1]
+        else:
+            label = f"Zone {zone_id}"
+        ax.text(
+            (edges[index] + edges[index + 1]) / 2,
+            0.97,
+            f"R{index + 1}\n{label}",
+            transform=ax.get_xaxis_transform(),
+            ha="center",
+            va="top",
+            fontsize=8.5,
+            color="#333333",
+            linespacing=1.25,
+        )
+
+    for edge in edges[1:-1]:
+        ax.vlines(
+            edge,
+            0,
+            1,
+            transform=ax.get_xaxis_transform(),
+            colors="0.35",
+            linestyles="--",
+            linewidth=0.9,
+            alpha=0.75,
+            zorder=1,
+        )
+    ax.set_xlim(edges[0], edges[-1])
+
+
 def _run_label(run: dict, index: int = 0) -> str:
     return str(run.get("config_name", f"run_{index}"))
 
@@ -135,9 +241,18 @@ def _save(fig, output: Path, show: bool) -> None:
 # ---------------------------------------------------------------------------
 # Plot modes
 # ---------------------------------------------------------------------------
-def plot_scalar(runs: list[dict], output: Path, show: bool = False) -> None:
+def plot_scalar(
+    runs: list[dict],
+    output: Path,
+    show: bool = False,
+    zone_names: list[str] | None = None,
+) -> None:
     """Scalar flux vs x, one line per selected run."""
-    fig, ax = plt.subplots(figsize=(7.5, 4.2), dpi=150)
+    fig, ax = plt.subplots(figsize=(11.0, 5.8), dpi=150)
+    first = runs[0].get("configuration", {}) if runs else {}
+    decorate_regions(ax, first, zone_names)
+
+    fluxes = []
     for i, run in enumerate(runs):
         phi = np.asarray(run["scalar_flux"], dtype=float)
         x = cell_centers(run.get("configuration", {}))
@@ -146,11 +261,25 @@ def plot_scalar(runs: list[dict], output: Path, show: bool = False) -> None:
                 f"{_run_label(run, i)}: scalar_flux ({len(phi)}) does not "
                 f"match NC ({len(x)})"
             )
+        fluxes.append(phi)
         label = _run_label(run, i)
         ktext = _k_text(run)
         if len(runs) > 1 and ktext:
             label = f"{label} ({ktext})"
-        ax.plot(x, phi, "o-", ms=3, label=label)
+        if len(runs) == 1:
+            line, = ax.plot(x, phi, "-", lw=2.3, color="#08306b", label=label)
+            ax.fill_between(x, 0, phi, color=line.get_color(), alpha=0.08)
+        else:
+            ax.plot(x, phi, "-", lw=2.0, label=label)
+
+    if fluxes:
+        values = np.concatenate(fluxes)
+        ymax = float(np.max(values))
+        ymin = float(np.min(values))
+        if ymax > ymin:
+            ax.set_ylim(min(0.0, ymin), ymax + 0.18 * (ymax - ymin))
+        else:
+            ax.set_ylim(0, 1)
 
     ax.set_xlabel("x [cm]")
     ax.set_ylabel("Scalar flux")
@@ -171,6 +300,7 @@ def plot_angular(
     run: dict,
     output: Path,
     show: bool = False,
+    zone_names: list[str] | None = None,
 ) -> None:
     """Angular flux vs x: one colored line per direction on the same axes."""
     angular = np.asarray(run["angular_flux"], dtype=float)
@@ -208,17 +338,19 @@ def plot_angular(
     else:
         colors = [cmap(m / (n_directions - 1)) for m in range(n_directions)]
 
-    fig, ax = plt.subplots(figsize=(8.0, 4.5), dpi=150)
+    fig, ax = plt.subplots(figsize=(11.0, 6.0), dpi=150)
+    decorate_regions(ax, run.get("configuration", {}), zone_names)
     for m, color in enumerate(colors):
         ax.plot(
             x,
             angular[:, m],
-            "o-",
-            ms=3,
+            "-",
+            lw=1.6,
             color=color,
             label=labels[m],
         )
 
+    ax.margins(y=0.16)
     ax.set_xlabel("x [cm]")
     ax.set_ylabel(ylabel)
     title = f"Angular flux — {_run_label(run)}"
@@ -272,7 +404,7 @@ def plot_datos(
     path: Path, output: Path, x_key: str, show: bool = False
 ) -> None:
     """Legacy datos.json mode: flux at positions vs SCS/NU_SIGF/k_eff."""
-    with path.open("r") as f:
+    with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     rows = data.get("data", [])
     if not rows:
@@ -355,6 +487,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run name/index to plot; 'all' for scalar/k-history",
     )
     parser.add_argument(
+        "--zone-names",
+        metavar="NAME,NAME,...",
+        help=(
+            "Comma-separated zone names for the region labels "
+            "(default: configuration.ZONE_NAMES, then 'Zone N')"
+        ),
+    )
+    parser.add_argument(
         "--list-runs",
         action="store_true",
         help="List the runs in -r and exit",
@@ -393,6 +533,14 @@ def main(argv: list[str] | None = None) -> int:
     if kind is None:
         kind = "scalar" if args.result is not None else "scs"
 
+    zone_names = None
+    if args.zone_names:
+        zone_names = [
+            name.strip() for name in args.zone_names.split(",") if name.strip()
+        ]
+    if zone_names is not None and kind not in {"scalar", "angular"}:
+        parser.error("--zone-names is only valid with --kind scalar/angular")
+
     if kind == "scs":
         if args.result is not None:
             parser.error("--kind scs requires -i/--input (datos.json)")
@@ -430,9 +578,11 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if kind == "scalar":
-            plot_scalar(selected, output, args.show)
+            plot_scalar(selected, output, args.show, zone_names=zone_names)
         elif kind == "angular":
-            plot_angular(selected[0], output, args.show)
+            plot_angular(
+                selected[0], output, args.show, zone_names=zone_names
+            )
         elif kind == "k-history":
             plot_k_history(selected, output, args.show)
     except (ValueError, KeyError) as exc:

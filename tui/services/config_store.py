@@ -27,7 +27,7 @@ def next_config_path() -> Path:
 def load_config(path: Path | str) -> dict[str, Any]:
     """Load one configuration object from JSON."""
     path = Path(path)
-    with path.open("r") as handle:
+    with path.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
     if isinstance(data, list):
         if len(data) != 1 or not isinstance(data[0], dict):
@@ -44,7 +44,7 @@ def save_config(path: Path | str, config: dict[str, Any]) -> Path:
     """Write one configuration object, creating parent directories."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(config, indent=2) + "\n")
+    path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
     return path
 
 

@@ -8,7 +8,7 @@ from .row_table import Column, RowTable
 
 
 class ZoneTable(RowTable):
-    """Sigma_t and Sigma_s0 per material zone."""
+    """Zone name, Sigma_t and Sigma_s0 per material zone."""
 
     class Changed(RowTable.Changed):
         """Posted after a zone row is added, removed or edited."""
@@ -20,12 +20,20 @@ class ZoneTable(RowTable):
     add_label = "+ Zone"
     remove_blocked_message = "Zone is used by a region; change the region zone first."
     columns: ClassVar[tuple[Column, ...]] = (
+        Column(
+            "name",
+            "Name",
+            "",
+            kind="text",
+            placeholder="e.g. Reflector",
+            required=False,
+        ),
         Column("sct", "Sigma_t", "1.0", kind="float"),
         Column("scs", "Sigma_s0", "0.9", kind="float"),
     )
 
-    def set_values(self, sct: list, scs: list) -> None:
-        self.set_columns(sct, scs)
+    def set_values(self, sct: list, scs: list, names: list | None = None) -> None:
+        self.set_columns(names or [], sct, scs)
 
     @property
     def zone_count(self) -> int:

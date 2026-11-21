@@ -204,7 +204,11 @@ class ConfigEditorPane(VerticalScroll):
                 config.get("IZL") or [],
                 config.get("Q") or [],
             )
-            zone.set_values(config.get("SCT") or [], config.get("SCS") or [])
+            zone.set_values(
+                config.get("SCT") or [],
+                config.get("SCS") or [],
+                config.get("ZONE_NAMES"),
+            )
             fission.set_zone_count(zone.zone_count)
             fission.set_values(
                 config.get("NU_SIGF") or [],
@@ -242,7 +246,7 @@ class ConfigEditorPane(VerticalScroll):
         fission = self.query_one(FissionTable)
 
         nc, hr, izl, q = region.values()
-        sct, scs = zone.values()
+        names, sct, scs = zone.values()
         nusf, sigmaf = fission.values()
         config.update(
             {
@@ -258,6 +262,13 @@ class ConfigEditorPane(VerticalScroll):
                 "SIGMA_F": sigmaf,
             }
         )
+        zone_names = [str(name).strip() for name in names if name]
+        if zone_names and len(zone_names) != len(sct):
+            raise ValueError(
+                "Zone names: fill one name per zone or leave them all blank."
+            )
+        if zone_names:
+            config["ZONE_NAMES"] = zone_names
 
         n_half = int(config["N"]) // 2
         if config.get("reflex_izq"):

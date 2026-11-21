@@ -4,7 +4,14 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
 
 ## [Unreleased]
 
+### Added
+- `ZONE_NAMES` in the 1D config and a `Name` column in the TUI material-zone
+  table.
+- `nts-1d-plot --zone-names` to label zones from the CLI.
+
 ### Changed
+- Scalar and angular plots shade each region, draw dashed interfaces and
+  label `R1..Rn` with the zone name.
 - El workflow de release ejecuta CI en Ubuntu y Windows y solo publica en PyPI
   si ambos pasan.
 

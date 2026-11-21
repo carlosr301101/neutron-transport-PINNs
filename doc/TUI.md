@@ -51,7 +51,7 @@ El formulario refleja `Config.manual_input` y `nts-1d-config`:
 
 - **Geometría y materiales**: barra de geometría coloreada por zona, tabla
   editable de regiones (`cells`, `length`, `zone`, `Q`) y tabla editable de
-  zonas (`Sigma_t`, `Sigma_s0`). Agregar o quitar filas con los botones. `Q`
+  zonas (`name`, `Sigma_t`, `Sigma_s0`). Agregar o quitar filas con los botones. `Q`
   es la fuente externa por región (`0` = ninguna); se oculta y se fuerza a
   cero en `eigenvalue`.
 - **Physics mode**: `MODE` es el primer campo.

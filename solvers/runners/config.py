@@ -76,6 +76,9 @@ class Config:
         self.NU: float | None = None
         self.AREA_CM2: float = 1.0
 
+        # Optional presentation metadata (never used by the solver).
+        self.ZONE_NAMES: list[str] | None = None
+
         # ---- Spatial discretization scheme ----
         self.SPATIAL_SCHEME = Method.DD.value
 
@@ -325,6 +328,21 @@ class Config:
         self.E_F_MEV = float(kwargs.get("E_F_MEV", 200.0))
         self.NU = kwargs.get("NU")
         self.AREA_CM2 = float(kwargs.get("AREA_CM2", 1.0))
+
+        zone_names = kwargs.get("ZONE_NAMES")
+        if zone_names is not None:
+            if isinstance(zone_names, str) or not isinstance(
+                zone_names, (list, tuple)
+            ):
+                raise ValueError("ZONE_NAMES must be a list of strings.")
+            names = [str(name).strip() for name in zone_names]
+            if len(names) != self.num_zones:
+                raise ValueError(
+                    f"ZONE_NAMES must have {self.num_zones} elements"
+                )
+            if any(not name for name in names):
+                raise ValueError("ZONE_NAMES cannot contain empty names.")
+            self.ZONE_NAMES = names
 
         # --- Esquema de discretización espacial ---
         self.set_spatial_scheme(
@@ -805,7 +823,7 @@ class Config:
                 return value.tolist()
             return list(value)
 
-        return {
+        payload = {
             "num_regions": self.num_regions,
             "num_zones": self.num_zones,
             "NC": _as_list(self.NC),
@@ -832,3 +850,6 @@ class Config:
             "NU": self.NU,
             "AREA_CM2": self.AREA_CM2,
         }
+        if self.ZONE_NAMES:
+            payload["ZONE_NAMES"] = list(self.ZONE_NAMES)
+        return payload

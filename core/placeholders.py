@@ -13,8 +13,8 @@ from decimal import Decimal, InvalidOperation
 
 PLACEHOLDER_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 
-# Enum-like fields whose string values are not placeholders.
-_TEXT_KEYS = {"SPATIAL_SCHEME", "MODE"}
+# Enum-like fields and metadata whose string values are not placeholders.
+_TEXT_KEYS = {"SPATIAL_SCHEME", "MODE", "ZONE_NAMES"}
 
 
 def is_placeholder(value: object) -> bool:
@@ -79,7 +79,11 @@ def replace_placeholders(value, replacements: dict[str, float]):
     """Return *value* with every placeholder name replaced recursively."""
     if isinstance(value, dict):
         return {
-            key: replace_placeholders(child, replacements)
+            key: (
+                child
+                if key in _TEXT_KEYS
+                else replace_placeholders(child, replacements)
+            )
             for key, child in value.items()
         }
     if isinstance(value, list):
@@ -95,7 +99,9 @@ def contains_placeholders(value, placeholder_names: set[str]) -> bool:
     """True when any of *placeholder_names* remains in *value*."""
     if isinstance(value, dict):
         return any(
-            contains_placeholders(child, placeholder_names) for child in value.values()
+            contains_placeholders(child, placeholder_names)
+            for key, child in value.items()
+            if key not in _TEXT_KEYS
         )
     if isinstance(value, (list, tuple)):
         return any(contains_placeholders(child, placeholder_names) for child in value)

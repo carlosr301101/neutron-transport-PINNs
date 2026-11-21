@@ -183,6 +183,8 @@ by asking the user, not by guessing.
 - `SCS` = `Sigma_s0` [0.9] cm^-1; it must satisfy `SCS <= SCT` (the 1D
   validator does not enforce this).
 - `SIGMA_F` only when power normalization is requested; it must be `<= SCT`.
+- Optional zone names for plots (`ZONE_NAMES`, one per zone). The terminal
+  wizard does not ask for them; collect them here or in the TUI.
 
 **3. Angular discretization**
 
@@ -403,7 +405,7 @@ Shortcuts (`pyproject.toml` scripts):
 Launch with `uv run nts tui` (same as `uv run nts-tui`).
 
 - **Config**: geometry bar, editable region table (`cells`, `length`, `zone`,
-  `Q`), zone table (`Sigma_t`, `Sigma_s0`), fission table (`nu*Sigma_f`,
+  `Q`), zone table (`name`, `Sigma_t`, `Sigma_s0`), fission table (`nu*Sigma_f`,
   `Sigma_f`), plus every scalar field of the 1D config. Power normalization is
   a switch: `POWER_KW`, `E_F_MEV`, `NU` and `AREA_CM2` stay hidden until it is
   enabled, and an enabled switch with a blank `POWER_KW` is a form error.
@@ -522,6 +524,7 @@ support fission.
 "NU_SIGF": [0.11],   # nu*Sigma_f per zone [cm^-1]
 "MODE": "eigenvalue",
 "SPATIAL_SCHEME": "DD",  # DD (default) | STEP | SC
+# "ZONE_NAMES": ["Reflector", "Core"],  # optional plot labels
 # "K_EFF": 1.0,      # fixed_k only
 "TOL_K": 1e-6,
 "MAX_OUTER": 200,
@@ -730,6 +733,10 @@ uv run nts-1d-plot -i outputs/results/datos.json --x k_eff
   k_history); without a path it uses the JSON stem. `nts-1d-excel`
   converts an existing output.
 - `--kind k-history` only works for `MODE=eigenvalue`.
+- Scalar and angular plots shade each region, draw dashed interfaces and
+  label them `R1`, `R2`, ... with the zone name. Names come from the optional
+  `ZONE_NAMES` config key or from `--zone-names "A,B,C"` (CLI wins); without
+  them the labels are `Zone 1`, `Zone 2`, ...
 - Default outputs: `outputs/results/plots/scalar_flux.png`,
   `angular_flux.png`, `k_history.png`.
 

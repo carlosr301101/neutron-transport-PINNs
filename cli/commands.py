@@ -238,7 +238,7 @@ def cmd_show(args):
 
     # Output files are already JSON - just display them
     try:
-        with open(result_file, "r") as f:
+        with open(result_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         console.print("\n[bold cyan]Simulation Result:[/]")
@@ -507,7 +507,7 @@ def _serialize_1d_run(
 
 def _load_json_configs(path: Path) -> list[tuple[str, dict]]:
     """Load one 1D config object, or a list of them, from JSON."""
-    with path.open("r") as f:
+    with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
     if isinstance(data, dict):
@@ -690,7 +690,7 @@ def cmd_tui(args):
 
 
 def _load_mflux(result_path: Path) -> list[list[float]]:
-    with open(result_path, "r") as f:
+    with open(result_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     if "MFLUX" not in data:

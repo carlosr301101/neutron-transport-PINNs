@@ -94,7 +94,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(
-            json.dumps(conf.as_dict(), indent=2, ensure_ascii=False) + "\n"
+            json.dumps(conf.as_dict(), indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
         )
     except OSError as exc:
         print(f"Error writing {output}: {exc}", file=sys.stderr)

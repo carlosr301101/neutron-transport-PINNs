@@ -41,6 +41,37 @@ def make_output(path: Path, n_runs: int = 2) -> None:
     path.write_text(json.dumps({"solver": "NTS_DD_1D", "runs": runs}))
 
 
+def make_zoned_output(path: Path) -> None:
+    """Two regions / two zones with zone names for the region styling tests."""
+    config = {
+        "num_regions": 2,
+        "num_zones": 2,
+        "NC": [2, 2],
+        "HR": [2.0, 2.0],
+        "IZL": [1, 2],
+        "SCT": [1.0, 0.5],
+        "SCS": [0.9, 0.1],
+        "ZONE_NAMES": ["Reflector", "Core"],
+        "N": 2,
+    }
+    run = {
+        "config_name": "run_0",
+        "configuration": config,
+        "scalar_flux": [0.3, 0.8, 1.0, 0.6],
+        "angular_flux": [
+            [0.1, 0.2],
+            [0.3, 0.4],
+            [0.5, 0.4],
+            [0.2, 0.3],
+        ],
+        "miu": [-0.57735, 0.57735],
+        "omega": [1.0, 1.0],
+        "k_eff": 1.02,
+        "mode": "eigenvalue",
+    }
+    path.write_text(json.dumps({"solver": "NTS_DD_1D", "runs": [run]}))
+
+
 def make_datos(path: Path) -> None:
     path.write_text(
         json.dumps(
@@ -198,6 +229,95 @@ class TestPlot1DFlux(unittest.TestCase):
                     "--directions", "0",
                 ]
             )
+
+
+class TestRegionStyling(unittest.TestCase):
+    def test_scalar_shades_regions_and_labels_zones(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_zoned.json"
+            make_zoned_output(result)
+            run = plot.load_output(result)[0]
+            with patch.object(plot, "_save") as save:
+                plot.plot_scalar([run], Path(tmp) / "scalar.png")
+                fig = save.call_args.args[0]
+                ax = fig.axes[0]
+                self.assertGreaterEqual(len(ax.patches), 2)
+                self.assertGreaterEqual(len(ax.collections), 1)
+                texts = [text.get_text() for text in ax.texts]
+                self.assertIn("R1\nReflector", texts)
+                self.assertIn("R2\nCore", texts)
+                plt.close(fig)
+
+    def test_zone_names_override(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_zoned.json"
+            make_zoned_output(result)
+            run = plot.load_output(result)[0]
+            with patch.object(plot, "_save") as save:
+                plot.plot_scalar(
+                    [run],
+                    Path(tmp) / "scalar.png",
+                    zone_names=["Liners", "Fuel"],
+                )
+                fig = save.call_args.args[0]
+                texts = [text.get_text() for text in fig.axes[0].texts]
+                self.assertIn("R1\nLiners", texts)
+                self.assertIn("R2\nFuel", texts)
+                plt.close(fig)
+
+    def test_zone_names_length_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_zoned.json"
+            make_zoned_output(result)
+            run = plot.load_output(result)[0]
+            with self.assertRaises(ValueError):
+                plot.plot_scalar(
+                    [run],
+                    Path(tmp) / "scalar.png",
+                    zone_names=["Only one"],
+                )
+
+    def test_angular_keeps_direction_lines(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_zoned.json"
+            make_zoned_output(result)
+            run = plot.load_output(result)[0]
+            with patch.object(plot, "_save") as save:
+                plot.plot_angular(run, Path(tmp) / "angular.png")
+                fig = save.call_args.args[0]
+                ax = fig.axes[0]
+                self.assertEqual(len(ax.lines), 2)
+                self.assertGreaterEqual(len(ax.patches), 2)
+                texts = [text.get_text() for text in ax.texts]
+                self.assertIn("R1\nReflector", texts)
+                plt.close(fig)
+
+    def test_cli_zone_names_flag(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_zoned.json"
+            output = Path(tmp) / "scalar.png"
+            make_zoned_output(result)
+            rc = run_plot(
+                [
+                    "-r", str(result), "--kind", "scalar",
+                    "--zone-names", "Liners, Fuel", "-o", str(output),
+                ]
+            )
+            self.assertEqual(rc, 0)
+            self.assertTrue(output.exists())
+
+    def test_cli_zone_names_mismatch_exits_2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "output_1d_zoned.json"
+            make_zoned_output(result)
+            with contextlib.redirect_stderr(io.StringIO()):
+                rc = run_plot(
+                    [
+                        "-r", str(result), "--kind", "scalar",
+                        "--zone-names", "Only one",
+                    ]
+                )
+            self.assertEqual(rc, 2)
 
 
 class TestEnglishLabelsAndMessages(unittest.TestCase):

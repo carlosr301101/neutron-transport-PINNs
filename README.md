@@ -638,6 +638,18 @@ uv run nts-1d-plot -r outputs/results/output_1d_016.json --kind k-history --run 
   history.
 - Default outputs: `outputs/results/plots/scalar_flux.png`,
   `angular_flux.png`, `k_history.png`.
+- Scalar and angular plots shade each mesh region, draw dashed interfaces and
+  label them `R1`, `R2`, ... with the zone name. Names come from the optional
+  `ZONE_NAMES` config key:
+  ```json
+  "ZONE_NAMES": ["Reflector", "Inner fuel", "Outer fuel"]
+  ```
+  or from the CLI, which overrides the config:
+  ```bash
+  uv run nts-1d-plot -r output_1d.json --kind scalar \
+    --zone-names "Reflector,Inner fuel,Outer fuel"
+  ```
+  Without either, the labels fall back to `Zone 1`, `Zone 2`, ...
 - Legacy `datos.json` mode: `uv run nts-1d-plot -i outputs/results/datos.json --x k_eff`.
 
 See [doc/MULTIPLICATIVE_MEDIA_EN.md](doc/MULTIPLICATIVE_MEDIA_EN.md) for the

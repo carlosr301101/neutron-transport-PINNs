@@ -19,6 +19,7 @@ from tui.screens.plot_studio import PlotStudioPane
 from tui.screens.results import ResultsPane
 from tui.screens.run_manager import RunManagerPane
 from tui.schema import DEFAULT_CONFIG
+from tui.widgets import RegionTable, ZoneTable
 from tui.widgets.image_preview import ImagePreview
 
 
@@ -63,6 +64,58 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                 self.assertIn(
                     "saved", pane.query_one("#cfg-status", Static).content.lower()
                 )
+
+    async def test_zone_names_save_and_load(self):
+        app = NTSApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab-config"
+            await pilot.pause()
+            pane = app.query_one(ConfigEditorPane)
+            pane.query_one(RegionTable).set_values(
+                [2, 2], [2.0, 2.0], [1, 2], [1.0, 0.0]
+            )
+            pane.query_one(ZoneTable).set_values(
+                [1.0, 0.5], [0.9, 0.1], ["Reflector", "Core"]
+            )
+            await pilot.pause()
+
+            config = pane._collect()
+            self.assertEqual(config["ZONE_NAMES"], ["Reflector", "Core"])
+
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "config.json"
+                pane.query_one("#cfg-path", Input).value = str(path)
+                pane._save()
+                self.assertTrue(path.exists())
+                saved = json.loads(path.read_text())
+            self.assertEqual(saved["ZONE_NAMES"], ["Reflector", "Core"])
+
+            pane._populate(saved)
+            await pilot.pause()
+            self.assertEqual(
+                pane.query_one("#zone-0-name", Input).value, "Reflector"
+            )
+            self.assertEqual(
+                pane.query_one("#zone-1-name", Input).value, "Core"
+            )
+
+    async def test_partial_zone_names_fail_to_save(self):
+        app = NTSApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab-config"
+            await pilot.pause()
+            pane = app.query_one(ConfigEditorPane)
+            pane.query_one(RegionTable).set_values(
+                [2, 2], [2.0, 2.0], [1, 2], [1.0, 0.0]
+            )
+            pane.query_one(ZoneTable).set_values(
+                [1.0, 0.5], [0.9, 0.1], ["Reflector"]
+            )
+            await pilot.pause()
+            with self.assertRaises(ValueError):
+                pane._collect()
 
     async def test_validate_does_not_block_the_ui(self):
         app = NTSApp()
