@@ -40,9 +40,9 @@ There must be no uncommitted changes.
 Use SemVer:
 
 ```text
-3.9.5 -> 3.9.6   fix
-3.9.5 -> 3.10.0  feature
-3.9.5 -> 4.0.0   breaking change
+3.10.0 -> 3.10.1   fix
+3.10.0 -> 3.11.0  feature
+3.10.0 -> 4.0.0   breaking change
 ```
 
 Never reuse a version already published on PyPI.
@@ -58,7 +58,7 @@ tui/_version.py
 Edit:
 
 ```python
-__version__ = "3.9.6"
+__version__ = "3.10.1"
 ```
 
 Do not edit `version` in `pyproject.toml`; it is dynamic:
@@ -81,7 +81,7 @@ Add the section at the top of:
 Example:
 
 ```markdown
-## [3.9.6] - 2026-11-18 - Short title
+## [3.10.1] - 2026-11-18 - Short title
 
 ### Fixed
 - Change description.
@@ -136,7 +136,7 @@ uv pip install --python /tmp/nts-release/bin/python dist/*.whl
 
 ```bash
 git add tui/_version.py CHANGELOG.md Changelog_EN.md README.md
-git commit -m "chore(release): v3.9.6"
+git commit -m "chore(release): v3.10.1"
 ```
 
 Add other files if the release includes code or docs changes.
@@ -154,8 +154,8 @@ Wait for CI to pass on GitHub Actions.
 The tag must match `tui/_version.py` exactly.
 
 ```bash
-git tag -a v3.9.6 -m "neutron-transport-pinns 3.9.6"
-git push origin v3.9.6
+git tag -a v3.10.1 -m "neutron-transport-pinns 3.10.1"
+git push origin v3.10.1
 ```
 
 Alternatively:
@@ -168,11 +168,11 @@ Pushing only the new tag is safer.
 
 ## 9. What `release.yml` does
 
-On `v3.9.6`:
+On `v3.10.1`:
 
 1. Runs CI on Ubuntu and Windows (`ci.yml`), including the `cp1252` console
    test.
-2. If both pass, checks `v3.9.6 == tui/_version.py`.
+2. If both pass, checks `v3.10.1 == tui/_version.py`.
 3. Runs `uv build --clear`.
 4. Runs `uvx twine check dist/*`.
 5. Publishes with:
@@ -202,8 +202,8 @@ After the tag exists:
 GitHub → Releases → Draft a new release
 ```
 
-- Tag: `v3.9.6`
-- Title: `neutron-transport-pinns 3.9.6`
+- Tag: `v3.10.1`
+- Title: `neutron-transport-pinns 3.10.1`
 - Description: copy the changelog section.
 - Publish release.
 
@@ -213,7 +213,7 @@ from the tag.
 ## 11. Verify PyPI
 
 ```text
-https://pypi.org/project/neutron-transport-pinns/3.9.6/
+https://pypi.org/project/neutron-transport-pinns/3.10.1/
 ```
 
 Clean install:
@@ -221,7 +221,7 @@ Clean install:
 ```bash
 uv venv /tmp/nts-pypi
 uv pip install --python /tmp/nts-pypi/bin/python \
-  neutron-transport-pinns==3.9.6
+  neutron-transport-pinns==3.10.1
 
 /tmp/nts-pypi/bin/python -c "import tui; print(tui.__version__)"
 /tmp/nts-pypi/bin/nts --help

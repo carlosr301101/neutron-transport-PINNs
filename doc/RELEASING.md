@@ -40,9 +40,9 @@ No debe haber cambios sin commitear.
 Usar SemVer:
 
 ```text
-3.9.5 -> 3.9.6   fix
-3.9.5 -> 3.10.0  feature
-3.9.5 -> 4.0.0   cambio incompatible
+3.10.0 -> 3.10.1   fix
+3.10.0 -> 3.11.0  feature
+3.10.0 -> 4.0.0   cambio incompatible
 ```
 
 No reutilizar una versión ya publicada en PyPI.
@@ -58,7 +58,7 @@ tui/_version.py
 Editar:
 
 ```python
-__version__ = "3.9.6"
+__version__ = "3.10.1"
 ```
 
 No editar `version` en `pyproject.toml`; es dinámico:
@@ -81,7 +81,7 @@ Añadir la sección al inicio de:
 Ejemplo:
 
 ```markdown
-## [3.9.6] - 2026-11-18 - Título breve
+## [3.10.1] - 2026-11-18 - Título breve
 
 ### Fixed
 - Descripción del cambio.
@@ -136,7 +136,7 @@ uv pip install --python /tmp/nts-release/bin/python dist/*.whl
 
 ```bash
 git add tui/_version.py CHANGELOG.md Changelog_EN.md README.md
-git commit -m "chore(release): v3.9.6"
+git commit -m "chore(release): v3.10.1"
 ```
 
 Añadir otros archivos si el release incluye cambios de código o docs.
@@ -154,8 +154,8 @@ Esperar a que CI pase en GitHub Actions.
 El tag debe coincidir exactamente con `tui/_version.py`.
 
 ```bash
-git tag -a v3.9.6 -m "neutron-transport-pinns 3.9.6"
-git push origin v3.9.6
+git tag -a v3.10.1 -m "neutron-transport-pinns 3.10.1"
+git push origin v3.10.1
 ```
 
 También vale:
@@ -168,11 +168,11 @@ Pero es más seguro subir solo el tag nuevo.
 
 ## 9. Qué hace `release.yml`
 
-Al subir `v3.9.6`:
+Al subir `v3.10.1`:
 
 1. Ejecuta CI en Ubuntu y Windows (`ci.yml`), incluida la prueba de consola
    `cp1252`.
-2. Si ambos pasan, verifica `v3.9.6 == tui/_version.py`.
+2. Si ambos pasan, verifica `v3.10.1 == tui/_version.py`.
 3. Ejecuta `uv build --clear`.
 4. Ejecuta `uvx twine check dist/*`.
 5. Publica con:
@@ -202,8 +202,8 @@ Después de que el tag exista:
 GitHub → Releases → Draft a new release
 ```
 
-- Tag: `v3.9.6`
-- Título: `neutron-transport-pinns 3.9.6`
+- Tag: `v3.10.1`
+- Título: `neutron-transport-pinns 3.10.1`
 - Descripción: copiar la sección del changelog.
 - Publish release.
 
@@ -213,7 +213,7 @@ El Release de GitHub es informativo; la publicación en PyPI ya la hace
 ## 11. Verificar PyPI
 
 ```text
-https://pypi.org/project/neutron-transport-pinns/3.9.6/
+https://pypi.org/project/neutron-transport-pinns/3.10.1/
 ```
 
 Instalación limpia:
@@ -221,7 +221,7 @@ Instalación limpia:
 ```bash
 uv venv /tmp/nts-pypi
 uv pip install --python /tmp/nts-pypi/bin/python \
-  neutron-transport-pinns==3.9.6
+  neutron-transport-pinns==3.10.1
 
 /tmp/nts-pypi/bin/python -c "import tui; print(tui.__version__)"
 /tmp/nts-pypi/bin/nts --help

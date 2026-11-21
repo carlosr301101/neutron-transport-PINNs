@@ -2,12 +2,13 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
-## [Unreleased]
+## [3.10.0] - 2026-11-20 - Zonas nombradas y gráficas por región
 
 ### Added
 - `ZONE_NAMES` in the 1D config and a `Name` column in the TUI material-zone
   table.
 - `nts-1d-plot --zone-names` to label zones from the CLI.
+- Flujo guiado en la skill para crear un problema de transporte 1D nuevo.
 
 ### Changed
 - Scalar and angular plots shade each region, draw dashed interfaces and
@@ -15,6 +16,7 @@ Registro de todos los cambios notables en el proyecto NTS Automation System.
 - La TUI inicia una configuración nueva con 10 celdas en la región 1.
 - El workflow de release ejecuta CI en Ubuntu y Windows y solo publica en PyPI
   si ambos pasan.
+- Bump de versión a 3.10.0.
 
 ## [3.9.5] - 2026-11-18 - Consola Windows compatible
 
