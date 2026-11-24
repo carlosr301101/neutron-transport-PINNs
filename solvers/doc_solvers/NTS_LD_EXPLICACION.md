@@ -290,7 +290,7 @@ Matriz de **NR_Y filas × NR_X columnas** con valores de fuentes (≥ 0).
 
 ### 10. **BC** - Condiciones de Frontera
 
-4 valores separados: `BOTTOM TOP LEFT RIGHT`
+4 valores separados: `LEFT BOTTOM RIGHT TOP`
 
 **Significado**:
 - **BOTTOM** (y=0): Frontera inferior

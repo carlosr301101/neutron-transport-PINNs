@@ -44,6 +44,7 @@ nts-1d-run-dd = "cli.run_1d:cli_dd"
 nts-1d-run-step = "cli.run_1d:cli_step"
 nts-1d-run-sc = "cli.run_1d:cli_sc"
 nts-1d-config = "utils.generate_1d_config:main"
+nts-2d-config = "utils.generate_2d_config:main"
 nts-tui = "tui.app:main"
 nts-generate = "cli.generate_placeholder:cli"
 

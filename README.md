@@ -214,11 +214,12 @@ Main entry point: `uv run nts <command>` (implemented in `cli/main.py` → `cli/
 | `nts generate <config.json>` [-p] [-o PATH] | Generate a numbered `input_###.txt` for the 2D solvers |
 | `nts generate --place-holder NAME START END STEP [--json CONFIG] [-o OUT]` | Expand placeholders from `inputs_placeholder.py` or a JSON config → `.py`/`.json` |
 | `nts-1d-config [-o config.json]` | Interactive 1D config generator; numeric fields accept `kk`/`mm` placeholders |
-| `nts run [-s SOLVER] [-i input.txt ...] [-p N]` | Run 2D simulations in parallel → `output_###.json` |
+| `nts-2d-config [-o caso.json]` | Interactive 2D config generator (zones, grid, `ZMAP`, `QMAP`, `BC`, solver) |
+| `nts run [-s SOLVER] [-i input.txt ...] [-p N] [--dry-run]` | Run 2D simulations in parallel → `output_###.json`; `--dry-run` prints commands and input |
 | `nts run-1d [-c inputs.py \| --json config.json \| --manual] [-o output.json]` | Run the Python 1D solver from a file, JSON, or the interactive wizard |
 | `nts list inputs\|outputs` | List generated inputs / results |
-| `nts show <result.json>` | Show a result summary (STATUS, ITER, CPU) |
-| `nts plot [-r result.json] [-o out.png] [--show]` | Plot the `MFLUX` heatmap of a 2D result |
+| `nts show <result.json>` | Show a result summary (STATUS, ITER, CPU, MFLUX shape) |
+| `nts plot [-r result.json] [-i input.txt] [-o out.png] [--show]` | Plot the `MFLUX` heatmap; axes in cm when the input file is available |
 | `nts-1d-plot -r output_1d.json [--kind scalar\|angular\|k-history] [--run ...]` | Plot 1D scalar/angular flux or `k_eff` history from a raw output |
 | `nts-1d-plot -i datos.json [--x SCS\|NU_SIGF\|k_eff]` | Legacy SCS/NU_SIGF/k_eff vs flux from `datos.json` |
 | `python -m cli.run_tests [-v] [--failfast] [-p PATTERN]` | Run the repository unittest suite |
@@ -230,6 +231,7 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 | `nts-generate` | Placeholder expansion (`--place-holder`, `--json`, `-o`) |
 | `nts-tui` | Launch the 1D terminal UI |
 | `nts-1d-config` | Interactive 1D config JSON generator (`-o` optional) |
+| `nts-2d-config` | Interactive 2D config JSON generator (`-o` optional) |
 | `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |
 | `nts-1d-run-dd` / `-step` / `-sc` | Same flags, but forces the spatial scheme |
 | `nts-1d-excel output_1d_###.json [-o out.xlsx] [--run ...]` | Export a consolidated 1D output to a formatted Excel workbook |
@@ -672,7 +674,7 @@ See `templates/base_input.json` (2D, with `_comment` keys) and `example_config.j
 | `NR_Y`, `YDOM` | Y regions: `{"length": cm, "nodes": M}` | `len(YDOM) == NR_Y` |
 | `ZMAP` | Zone map (NR_Y × NR_X) | Integers in `[1, NZ]` |
 | `QMAP` | Source map (NR_Y × NR_X) | `≥ 0` |
-| `BC` | Boundary conditions `[left, right, bottom, top]` | `0.0` (vacuum) or `1.0` (reflective) |
+| `BC` | Boundary conditions `[left, bottom, right, top]` | `-1.0` reflective, `0.0` vacuum, `> 0` incoming flux |
 | `TOL` | Convergence tolerance | `1e-7 … 1e-2` |
 
 ### 1D format (`outputs/inputs/inputs.py` dicts)
@@ -922,6 +924,8 @@ multiplicative-media guide and the changelog are kept alongside them.
 | `doc/PACKAGING.md` | Packaging and PyPI publishing checklist (Spanish) |
 | `doc/TUI_EN.md` | 1D terminal UI guide (English) |
 | `doc/TUI.md` | 1D terminal UI guide (Spanish) |
+| `doc/2D_INTEGRATION.md` | Detailed plan for integrating the 2D C solvers into the CLI/TUI |
+| `doc/2D_SOLVERS_CONTRACT.md` | Canonical 2D `input.txt`/JSON contract shared by the C solvers and Python |
 | `doc/NTS_DOCUMENTATION.md` | Master reference for the 5 C programs (input format, method selection, performance) |
 | `doc/MULTIPLICATIVE_MEDIA_EN.md` | 1D fission/`k_eff` modes, benchmark, power normalization, validation (English) |
 | `doc/SPATIAL_SCHEMES_EN.md` | DD / STEP / SC spatial schemes: formulation, selection, results (English) |

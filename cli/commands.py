@@ -22,6 +22,7 @@ from rich.progress import (
 from core.config import SimulationConfig
 from core.validator import validate_file, get_validation_summary
 from core.input_builder import InputBuilder
+from core.input_reader import read_input
 from core.placeholders import (
     build_placeholder_values as _build_placeholder_values,
     contains_placeholders as _contains_placeholders,
@@ -35,8 +36,10 @@ from utils.paths import (
     get_next_input_index,
     ensure_directories,
     verify_solver_binaries,
+    get_solver_path,
     AVAILABLE_SOLVERS,
     get_template_path,
+    INPUTS_DIR,
     PLOTS_DIR,
     RESULTS_DIR,
 )
@@ -132,6 +135,40 @@ def cmd_validate(args):
         return 1
 
 
+def _print_dry_run(solver: str, tasks: list[tuple[str, str, str]]) -> int:
+    """Print the commands that would run without executing any solver."""
+    try:
+        solver_path = str(get_solver_path(solver))
+    except (ValueError, FileNotFoundError):
+        solver_path = solver
+        console.print(
+            f"[yellow]Warning:[/] binary for {solver} not found; "
+            "showing the generic command."
+        )
+
+    console.print(f"\n[bold]Dry run:[/] {len(tasks)} simulation(s) with {solver}")
+
+    for _task_solver, input_file, output_file in tasks:
+        console.print(f"  [green]{input_file}[/] -> [yellow]{output_file}[/]")
+        console.print(f"    {solver_path} {input_file} > {output_file}")
+
+    first_input = tasks[0][1] if tasks else None
+    if first_input:
+        try:
+            lines = Path(first_input).read_text(encoding="utf-8").splitlines()
+        except OSError as exc:
+            console.print(f"[yellow]Could not read {first_input}:[/] {exc}")
+            return 0
+
+        preview = lines[:20]
+        console.print(f"\n[bold]Input preview:[/] {first_input}")
+        console.print("\n".join(preview))
+        if len(lines) > len(preview):
+            console.print(f"... ({len(lines) - len(preview)} more lines)")
+
+    return 0
+
+
 def cmd_run(args):
     """Run simulations."""
     get_logger()
@@ -140,6 +177,7 @@ def cmd_run(args):
 
     # Check solvers
     solver = args.solver
+    dry_run = getattr(args, "dry_run", False)
     if solver not in AVAILABLE_SOLVERS:
         console.print(f"[bold red]✗ Unknown solver:[/] {solver}")
         console.print(f"Available solvers: {', '.join(AVAILABLE_SOLVERS)}")
@@ -147,8 +185,13 @@ def cmd_run(args):
 
     solver_status = verify_solver_binaries()
     if not solver_status[solver]:
-        console.print(f"[bold red]✗ Solver binary not found:[/] {solver}")
-        return 1
+        if not dry_run:
+            console.print(f"[bold red]✗ Solver binary not found:[/] {solver}")
+            return 1
+        console.print(
+            f"[yellow]Warning:[/] solver binary not found: {solver} "
+            "(continuing because this is a dry run)"
+        )
 
     # Get input files
     if args.inputs:
@@ -160,10 +203,6 @@ def cmd_run(args):
             console.print("[bold red]✗ No input files found in outputs/inputs/[/]")
             return 1
 
-    console.print(
-        f"[bold blue]Running {len(input_files)} simulation(s) with {solver}[/]"
-    )
-
     # Prepare tasks
     from utils.paths import RESULTS_DIR
 
@@ -171,6 +210,13 @@ def cmd_run(args):
     for i, input_file in enumerate(input_files, 1):
         output_file = RESULTS_DIR / f"output_{i:03d}.json"
         tasks.append((solver, input_file, str(output_file)))
+
+    if dry_run:
+        return _print_dry_run(solver, tasks)
+
+    console.print(
+        f"[bold blue]Running {len(input_files)} simulation(s) with {solver}[/]"
+    )
 
     # Run with progress bar.  Legacy Windows consoles cannot encode Rich's
     # braille spinner, so fall back to the ASCII "line" animation.
@@ -251,7 +297,16 @@ def cmd_show(args):
         if "ITER" in data:
             console.print(f"[bold]Iterations:[/] {data['ITER']}")
         if "CPU" in data:
-            console.print(f"[bold]CPU Time:[/] {data['CPU']:.6f}s")
+            try:
+                console.print(f"[bold]CPU Time:[/] {float(data['CPU']):.6f}s")
+            except (TypeError, ValueError):
+                console.print(f"[bold]CPU Time:[/] {data['CPU']}")
+        mflux = data.get("MFLUX")
+        if isinstance(mflux, list) and mflux and isinstance(mflux[0], list):
+            rows = len(mflux)
+            cols = len(mflux[0])
+            console.print(f"[bold]Flux grid:[/] {rows} x {cols} cells")
+            console.print(f"[bold]Cells per axis:[/] y={rows}, x={cols}")
 
     except json.JSONDecodeError as e:
         console.print(f"[bold red]✗ Invalid JSON:[/] {e}")
@@ -739,6 +794,15 @@ def _get_next_plot_index() -> int:
     return max(indices) + 1 if indices else 1
 
 
+def _input_for_result(result_file: Path) -> Optional[Path]:
+    """Return the ``input_NNN.txt`` that produced ``output_NNN.json``, if any."""
+    parts = result_file.stem.split("_")
+    if len(parts) < 2 or parts[0] != "output":
+        return None
+    candidate = INPUTS_DIR / f"input_{parts[1]}.txt"
+    return candidate if candidate.is_file() else None
+
+
 def cmd_plot(args):
     """Plot MFLUX as a 2D heatmap."""
     logger = get_logger()
@@ -759,6 +823,38 @@ def cmd_plot(args):
     except Exception as e:
         console.print(f"[bold red]✗ Error:[/] {str(e)}")
         return 1
+
+    # Physical axes come from the input file: results JSON has no geometry.
+    extent = None
+    geometry = None
+    input_file = (
+        Path(args.input)
+        if getattr(args, "input", None)
+        else _input_for_result(result_file)
+    )
+    if input_file is not None:
+        if not Path(input_file).is_file():
+            console.print(f"[yellow]Warning:[/] input file not found: {input_file}")
+        else:
+            try:
+                geometry = read_input(input_file)
+                extent = geometry.extent
+            except Exception as e:
+                console.print(
+                    f"[yellow]Warning:[/] could not read geometry from "
+                    f"{input_file}: {e}"
+                )
+
+    if extent is not None:
+        rows = len(mflux)
+        cols = len(mflux[0])
+        expected = (geometry.total_nodes_y, geometry.total_nodes_x)
+        if (rows, cols) != expected:
+            console.print(
+                f"[yellow]Warning:[/] MFLUX is {rows}x{cols} but {input_file} "
+                f"defines {expected[0]}x{expected[1]} cells; using indexes."
+            )
+            extent = None
 
     if args.out is None:
         index = _get_next_plot_index()
@@ -790,10 +886,27 @@ def cmd_plot(args):
             fig, ax = plt.subplots(figsize=(7.5, 6.0), dpi=150)
         else:
             raise
-    im = ax.imshow(mflux, origin="lower", cmap="viridis", aspect="auto")
+    if extent is not None:
+        im = ax.imshow(
+            mflux,
+            origin="lower",
+            cmap="viridis",
+            aspect="auto",
+            extent=extent,
+        )
+        ax.set_xlabel("x [cm]")
+        ax.set_ylabel("y [cm]")
+    else:
+        if input_file is None:
+            console.print(
+                "[yellow]No input file found for this result; "
+                "plotting cell indexes.[/]"
+            )
+        im = ax.imshow(mflux, origin="lower", cmap="viridis", aspect="auto")
+        ax.set_xlabel("X index")
+        ax.set_ylabel("Y index")
+
     ax.set_title("Neutron Flux (MFLUX)")
-    ax.set_xlabel("X index")
-    ax.set_ylabel("Y index")
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_label("Flux intensity")
@@ -880,6 +993,11 @@ def create_parser():
         default=4,
         help="Number of parallel processes (default: 4)",
     )
+    run_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the commands and the input preview without running",
+    )
     run_parser.set_defaults(func=cmd_run)
 
     # List command
@@ -900,6 +1018,14 @@ def create_parser():
     plot_parser = subparsers.add_parser("plot", help="Plot MFLUX heatmap from results")
     plot_parser.add_argument(
         "-r", "--result", help="Result file path (JSON). Default: latest output_*.json"
+    )
+    plot_parser.add_argument(
+        "-i",
+        "--input",
+        help=(
+            "Input file with the geometry (default: input_NNN.txt matching "
+            "the result file)"
+        ),
     )
     plot_parser.add_argument(
         "-o",

@@ -3,7 +3,7 @@
   "_description": "This is a template for generating input.txt files for NTS solvers",
   
   "N": 4,
-  "_N_comment": "Number of discrete ordinates (must be even). Common values: 2, 4, 8, 16, 32",
+  "_N_comment": "Number of discrete ordinates (must be even, 2 to 18). Common values: 2, 4, 8, 16",
   
   "NZ": 1,
   "_NZ_comment": "Number of material zones in the problem",
@@ -24,7 +24,7 @@
     {"length": 10.0, "nodes": 5},
     {"length": 10.0, "nodes": 5}
   ],
-  "_XDOM_comment": "X domain definition. Each region has length (cm) and number of nodes. Array length must equal NR_X",
+  "_XDOM_comment": "X domain definition. Each region has length (cm) and number of cells (>= 3). Array length must equal NR_X",
   
   "NR_Y": 2,
   "_NR_Y_comment": "Number of regions in Y direction",
@@ -33,7 +33,7 @@
     {"length": 10.0, "nodes": 5},
     {"length": 10.0, "nodes": 5}
   ],
-  "_YDOM_comment": "Y domain definition. Each region has length (cm) and number of nodes. Array length must equal NR_Y",
+  "_YDOM_comment": "Y domain definition. Each region has length (cm) and number of cells (>= 3). Array length must equal NR_Y",
   
   "ZMAP": [
     [1, 1],
@@ -48,7 +48,7 @@
   "_QMAP_comment": "Source map: 2D array (NR_Y x NR_X) defining neutron source strength in each region. Non-negative values",
   
   "BC": [0.0, 0.0, 0.0, 0.0],
-  "_BC_comment": "Boundary conditions: [left, right, bottom, top]. 0.0 = vacuum, 1.0 = reflective",
+  "_BC_comment": "Boundary conditions in order [left, bottom, right, top]. -1.0 = reflective, 0.0 = vacuum, > 0 = incoming flux",
   
   "TOL": 1e-5,
   "_TOL_comment": "Convergence tolerance for solver. Typical range: 1e-7 to 1e-2. Smaller = more accurate but slower"

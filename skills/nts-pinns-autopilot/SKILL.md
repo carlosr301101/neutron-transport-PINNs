@@ -786,9 +786,10 @@ N=2/4/8 rows all follow them):
   `eigenvalue` requires `Q=0` and zero incoming flux; `driven` requires
   `Q != 0` or incoming flux and forces `k=1`; `POWER_KW` requires
   `SIGMA_F` or `NU`.
-- `BC` order is **[left, right, bottom, top]** (0.0 vacuum, 1.0 reflective).
-  Some older docs claim another order — the code and `core/input_builder.py`
-  are the truth.
+- `BC` order is **[left, bottom, right, top]**: `-1.0` reflective, `0.0` vacuum,
+  `> 0` incoming flux. This matches `core/input_builder.py` and
+  `doc/2D_SOLVERS_CONTRACT.md`; older docs that say `[left, right, bottom, top]`
+  or use `1.0` for reflective are wrong.
 - Positions in `scalar_flux` are **cell centres**: `dx = HR/NC` summed per
   cell index, so pos `i` ≈ (i+0.5)·dx. For HR=20, NC=101: pos 0 = 0.099 cm,
   pos 100 = 19.901 cm (vacuum face).

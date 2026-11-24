@@ -88,7 +88,7 @@ def run_solver(
         
         # Run solver with input file as argument (not stdin)
         # Command format: NTS_DD input_001.txt
-        with open(output_file, 'w') as outfile:
+        with open(output_file, "w", encoding="utf-8") as outfile:
             process = subprocess.run(
                 [str(solver_path), str(input_path)],
                 stdout=outfile,

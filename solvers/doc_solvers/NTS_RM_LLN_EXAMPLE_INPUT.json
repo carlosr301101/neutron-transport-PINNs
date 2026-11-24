@@ -317,7 +317,7 @@
     },
     "BC": {
       "name": "Boundary Conditions",
-      "format": "BOTTOM TOP LEFT RIGHT",
+      "format": "LEFT BOTTOM RIGHT TOP",
       "typical_values": [0.0, 0.0, 0.0, 0.0],
       "note": "Usually vacuum for assembly-level problems"
     },

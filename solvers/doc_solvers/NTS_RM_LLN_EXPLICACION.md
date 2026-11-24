@@ -53,7 +53,7 @@ El programa acepta **11 parámetros de entrada** (idénticos a todos los método
 | 7 | YDOM | L[cm] M[nodos] | Longitud y nodos Y | 5.5 cm típico |
 | 8 | ZMAP | Matriz (NR_Y × NR_X) | Índice zona en cada región | Definir patrón assembly |
 | 9 | QMAP | Matriz (NR_Y × NR_X) | Fuente por región | Distribuida o uniforme |
-| 10 | BC | 4 valores BOTTOM TOP LEFT RIGHT | Condiciones frontera | Típico: 0.0 (vacío) |
+| 10 | BC | 4 valores LEFT BOTTOM RIGHT TOP | Condiciones frontera | Típico: 0.0 (vacío) |
 | 11 | TOLERANCE | 0 < ε < 1 | Tolerancia convergencia | 1e-5 recomendado |
 
 ### Parámetros Clave para RM_LLN

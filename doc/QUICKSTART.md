@@ -88,22 +88,26 @@ with selectable DD / STEP / SC discretization over a shared engine
 
 Notes:
 
-- `BC` order is **[left, right, bottom, top]**; `0.0` = vacuum, `1.0` = reflective.
-- Constraints: `N` even, `sigma_s < sigma_t`, `ZMAP` values in `[1, NZ]`, `TOL ∈ [1e-7, 1e-2]`.
+- `BC` order is **[left, bottom, right, top]**; `-1.0` = reflective, `0.0` = vacuum, `> 0` = incoming flux.
+- Constraints: `N` even, `2 <= N <= 18`, `sigma_s < sigma_t`, `nodes >= 3`, `ZMAP` values in `[1, NZ]`, `TOL ∈ [1e-7, 1e-2]`.
 
 ## ⚡ Quick Workflow — 2D
 
 ```bash
+# 0. (Optional) Interactive config generator
+uv run nts-2d-config -o caso.json
+
 # 1. Validate config
 uv run nts validate example_config.json
 
 # 2. Generate input
 uv run nts generate example_config.json
 
-# 3. Run (all inputs, parallel)
+# 3. Preview or run (all inputs, parallel)
+uv run nts run --solver NTS_DD --dry-run
 uv run nts run --solver NTS_DD --parallel 4
 
-# 4. Inspect and plot
+# 4. Inspect and plot (axes in cm when input_###.txt is found)
 uv run nts show outputs/results/output_001.json
 uv run nts plot -r outputs/results/output_001.json
 ```

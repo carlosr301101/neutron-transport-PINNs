@@ -169,7 +169,7 @@ NR_Y          - Number of Y regions
 YDOM          - Y region lengths and nodes: L[cm] M [...] for each region
 ZMAP          - Zone map matrix (NR_Y × NR_X) with indices 1 to NZ
 QMAP          - Source map matrix (NR_Y × NR_X)
-BC            - Boundary conditions: LEFT RIGHT BOTTOM TOP
+BC            - Boundary conditions: LEFT BOTTOM RIGHT TOP
 TOL           - Convergence tolerance (1e-2 to 1e-7 recommended)
 ```
 
