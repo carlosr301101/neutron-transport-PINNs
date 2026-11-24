@@ -1,0 +1,97 @@
+"""NTS 2D terminal user interface."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import ClassVar
+
+from textual.app import App, ComposeResult
+from textual.widgets import Footer, Header, TabbedContent, TabPane
+
+from .log import configure_logging
+from .screens import (
+    Config2DPane,
+    Dashboard2DPane,
+    Plots2DPane,
+    Results2DPane,
+    Run2DPane,
+)
+
+_TABS: dict[str, type] = {
+    "tab2d-dashboard": Dashboard2DPane,
+    "tab2d-config": Config2DPane,
+    "tab2d-run": Run2DPane,
+    "tab2d-results": Results2DPane,
+    "tab2d-plots": Plots2DPane,
+}
+
+
+class NTS2DApp(App):
+    """Textual application for the 2D workflow."""
+
+    TITLE = "NTS Control"
+    SUB_TITLE = "2D neutron transport"
+    CSS_PATH = "app.tcss"
+
+    BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
+        ("q", "quit", "Quit"),
+    ]
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        with TabbedContent(id="tabs"):
+            with TabPane("Dashboard", id="tab2d-dashboard"):
+                yield Dashboard2DPane(classes="pane")
+            with TabPane("Config", id="tab2d-config"):
+                yield Config2DPane(classes="pane")
+            with TabPane("Run", id="tab2d-run"):
+                yield Run2DPane(classes="pane")
+            with TabPane("Results", id="tab2d-results"):
+                yield Results2DPane(classes="pane")
+            with TabPane("Plots", id="tab2d-plots"):
+                yield Plots2DPane(classes="pane")
+        yield Footer()
+
+    def refresh_all(self) -> None:
+        """Refresh every pane that shows filesystem data."""
+        refreshers = (
+            (Dashboard2DPane, "refresh_status"),
+            (Config2DPane, "refresh_load_options"),
+            (Run2DPane, "refresh_configs"),
+            (Results2DPane, "refresh_outputs"),
+            (Plots2DPane, "refresh_results"),
+        )
+        for pane_type, method_name in refreshers:
+            try:
+                pane = self.query_one(pane_type)
+                getattr(pane, method_name)()
+            except Exception:
+                self.log.debug(
+                    "refresh failed for %s.%s",
+                    pane_type.__name__,
+                    method_name,
+                    exc_info=True,
+                )
+
+    def set_plot_source(self, path: Path | str) -> None:
+        """Send a result file to the heatmap studio and switch tabs."""
+        self.query_one("#tabs", TabbedContent).active = "tab2d-plots"
+        try:
+            self.query_one(Plots2DPane).set_source(path)
+        except Exception:
+            self.log.debug("plot source failed", exc_info=True)
+
+    def on_unmount(self) -> None:
+        try:
+            self.query_one(Run2DPane).cancel_run()
+        except Exception:
+            self.log.debug("cancel failed", exc_info=True)
+
+
+def main() -> None:
+    configure_logging()
+    NTS2DApp().run()
+
+
+if __name__ == "__main__":
+    main()

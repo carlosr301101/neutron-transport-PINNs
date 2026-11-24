@@ -1,6 +1,6 @@
 # Integración de los solvers 2D en CLI y TUI
 
-Estado: **en implementación**. Fases 0–3 completadas; fases 4–7 pendientes.
+Estado: **en implementación**. Fases 0–4 completadas; fases 5–7 pendientes.
 El contrato de entrada/salida vive en `doc/2D_SOLVERS_CONTRACT.md`.
 
 Este documento describe la implementación de los
@@ -376,6 +376,8 @@ nts-tui-2d
 
 - `N`, `TOL`.
 - Selector de solver.
+- Mapa 2D proporcional del dominio (ancho/alto según `XDOM`/`YDOM`, color por
+  `ZMAP`, líneas de borde de región, ejes y BC en la leyenda).
 - Tabla de zonas (`σt`, `σs`).
 - Tabla X (`length`, `nodes`).
 - Tabla Y (`length`, `nodes`).
@@ -723,9 +725,9 @@ PR 6  Fase 7       docs, skill, changelog
 [x] Fase 1  núcleo 2D (BC, Pydantic, InputBuilder, golden tests)
 [x] Fase 2  wizard nts-2d-config + CLI 2D
 [x] Fase 3  C portables (Linux/Windows), CPU >= 0, Makefile, CI de compilación
-[ ] Fase 4  tui2d
+[x] Fase 4  tui2d (config con mapa 2D proporcional, run, results, plots)
 [ ] Fase 5  wheel platform-specific
-[~] Fase 6  tests de solvers hechos (`test_2d_solvers.py`); CI/wheel pendientes
+[~] Fase 6  tests de solvers y TUI hechos; CI/wheel pendientes
 [ ] Fase 7  documentación y skill
 ```
 
@@ -735,4 +737,4 @@ PR 6  Fase 7       docs, skill, changelog
 git switch feat/2d-integration
 ```
 
-Después, Fase 4 (`tui2d/`).
+Después, Fase 5 (wheels específicos de plataforma).

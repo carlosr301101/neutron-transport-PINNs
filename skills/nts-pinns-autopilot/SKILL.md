@@ -95,6 +95,7 @@ environment and dependencies are used.
 |---|---|---|
 | Main CLI | `nts` | `uv run nts` |
 | TUI | `nts-tui` or `nts tui` | `uv run nts-tui` or `uv run nts tui` |
+| 2D TUI | `nts-tui-2d` or `nts tui --dim 2` | `uv run nts-tui-2d` or `uv run nts tui --dim 2` |
 | 1D config wizard | `nts-1d-config` | `uv run nts-1d-config` |
 | 1D solver | `nts-1d-run` | `uv run nts-1d-run` |
 | Scalar/angular plots | `nts-1d-plot` | `uv run nts-1d-plot` |
@@ -372,7 +373,7 @@ Main CLI (`cli/commands.py` via `main.py`):
 
 | Command | Purpose | Key flags |
 |---------|---------|-----------|
-| `nts tui` | Launch the 1D terminal UI (config, run, results, plots, placeholders, export) | — |
+| `nts tui [--dim 2]` | Launch the terminal UI; `--dim 2` opens the 2D workflow (config with proportional domain map, run, results, heatmaps) | `--dim 1\|2` |
 | `nts status` | Solver binaries + file counts | — |
 | `nts validate <config.json>` | Pydantic validation + summary | — |
 | `nts generate <config.json>` | JSON config → `input_###.txt` | `-p` preview, `--place-holder NAME START END STEP` (repeatable, nargs=4), `--json` placeholder config, `-o` output |
@@ -388,6 +389,7 @@ Shortcuts (`pyproject.toml` scripts):
 | Shortcut | Equivalent |
 |----------|-----------|
 | `nts-tui` | `nts tui` (same 1D terminal UI) |
+| `nts-tui-2d` | `nts tui --dim 2` (2D terminal UI) |
 | `nts-generate` | `nts generate` in placeholder mode (`--place-holder`, `--json`, `-o`) |
 | `nts-1d-config` | Interactive 1D config JSON generator |
 | `nts-1d-run` | `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |
@@ -403,6 +405,14 @@ Shortcuts (`pyproject.toml` scripts):
 ## TUI (1D workflow)
 
 Launch with `uv run nts tui` (same as `uv run nts-tui`).
+
+For the 2D workflow launch `uv run nts tui --dim 2` (same as `uv run nts-tui-2d`).
+The 2D Config tab draws the domain proportionally (20x10 cm is twice as wide
+as tall), edits zones, X/Y regions, `ZMAP`, `QMAP` and the four BC values in
+`[left, bottom, right, top]` order (`-1.0` reflective, `0.0` vacuum, `> 0`
+incoming), and previews `input.txt`. Run executes the selected configs with
+the chosen solver; Results lists STATUS/ITER/CPU/grid; Plots writes MFLUX
+heatmaps with cm axes. The full guide is `doc/TUI2D_EN.md` (`TUI2D.md`).
 
 - **Config**: geometry bar, editable region table (`cells`, `length`, `zone`,
   `Q`), zone table (`name`, `Sigma_t`, `Sigma_s0`), fission table (`nu*Sigma_f`,

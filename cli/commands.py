@@ -737,10 +737,15 @@ def cmd_run_1d(args):
 
 
 def cmd_tui(args):
-    """Launch the 1D terminal user interface."""
-    from tui.app import main as tui_main
+    """Launch the terminal user interface (1D by default, 2D with --dim 2)."""
+    if getattr(args, "dim", 1) == 2:
+        from tui2d.app import main as tui2d_main
 
-    tui_main()
+        tui2d_main()
+    else:
+        from tui.app import main as tui_main
+
+        tui_main()
     return 0
 
 
@@ -1066,7 +1071,14 @@ def create_parser():
     run1d_parser.set_defaults(func=cmd_run_1d)
 
     tui_parser = subparsers.add_parser(
-        "tui", help="Launch the 1D terminal user interface"
+        "tui", help="Launch the terminal user interface (1D default, 2D with --dim 2)"
+    )
+    tui_parser.add_argument(
+        "--dim",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="Dimensionality of the TUI (default: 1)",
     )
     tui_parser.set_defaults(func=cmd_tui)
 

@@ -97,6 +97,9 @@ Notes:
 # 0. (Optional) Interactive config generator
 uv run nts-2d-config -o caso.json
 
+# 0b. (Optional) Interactive 2D TUI: domain map, ZMAP/QMAP, run, heatmaps
+uv run nts tui --dim 2
+
 # 1. Validate config
 uv run nts validate example_config.json
 

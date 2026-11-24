@@ -35,6 +35,7 @@ CLI/TUI automation system for **SN neutron transport simulations**:
 - **1D manual or JSON configuration**: interactive `--manual` wizard or `--json` file, with the effective config embedded in the output
 - **1D config generator**: `nts-1d-config` writes JSON with optional `kk`/`mm` placeholders, expandable via `nts-generate --json`
 - **1D TUI**: `nts tui` / `nts-tui` manages the full 1D workflow (config wizard with editable geometry/material tables, runs, results, plots, placeholders, exports)
+- **2D TUI**: `nts tui --dim 2` / `nts-tui-2d` edits zones, regions, `ZMAP`, `QMAP` and BC with a proportional domain map, then runs the C solvers and plots MFLUX heatmaps
 - **1D result plots**: scalar flux vs `x`, angular flux per direction on one axes, `k_history`, and legacy SCS plots
 - **Post-processing**: scalar-flux extraction, SCS/NU_SIGF/k_eff-vs-flux plots, 2D MFLUX heatmaps
 - **Structured logging** per simulation plus a global rotating log
@@ -209,7 +210,7 @@ Main entry point: `uv run nts <command>` (implemented in `cli/main.py` → `cli/
 
 | Command | Purpose |
 |---------|---------|
-| `nts tui` | Launch the 1D terminal UI |
+| `nts tui [--dim 1\|2]` | Launch the terminal UI (1D by default, 2D with `--dim 2`) |
 | `nts status` | Show solver binary availability and file counts |
 | `nts validate <config.json>` | Validate a JSON configuration (Pydantic) and print a summary |
 | `nts generate <config.json>` [-p] [-o PATH] | Generate a numbered `input_###.txt` for the 2D solvers |
@@ -231,6 +232,7 @@ Extra shortcuts (independent entry points, see `pyproject.toml`):
 |----------|---------|
 | `nts-generate` | Placeholder expansion (`--place-holder`, `--json`, `-o`) |
 | `nts-tui` | Launch the 1D terminal UI |
+| `nts-tui-2d` | Launch the 2D terminal UI (same as `nts tui --dim 2`) |
 | `nts-1d-config` | Interactive 1D config JSON generator (`-o` optional) |
 | `nts-2d-config` | Interactive 2D config JSON generator (`-o` optional) |
 | `nts-1d-run` | Same as `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |
@@ -285,6 +287,9 @@ Generated files are auto-numbered in `outputs/inputs/input_001.txt`, `input_002.
 ### 2. Run simulations
 
 ```bash
+# Interactive 2D UI (config with proportional domain map, run, results, plots)
+uv run nts tui --dim 2
+
 # All inputs with the default solver (NTS_DD), 4 parallel processes
 uv run nts run --parallel 4
 
@@ -781,6 +786,12 @@ neutron-transport-PINNs/
 │   ├── screens/                 # Dashboard, Config, Run, Results, Plots, Placeholders, Export
 │   ├── widgets/                 # Region/zone/fission tables, geometry bar, preview
 │   └── services/                # Config store, runner, plots, sweeps, export
+├── tui2d/                       # Textual 2D UI (nts tui --dim 2 / nts-tui-2d)
+│   ├── app.py                   # NTS2DApp and tab layout
+│   ├── models.py                # Config defaults, validation and input preview
+│   ├── screens/                 # Dashboard, Config, Run, Results, Plots
+│   ├── widgets/                 # Domain map, matrix/BC/zone/region editors
+│   └── services/                # Config store, solver runner, results, heatmaps
 ├── core/                        # Config generation and validation
 │   ├── config.py                # Pydantic models (Zone, SimulationConfig)
 │   ├── placeholders.py          # Shared placeholder expansion helpers
@@ -815,6 +826,8 @@ neutron-transport-PINNs/
 ├── doc/                         # Project documentation & notes
 │   ├── TUI_EN.md                # 1D TUI guide (English)
 │   ├── TUI.md                   # 1D TUI guide (Spanish)
+│   ├── TUI2D_EN.md              # 2D TUI guide (English)
+│   ├── TUI2D.md                 # 2D TUI guide (Spanish)
 │   ├── MULTIPLICATIVE_MEDIA_EN.md  # k_eff modes, benchmark and validation (English)
 │   └── MULTIPLICATIVE_MEDIA.md     # Spanish version
 ├── outputs/                     # Generated artifacts (gitignored)
@@ -926,6 +939,8 @@ multiplicative-media guide and the changelog are kept alongside them.
 | `doc/PACKAGING.md` | Packaging and PyPI publishing checklist (Spanish) |
 | `doc/TUI_EN.md` | 1D terminal UI guide (English) |
 | `doc/TUI.md` | 1D terminal UI guide (Spanish) |
+| `doc/TUI2D_EN.md` | 2D terminal UI guide: proportional domain map, maps, runs, heatmaps (English) |
+| `doc/TUI2D.md` | 2D terminal UI guide (Spanish) |
 | `doc/2D_INTEGRATION.md` | Detailed plan for integrating the 2D C solvers into the CLI/TUI |
 | `doc/2D_SOLVERS_CONTRACT.md` | Canonical 2D `input.txt`/JSON contract shared by the C solvers and Python |
 | `doc/NTS_DOCUMENTATION.md` | Master reference for the 5 C programs (input format, method selection, performance) |

@@ -50,6 +50,16 @@ def main():
 
             return tui_main() or 0
 
+        if sys.argv[1:3] == ["tui", "--dim"] and len(sys.argv) == 4:
+            if sys.argv[3] == "2":
+                from tui2d.app import main as tui2d_main
+
+                return tui2d_main() or 0
+            if sys.argv[3] == "1":
+                from tui.app import main as tui_main
+
+                return tui_main() or 0
+
         # Run CLI
         from cli.commands import main as cli_main
         return cli_main()
