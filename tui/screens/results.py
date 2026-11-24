@@ -34,8 +34,8 @@ class ResultsPane(VerticalScroll):
         )
         yield DataTable(id="results-table", cursor_type="row")
         yield Static("", id="results-detail", classes="detail")
-        # La composición termina después de este método: programar la carga
-        # para el siguiente refresco evita consultar hijos que aún no existen.
+        # Composition finishes after this method: schedule the load for the
+        # next refresh so the children exist when they are queried.
         self.call_after_refresh(self.ensure_loaded)
 
     def ensure_loaded(self) -> None:

@@ -100,8 +100,8 @@ class NTSApp(App):
     ) -> None:
         """Mount the pane for a tab the first time it is opened.
 
-        Cada panel programa su propia carga desde ``compose`` con
-        ``call_after_refresh``: así los hijos ya existen cuando se consultan.
+        Each pane schedules its own load from ``compose`` with
+        ``call_after_refresh``, so its children exist before they are queried.
         """
         tab_id = event.pane.id
         if tab_id not in _TAB_PANES:
@@ -144,10 +144,10 @@ class NTSApp(App):
     def set_plot_source(self, path: Path | str) -> None:
         """Send a result file to the plot studio and switch tabs.
 
-        Primero monta el panel y después activa la pestaña: Textual revierte
-        la activación si el ``TabPane`` todavía está vacío.  La carga del
-        archivo se aplica cuando el panel está compuesto (o de inmediato si
-        ya lo estaba).
+        The pane is mounted first and the tab is activated afterwards: Textual
+        reverts the activation while the ``TabPane`` is still empty. The file
+        is applied when the pane is composed (or immediately if it already
+        was).
         """
         self._pending_plot_source = str(path)
         self.call_next(self._show_plots)
@@ -155,8 +155,8 @@ class NTSApp(App):
     async def _show_plots(self) -> None:
         pane = await self._ensure_pane("tab-plots")
         self.query_one("#tabs", TabbedContent).active = "tab-plots"
-        # Mover el foco al panel evita que TabbedContent reactive la pestaña
-        # anterior al recibir el DescendantFocus del botón que se acaba de usar.
+        # Moving focus to the pane prevents TabbedContent from reactivating the
+        # previous tab when it receives the button's DescendantFocus message.
         self.set_focus(pane)
         self._apply_pending_plot_source()
 
