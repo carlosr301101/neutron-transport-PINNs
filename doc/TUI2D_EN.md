@@ -112,22 +112,38 @@ The map updates on every edit of the region tables, `ZMAP` or the BC table.
    `output_NNN.json` under `outputs/results/`.
 6. `Cancel` terminates the running processes.
 
-The log lists each start and finish with `STATUS`, `ITER` and `CPU`. Results
-appear in the Results tab as soon as the run finishes.
+The log lists each start and finish with `STATUS`, `ITER`, `CPU` and the exact
+output path, for example:
+
+```text
+[config_2d_001.json] started input_010.txt -> outputs/results/output_010.json
+OK config_2d_001.json: STATUS=0 ITER=19 CPU=0.000584
+   -> outputs/results/output_010.json
+Output: outputs/results/output_010.json
+```
+
+`Output: ...` stays visible under the status line. `Plot latest` opens the
+Plots tab with that file selected and `Results` opens the Results tab with it
+selected. Results also appear automatically in the Results/Plots tabs when a
+run finishes.
 
 ## Results tab
 
 One row with `STATUS`, `ITER`, `CPU [s]`, `Grid` and `Mean flux`. Selecting a
 row shows the file path, grid shape, mean, minimum and maximum flux. `Use in
-Plots` opens the heatmap tab with that file selected.
+Plots` switches to the Plots tab with that exact file selected.
 
 Files written by the 1D solver (`output_1d_*.json`) are ignored because they
 use a different schema.
 
 ## Plots tab
 
-- Result selector and optional input geometry. The matching `input_NNN.txt`
-  is filled automatically; it provides the cm axes.
+- The tab shows the results directory (`outputs/results/`) and the available
+  files. A newly created result is selected automatically.
+- Result selector plus a **Result path** field for files outside the results
+  directory: type a path and press `Load path`.
+- Optional input geometry. The matching `input_NNN.txt` is filled
+  automatically; it provides the cm axes.
 - Output PNG path (default: next free `outputs/results/plots/mflux_2d.png`).
 - `Generate` runs matplotlib in a worker thread, so the UI does not freeze.
 - The heatmap uses `origin="lower"`, `x [cm]` / `y [cm]` when the geometry is

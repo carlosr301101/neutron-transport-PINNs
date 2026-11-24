@@ -74,12 +74,42 @@ class NTS2DApp(App):
                 )
 
     def set_plot_source(self, path: Path | str) -> None:
-        """Send a result file to the heatmap studio and switch tabs."""
-        self.query_one("#tabs", TabbedContent).active = "tab2d-plots"
+        """Send a result file to the heatmap studio and switch tabs.
+
+        The pane is selected *before* activating the tab so the activation
+        refresh cannot replace the requested file with the newest one.
+        """
         try:
-            self.query_one(Plots2DPane).set_source(path)
+            pane = self.query_one(Plots2DPane)
+            pane.set_source(path)
+            self.query_one("#tabs", TabbedContent).active = "tab2d-plots"
+            self.set_focus(pane)
         except Exception:
             self.log.debug("plot source failed", exc_info=True)
+
+    def show_results(self, path: Path | str | None = None) -> None:
+        """Open the Results tab, optionally selecting one result file."""
+        try:
+            pane = self.query_one(Results2DPane)
+            if path is not None:
+                pane.select_path(path)
+            self.query_one("#tabs", TabbedContent).active = "tab2d-results"
+            self.set_focus(pane)
+        except Exception:
+            self.log.debug("show results failed", exc_info=True)
+
+    async def on_tabbed_content_tab_activated(
+        self, event: TabbedContent.TabActivated
+    ) -> None:
+        """Refresh filesystem-backed panes when their tab is opened."""
+        tab_id = event.pane.id
+        try:
+            if tab_id == "tab2d-results":
+                self.query_one(Results2DPane).refresh_outputs()
+            elif tab_id == "tab2d-plots":
+                self.query_one(Plots2DPane).refresh_results()
+        except Exception:
+            self.log.debug("tab refresh failed for %s", tab_id, exc_info=True)
 
     def on_unmount(self) -> None:
         try:

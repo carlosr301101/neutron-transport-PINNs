@@ -116,22 +116,39 @@ tabla de fronteras.
    `output_NNN.json` en `outputs/results/`.
 6. `Cancel` termina los procesos en curso.
 
-El log muestra cada inicio y fin con `STATUS`, `ITER` y `CPU`. Los resultados
-aparecen en la pestaña Results al terminar.
+El log muestra cada inicio y fin con `STATUS`, `ITER`, `CPU` y la ruta exacta
+de salida, por ejemplo:
+
+```text
+[config_2d_001.json] started input_010.txt -> outputs/results/output_010.json
+OK config_2d_001.json: STATUS=0 ITER=19 CPU=0.000584
+   -> outputs/results/output_010.json
+Output: outputs/results/output_010.json
+```
+
+`Output: ...` queda visible bajo la barra de estado. `Plot latest` abre la
+pestaña Plots con ese archivo seleccionado y `Results` abre Results con él
+seleccionado. Los resultados también aparecen solos en Results/Plots al
+terminar la corrida.
 
 ## Pestaña Results
 
 Una fila con `STATUS`, `ITER`, `CPU [s]`, `Grid` y `Mean flux`. Al seleccionar
 una fila se ven la ruta, la forma de la malla y el flujo medio, mínimo y
-máximo. `Use in Plots` abre el heatmap con ese archivo seleccionado.
+máximo. `Use in Plots` cambia a la pestaña Plots con ese archivo exacto
+seleccionado.
 
 Los archivos del solver 1D (`output_1d_*.json`) se ignoran porque usan otro
 esquema.
 
 ## Pestaña Plots
 
-- Selector de resultado y geometría opcional. El `input_NNN.txt` que
-  corresponde se rellena solo; de ahí salen los ejes en cm.
+- La pestaña muestra el directorio de resultados (`outputs/results/`) y los
+  archivos disponibles. Un resultado recién creado se selecciona solo.
+- Selector de resultado y campo **Result path** para archivos fuera del
+  directorio de resultados: escribe la ruta y pulsa `Load path`.
+- Geometría opcional. El `input_NNN.txt` que corresponde se rellena solo; de
+  ahí salen los ejes en cm.
 - Ruta del PNG (por defecto, el siguiente `outputs/results/plots/mflux_2d.png`).
 - `Generate` ejecuta matplotlib en un hilo de trabajo, sin congelar la UI.
 - El heatmap usa `origin="lower"`, ejes `x [cm]` / `y [cm]` cuando hay

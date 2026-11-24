@@ -146,7 +146,7 @@ class SolverRunner:
         emit: EventCallback,
     ) -> RunOutcome:
         outcome = RunOutcome(config=config_path, input=input_path, output=output_path)
-        emit(f"[{config_path.name}] started ({input_path.name})")
+        emit(f"[{config_path.name}] started {input_path.name} -> {output_path}")
         try:
             process = subprocess.Popen(
                 [str(binary), str(input_path)],

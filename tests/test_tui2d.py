@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from textual.widgets import DataTable, Input, Select, Static, TabbedContent
@@ -16,7 +17,7 @@ from tui2d.app import NTS2DApp
 from tui2d.screens import Config2DPane, Plots2DPane, Results2DPane, Run2DPane
 from tui2d.services import results as results_service
 from tui2d.services import plots as plots_service
-from tui2d.services.runner import SolverRunner
+from tui2d.services.runner import RunOutcome, SolverRunner
 from tui2d.widgets import BCTable, DomainMap, MatrixEditor, RegionTable, ZoneTable
 from utils.paths import get_solver_path
 
@@ -270,6 +271,125 @@ class TestTUI2DApp(unittest.IsolatedAsyncioTestCase):
                         str(pane.query_one("#plot2d-result", Select).value), str(out)
                     )
 
+    async def test_plots_selects_the_newest_result(self):
+        app = NTS2DApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(Plots2DPane)
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                for name in ("output_001.json", "output_002.json"):
+                    (tmp / name).write_text(
+                        json.dumps({"STATUS": 0, "MFLUX": [[1.0]]}),
+                        encoding="utf-8",
+                    )
+                with patch.object(results_service, "RESULTS_DIR", tmp):
+                    pane.refresh_results()
+                    await pilot.pause()
+                    select = pane.query_one("#plot2d-result", Select)
+                    self.assertEqual(
+                        str(select.value), str(tmp / "output_002.json")
+                    )
+
+                    # A new result from a run becomes the selected one.
+                    (tmp / "output_003.json").write_text(
+                        json.dumps({"STATUS": 0, "MFLUX": [[2.0]]}),
+                        encoding="utf-8",
+                    )
+                    pane.refresh_results()
+                    await pilot.pause()
+                    self.assertEqual(
+                        str(select.value), str(tmp / "output_003.json")
+                    )
+
+    async def test_plots_accepts_a_manual_path(self):
+        app = NTS2DApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            pane = app.query_one(Plots2DPane)
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                external = tmp / "elsewhere.json"
+                external.write_text(
+                    json.dumps({"STATUS": 0, "MFLUX": [[1.0]]}),
+                    encoding="utf-8",
+                )
+                with patch.object(
+                    results_service, "RESULTS_DIR", tmp / "empty"
+                ):
+                    pane.query_one("#plot2d-path", Input).value = str(external)
+                    pane.on_button_pressed(
+                        SimpleNamespace(
+                            button=SimpleNamespace(id="plot2d-load-path")
+                        )
+                    )
+                    await pilot.pause()
+                    self.assertEqual(
+                        str(pane.query_one("#plot2d-result", Select).value),
+                        str(external),
+                    )
+
+    async def test_use_in_plots_switches_and_selects(self):
+        app = NTS2DApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab2d-results"
+            await pilot.pause()
+            pane = app.query_one(Results2DPane)
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                out = tmp / "output_042.json"
+                out.write_text(
+                    json.dumps({"STATUS": 0, "ITER": 1, "MFLUX": [[1.0]]}),
+                    encoding="utf-8",
+                )
+                with patch.object(results_service, "RESULTS_DIR", tmp):
+                    pane.refresh_outputs()
+                    await pilot.pause()
+                    pane.on_button_pressed(
+                        SimpleNamespace(
+                            button=SimpleNamespace(id="res2d-to-plots")
+                        )
+                    )
+                    await pilot.pause()
+                    self.assertEqual(
+                        app.query_one("#tabs", TabbedContent).active,
+                        "tab2d-plots",
+                    )
+                    self.assertEqual(
+                        str(
+                            app.query_one(Plots2DPane)
+                            .query_one("#plot2d-result", Select)
+                            .value
+                        ),
+                        str(out),
+                    )
+
+    async def test_run_finish_shows_output_path(self):
+        app = NTS2DApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab2d-run"
+            await pilot.pause()
+            pane = app.query_one(Run2DPane)
+            outcome = RunOutcome(
+                config=Path("config_2d_001.json"),
+                input=Path("outputs/inputs/input_010.txt"),
+                output=Path("outputs/results/output_010.json"),
+                status=0,
+                iterations=19,
+                cpu=0.000584,
+            )
+            pane._finish([outcome])
+            await pilot.pause()
+            shown = str(pane.query_one("#run2d-output", Static).content)
+            self.assertIn("output_010.json", shown)
+            self.assertFalse(pane.query_one("#run2d-plots").disabled)
+            self.assertFalse(pane.query_one("#run2d-results").disabled)
+            self.assertIn(
+                "output_010.json", Run2DPane._status_text([outcome])
+            )
+
     async def test_run_pane_exposes_cancel(self):
         app = NTS2DApp()
         async with app.run_test(size=(160, 60)) as pilot:
@@ -279,6 +399,8 @@ class TestTUI2DApp(unittest.IsolatedAsyncioTestCase):
             pane = app.query_one(Run2DPane)
             self.assertTrue(pane.query_one("#run2d-cancel").disabled)
             self.assertFalse(pane.query_one("#run2d-start").disabled)
+            self.assertTrue(pane.query_one("#run2d-results").disabled)
+            self.assertTrue(pane.query_one("#run2d-plots").disabled)
 
 
 class TestServices(unittest.TestCase):

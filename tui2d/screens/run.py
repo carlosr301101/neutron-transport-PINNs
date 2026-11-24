@@ -29,6 +29,7 @@ class Run2DPane(VerticalScroll):
         super().__init__(**kwargs)
         self._runner: SolverRunner | None = None
         self._shutting_down = False
+        self._last_output: Path | None = None
 
     def compose(self) -> ComposeResult:
         yield Static("2D run manager", classes="title")
@@ -36,6 +37,8 @@ class Run2DPane(VerticalScroll):
             Button("Refresh", id="run2d-refresh"),
             Button("Run selected", id="run2d-start", variant="primary"),
             Button("Cancel", id="run2d-cancel", variant="error"),
+            Button("Results", id="run2d-results"),
+            Button("Plot latest", id="run2d-plots"),
             LoadingIndicator(id="run2d-loading"),
             classes="button-row",
         )
@@ -61,6 +64,12 @@ class Run2DPane(VerticalScroll):
             classes="field-row",
         )
         yield Static("", id="run2d-status", classes="status")
+        yield Static(
+            "No output yet. Each run writes outputs/results/output_NNN.json.",
+            id="run2d-output",
+            classes="muted",
+            markup=False,
+        )
         yield Static("", id="run2d-preview", classes="preview-text", markup=False)
         yield RichLog(id="run2d-log", markup=False, wrap=True)
         self.call_after_refresh(self._after_compose)
@@ -68,6 +77,7 @@ class Run2DPane(VerticalScroll):
     def _after_compose(self) -> None:
         self._set_loading(False)
         self._set_busy(False)
+        self._set_output_buttons(False)
         self.refresh_configs()
 
     # -- state ---------------------------------------------------------
@@ -112,6 +122,18 @@ class Run2DPane(VerticalScroll):
             self._start()
         elif button == "run2d-cancel":
             self.cancel_run()
+        elif (
+            button == "run2d-results"
+            and self._last_output is not None
+            and hasattr(self.app, "show_results")
+        ):
+            self.app.show_results(self._last_output)
+        elif (
+            button == "run2d-plots"
+            and self._last_output is not None
+            and hasattr(self.app, "set_plot_source")
+        ):
+            self.app.set_plot_source(self._last_output)
 
     def _start(self) -> None:
         paths = self._selected_paths()
@@ -125,6 +147,11 @@ class Run2DPane(VerticalScroll):
         solver = str(self.query_one("#run2d-solver", Select).value)
         workers = int(str(self.query_one("#run2d-workers", Select).value))
         self.query_one("#run2d-log", RichLog).clear()
+        self._last_output = None
+        self._set_output_buttons(False)
+        self.query_one("#run2d-output", Static).update(
+            "Running; output will appear here."
+        )
         self._status("Running...")
         self._set_loading(True)
         self._set_busy(True)
@@ -182,6 +209,24 @@ class Run2DPane(VerticalScroll):
         cancelled = any(outcome.cancelled for outcome in outcomes)
         prefix = "Cancelled" if cancelled else "Finished"
         self._status(f"{prefix}: {ok} ok, {failed} failed.")
+        self._last_output = next(
+            (
+                outcome.output
+                for outcome in outcomes
+                if outcome.ok and outcome.output is not None
+            ),
+            None,
+        )
+        self._set_output_buttons(self._last_output is not None)
+        if self._last_output is not None:
+            self.query_one("#run2d-output", Static).update(
+                f"Output: {self._last_output}"
+            )
+            self._append(f"Output: {self._last_output}")
+        else:
+            self.query_one("#run2d-output", Static).update(
+                "No output was written; check the log above."
+            )
         self._append(self._status_text(outcomes))
         if hasattr(self.app, "refresh_all"):
             self.app.refresh_all()
@@ -191,9 +236,10 @@ class Run2DPane(VerticalScroll):
         lines = []
         for outcome in outcomes:
             if outcome.ok:
+                target = f" -> {outcome.output}" if outcome.output else ""
                 lines.append(
                     f"OK {outcome.config.name}: STATUS={outcome.status} "
-                    f"ITER={outcome.iterations} CPU={outcome.cpu}"
+                    f"ITER={outcome.iterations} CPU={outcome.cpu}{target}"
                 )
             else:
                 reason = outcome.error or f"STATUS={outcome.status}"
@@ -206,13 +252,21 @@ class Run2DPane(VerticalScroll):
         self._runner = None
         self._set_loading(False)
         self._set_busy(False)
+        self._set_output_buttons(False)
         self._status(f"[red]Run failed:[/] {message}")
+        self.query_one("#run2d-output", Static).update(
+            f"No output: {message}"
+        )
         self._append(f"ERROR: {message}")
 
     # -- widgets -------------------------------------------------------
     def _set_busy(self, busy: bool) -> None:
         self.query_one("#run2d-start", Button).disabled = busy
         self.query_one("#run2d-cancel", Button).disabled = not busy
+
+    def _set_output_buttons(self, enabled: bool) -> None:
+        self.query_one("#run2d-results", Button).disabled = not enabled
+        self.query_one("#run2d-plots", Button).disabled = not enabled
 
     def _set_loading(self, visible: bool) -> None:
         self.query_one("#run2d-loading", LoadingIndicator).display = visible

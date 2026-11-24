@@ -18,6 +18,7 @@ class Results2DPane(VerticalScroll):
         super().__init__(**kwargs)
         self._paths: list[Path] = []
         self._loaded = False
+        self._suppress_selection = False
 
     def compose(self) -> ComposeResult:
         yield Static("2D results", classes="title")
@@ -39,17 +40,40 @@ class Results2DPane(VerticalScroll):
 
     def refresh_outputs(self) -> None:
         self._loaded = True
-        options = [(path.name, str(path)) for path in results.list_outputs()]
         select = self.query_one("#res2d-file", Select)
+        previous = None if select.is_blank() else str(select.value)
+        suppress = self._suppress_selection
+        self._suppress_selection = False
+
+        options = [(path.name, str(path)) for path in results.list_outputs()]
         select.set_options(options)
         if options:
-            select.value = options[-1][1]
+            values = {value for _, value in options}
+            if suppress and previous in values:
+                select.value = previous
+            else:
+                select.value = options[-1][1]
             self.refresh_table()
         else:
             self.query_one("#res2d-table", DataTable).clear(columns=True)
             self.query_one("#res2d-detail", Static).update(
                 "No 2D output_*.json files yet. Run a configuration first."
             )
+
+    def select_path(self, path: Path | str) -> None:
+        """Select a specific result file, adding it if it lives elsewhere."""
+        path = Path(path)
+        options = [(item.name, str(item)) for item in results.list_outputs()]
+        if str(path) not in {value for _, value in options}:
+            if not path.is_file():
+                return
+            options.append((path.name, str(path)))
+        select = self.query_one("#res2d-file", Select)
+        self._suppress_selection = True
+        select.set_options(options)
+        select.value = str(path)
+        self._loaded = True
+        self.refresh_table()
 
     def refresh_table(self) -> None:
         select = self.query_one("#res2d-file", Select)
