@@ -98,6 +98,13 @@
         height: auto;
     }
 
+    /* The inner grid must shrink to its rows: a Vertical defaults to 1fr and
+       otherwise leaves a large empty gap before the next section. */
+    #zmap-grid,
+    #qmap-grid {
+        height: auto;
+    }
+
     .table-title {
         text-style: bold;
         color: $secondary;

@@ -149,6 +149,22 @@ class TestTUI2DApp(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(len(config["ZMAP"]), 2)
             self.assertEqual(len(config["ZMAP"][0]), 2)
 
+    async def test_matrix_editors_shrink_to_content(self):
+        app = NTS2DApp()
+        async with app.run_test(size=(100, 40)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab2d-config"
+            await pilot.pause()
+            pane = app.query_one(Config2DPane)
+            zmap = pane.query_one("#cfg2d-zmap", MatrixEditor)
+            qmap = pane.query_one("#cfg2d-qmap", MatrixEditor)
+            # A Vertical defaults to 1fr; without height:auto the editor would
+            # grow to the whole viewport and leave a large gap before QMAP.
+            self.assertLess(zmap.size.height, 12)
+            self.assertLess(qmap.size.height, 12)
+            gap = qmap.region.y - (zmap.region.y + zmap.size.height)
+            self.assertLess(gap, 10)
+
     async def test_bc_table_round_trip(self):
         app = NTS2DApp()
         async with app.run_test(size=(160, 60)) as pilot:
