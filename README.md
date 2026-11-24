@@ -902,6 +902,7 @@ uv run python -m cli.run_tests                         # whole suite
 uv run python -m cli.run_tests -v                      # verbose
 uv run python -m cli.run_tests --failfast              # stop on first failure
 uv run python -m cli.run_tests -p "test_plot_1d_flux.py"  # one file
+uv run python -m cli.run_tests -p "test_2d_solvers.py"    # C solver smoke tests
 ```
 
 `python -m cli.run_tests` uses `unittest` and discovers `tests/test_*.py` from the

@@ -212,3 +212,25 @@ Esto evita mallas degeneradas y tolerancias que nunca convergen en la práctica.
 Los cinco archivos `solvers/doc_solvers/*_EXAMPLE_INPUT.json` describen el
 mismo formato. Todos deben ser JSON válido y usar el orden
 `LEFT BOTTOM RIGHT TOP`.
+
+## Compilación local (Linux)
+
+Los binarios de `solvers/runners/` se reconstruyen desde las fuentes con:
+
+```bash
+gcc -O2 -D__mingw_printf=printf \
+    -o solvers/runners/NTS_DD solvers/runners/NTS_DD.c -lm
+```
+
+y el mismo comando para `NTS_LD`, `NTS_STEP`, `NTS_RM_CN` y `NTS_RM_LLN`.
+`-D__mingw_printf=printf` neutraliza el alias que los fuentes usan para MinGW;
+en Windows/MinGW se compila sin ese `-D` y con `-static`.
+
+Los binarios y las fuentes deben mantenerse sincronizados: un binario viejo
+puede rechazar un `input.txt` que la fuente actual acepta. El test
+`tests/test_2d_solvers.py` ejecuta los cinco binarios y valida `STATUS`,
+dimensiones, simetría y el orden de `BC`.
+
+```bash
+uv run python -m cli.run_tests -p "test_2d_solvers.py"
+```
