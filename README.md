@@ -171,7 +171,8 @@ The PyPI wheel does **not** include the 2D C binaries or sources. To use
 ```bash
 git clone https://github.com/carlosr301101/neutron-transport-PINNs.git
 cd neutron-transport-PINNs
-# compile the C binaries into solvers/runners/
+make -C solvers                  # Linux; writes solvers/runners/NTS_*
+# pwsh -File solvers/build_windows.ps1   # Windows (MSYS2/MinGW-w64)
 export NTS_SOLVERS_DIR="$PWD/solvers/runners"
 ```
 

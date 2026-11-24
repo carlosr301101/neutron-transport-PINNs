@@ -12,13 +12,11 @@ The checks are numerical, not bit-exact:
   on the expected side (this catches a swapped ``BC`` order).
 
 The five binaries are executed once per class; individual tests only assert.
-Rebuild them with::
+Rebuild them from the repository root with::
 
-    gcc -O2 -D__mingw_printf=printf -o solvers/runners/NTS_DD \\
-        solvers/runners/NTS_DD.c -lm
+    make -C solvers
 
-and the same command for ``NTS_LD``, ``NTS_STEP``, ``NTS_RM_CN`` and
-``NTS_RM_LLN``.
+On Windows use ``solvers/build_windows.ps1`` (MSYS2/MinGW-w64).
 """
 
 from __future__ import annotations
@@ -157,18 +155,14 @@ class TestSolvers(unittest.TestCase):
                 self.assertEqual(data.get("STATUS"), 0, data)
                 self.assertGreater(data["ITER"], 0)
 
-    def test_cpu_time_is_a_number(self):
-        """``CPU`` is a finite float.
-
-        Known issue: ``NTS_DD`` and ``NTS_STEP`` call ``sleep(1)`` and subtract
-        one second, so ``CPU`` is slightly negative. The assertion accepts that
-        until the C fix lands; it still rejects NaN, missing keys and strings.
-        """
+    def test_cpu_time_is_non_negative(self):
+        """``CPU`` is a finite, non-negative number of seconds."""
         for solver in AVAILABLE_SOLVERS:
             with self.subTest(solver=solver):
                 data = self.result(solver)
                 cpu = float(data["CPU"])
                 self.assertTrue(math.isfinite(cpu), cpu)
+                self.assertGreaterEqual(cpu, 0.0, f"{solver}: CPU={cpu}")
 
     def test_mflux_shape_and_values(self):
         """``MFLUX`` is a finite, positive ``ntc_y x ntc_x`` matrix."""

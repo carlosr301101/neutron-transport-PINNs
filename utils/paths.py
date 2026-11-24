@@ -42,11 +42,12 @@ def _solver_candidates(solver_name: str) -> list[Path]:
     """Return the possible binary paths for a solver on this platform.
 
     Windows wheels ship ``NTS_DD.exe`` while Linux wheels ship ``NTS_DD``.
+    On Windows the extensionless Linux binary must not be considered: it
+    exists in a source checkout but cannot be executed.
     """
-    candidates = [SOLVERS_DIR / solver_name]
-    if os.name == "nt" and not solver_name.lower().endswith(".exe"):
-        candidates.insert(0, SOLVERS_DIR / f"{solver_name}.exe")
-    return candidates
+    if os.name == "nt":
+        return [SOLVERS_DIR / f"{solver_name}.exe"]
+    return [SOLVERS_DIR / solver_name]
 
 
 def get_solver_path(solver_name: str) -> Path:

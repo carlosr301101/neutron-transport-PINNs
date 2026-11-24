@@ -213,23 +213,35 @@ Los cinco archivos `solvers/doc_solvers/*_EXAMPLE_INPUT.json` describen el
 mismo formato. Todos deben ser JSON válido y usar el orden
 `LEFT BOTTOM RIGHT TOP`.
 
-## Compilación local (Linux)
+## Compilación local
 
 Los binarios de `solvers/runners/` se reconstruyen desde las fuentes con:
 
 ```bash
-gcc -O2 -D__mingw_printf=printf \
-    -o solvers/runners/NTS_DD solvers/runners/NTS_DD.c -lm
+make -C solvers          # Linux
+make -C solvers clean    # borra los cinco binarios
 ```
 
-y el mismo comando para `NTS_LD`, `NTS_STEP`, `NTS_RM_CN` y `NTS_RM_LLN`.
-`-D__mingw_printf=printf` neutraliza el alias que los fuentes usan para MinGW;
-en Windows/MinGW se compila sin ese `-D` y con `-static`.
+Equivale a compilar cada fuente con:
+
+```bash
+gcc -O2 -o solvers/runners/NTS_DD solvers/runners/NTS_DD.c -lm
+```
+
+Los fuentes activan `#define printf __mingw_printf` solo bajo `#ifdef _WIN32`,
+así que en Linux no hace falta editar nada. En Windows/MinGW-w64 se usa
+`solvers/build_windows.ps1`, que añade `-static` para no depender de
+`libgcc_s_*.dll` ni `libwinpthread-1.dll`:
+
+```powershell
+pwsh -File solvers/build_windows.ps1
+pwsh -File solvers/build_windows.ps1 -Gcc "C:\msys64\ucrt64\bin\gcc.exe"
+```
 
 Los binarios y las fuentes deben mantenerse sincronizados: un binario viejo
 puede rechazar un `input.txt` que la fuente actual acepta. El test
 `tests/test_2d_solvers.py` ejecuta los cinco binarios y valida `STATUS`,
-dimensiones, simetría y el orden de `BC`.
+dimensiones, simetría, `CPU >= 0` y el orden de `BC`.
 
 ```bash
 uv run python -m cli.run_tests -p "test_2d_solvers.py"

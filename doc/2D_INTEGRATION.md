@@ -1,6 +1,6 @@
 # Integración de los solvers 2D en CLI y TUI
 
-Estado: **en implementación**. Fases 0–2 completadas; fases 3–7 pendientes.
+Estado: **en implementación**. Fases 0–3 completadas; fases 4–7 pendientes.
 El contrato de entrada/salida vive en `doc/2D_SOLVERS_CONTRACT.md`.
 
 Este documento describe la implementación de los
@@ -273,11 +273,18 @@ nts plot -r outputs/results/output_001.json
 ### Cambios en C
 
 - Quitar `<unistd.h>` de los cinco archivos.
-- Quitar `sleep(1)` de `NTS_DD` y `NTS_STEP`.
+- Quitar `sleep(1)` de los cinco (lo tenían DD, LD, STEP, RM_CN y RM_LLN).
 - Corregir el tiempo:
   ```c
   *cpu_time = (long double)(end_t - start_t) / CLOCKS_PER_SEC;
   ```
+- Activar el alias de MinGW solo en Windows:
+  ```c
+  #ifdef _WIN32
+  #define printf __mingw_printf
+  #endif
+  ```
+  Así Linux compila sin `-D__mingw_printf=printf` ni editar el fuente.
 - Mantener los códigos de estado:
   ```text
   0 éxito
@@ -289,20 +296,23 @@ nts plot -r outputs/results/output_001.json
 ### Build
 
 ```text
-solvers/Makefile           Linux
-solvers/build_windows.ps1  MSYS2/MinGW
+solvers/Makefile           Linux y MSYS2 (detecta Windows para .exe y -static)
+solvers/build_windows.ps1  MSYS2/MinGW-w64
 ```
 
 Linux:
 
 ```bash
+make -C solvers
+# equivale a:
 gcc -O2 -o solvers/runners/NTS_DD solvers/runners/NTS_DD.c -lm
 ```
 
 Windows:
 
-```bash
-gcc -O2 -static -o solvers/runners/NTS_DD.exe solvers/runners/NTS_DD.c -lm
+```powershell
+pwsh -File solvers/build_windows.ps1
+# gcc -O2 -static -o solvers/runners/NTS_DD.exe solvers/runners/NTS_DD.c -lm
 ```
 
 `-static` evita depender de DLLs de MinGW.
@@ -310,11 +320,17 @@ gcc -O2 -static -o solvers/runners/NTS_DD.exe solvers/runners/NTS_DD.c -lm
 ### Runtime
 
 - `utils/paths.py`:
-  - `get_solver_path()` prueba `NTS_DD` y `NTS_DD.exe`.
+  - En Linux busca `NTS_DD`; en Windows solo `NTS_DD.exe` (un binario Linux
+    sin extensión no es ejecutable en Windows).
   - `verify_solver_binaries()` usa la misma lógica.
 - `execution/runner.py`:
   - UTF-8 al abrir el output.
   - Error claro si falta el binario.
+
+### CI
+
+- Linux: `make -C solvers` antes de los tests.
+- Windows: MSYS2/UCRT64 + `build_windows.ps1` antes de los tests.
 
 ### Criterio de aceptación
 
@@ -706,10 +722,10 @@ PR 6  Fase 7       docs, skill, changelog
 [x] Fase 0  contrato + JSON de ejemplo válidos
 [x] Fase 1  núcleo 2D (BC, Pydantic, InputBuilder, golden tests)
 [x] Fase 2  wizard nts-2d-config + CLI 2D
-[ ] Fase 3  C portables (Linux/Windows)
+[x] Fase 3  C portables (Linux/Windows), CPU >= 0, Makefile, CI de compilación
 [ ] Fase 4  tui2d
 [ ] Fase 5  wheel platform-specific
-[ ] Fase 6  tests 2D de solvers + CI
+[~] Fase 6  tests de solvers hechos (`test_2d_solvers.py`); CI/wheel pendientes
 [ ] Fase 7  documentación y skill
 ```
 
@@ -719,5 +735,4 @@ PR 6  Fase 7       docs, skill, changelog
 git switch feat/2d-integration
 ```
 
-Después, Fase 3 (`solvers/runners/*.c`, `solvers/Makefile`,
-`solvers/build_windows.ps1`).
+Después, Fase 4 (`tui2d/`).
