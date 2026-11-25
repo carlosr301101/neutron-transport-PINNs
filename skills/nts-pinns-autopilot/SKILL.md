@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v4.0.0), a CLI/TUI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v4.0.3), a CLI/TUI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -12,7 +12,9 @@ description: >-
   runs `uv run nts*` commands, or mentions kk/mm/SCT/SCS/NU_SIGF placeholders,
   k_eff, medio multiplicativo, eigenvalue, fixed_k, driven, nts-1d-config,
   inputs_placeholder.py, inputs.py, cuadraturas.py, output_1d_*.json, datos.json,
-  N=4/N=6/N=8, nts tui, nts-tui, TUI, quadrature orders, or asks to
+  N=4/N=6/N=8, nts tui, nts-tui, TUI, nts-tui-2d, tui2d,
+  nts tui --dim 2, 2D TUI, proportional domain map, ZMAP/QMAP, boundary
+  conditions, quadrature orders, or asks to
   run/compare/plot DD simulations, prepare KPI summaries, or guide the creation
   of a new neutron transport problem ("Quiero crear un problema de transporte
   de neutrones", "configurar un problema de transporte", "ayúdame a crear el
@@ -98,6 +100,7 @@ environment and dependencies are used.
 | Main CLI | `nts` | `uv run nts` |
 | TUI | `nts-tui` or `nts tui` | `uv run nts-tui` or `uv run nts tui` |
 | 2D TUI | `nts-tui-2d` or `nts tui --dim 2` | `uv run nts-tui-2d` or `uv run nts tui --dim 2` |
+| 2D config wizard | `nts-2d-config` | `uv run nts-2d-config` |
 | 1D config wizard | `nts-1d-config` | `uv run nts-1d-config` |
 | 1D solver | `nts-1d-run` | `uv run nts-1d-run` |
 | Scalar/angular plots | `nts-1d-plot` | `uv run nts-1d-plot` |
@@ -139,8 +142,13 @@ In the TUI: **Config → Save → Run → Results → Plots**. Quit with `q`.
 - The Linux x86_64 and Windows amd64 wheels include the five 2D binaries
   (`.exe` on Windows). No compilation is needed there.
 - macOS, ARM and other platforms receive the sdist (C sources, no binaries):
-  clone the repo, compile with `make -C solvers` or
+  clone the repo, compile with `make -C solvers rebuild` or
   `solvers/build_windows.ps1`, or set `NTS_SOLVERS_DIR`.
+- `make -C solvers rebuild` forces `clean + all`. CI and release use
+  `make -B` because the tracked binaries may require a newer glibc than the
+  build container; a skipped rebuild shows up as a solver exiting with code 1.
+- `templates/base_input.json` is bundled in the package; `nts status` should
+  show it as OK after a wheel install.
 
 ## Guided setup of a new 1D problem
 
@@ -370,6 +378,9 @@ uv run python -m cli.run_tests
 uv run python -m cli.run_tests -v
 uv run python -m cli.run_tests --failfast
 uv run python -m cli.run_tests -p "test_plot_1d_flux.py"
+uv run python -m cli.run_tests -p "test_2d_*.py"
+uv run python -m cli.run_tests -p "test_2d_solvers.py"
+uv run python -m cli.run_tests -p "test_tui2d.py"
 ```
 
 ## Command map
@@ -383,11 +394,12 @@ Main CLI (`cli/commands.py` via `main.py`):
 | `nts validate <config.json>` | Pydantic validation + summary | — |
 | `nts generate <config.json>` | JSON config → `input_###.txt` | `-p` preview, `--place-holder NAME START END STEP` (repeatable, nargs=4), `--json` placeholder config, `-o` output |
 | `nts-1d-config` | Interactive 1D config JSON generator | `-o` output; `kk`/`mm` placeholders in float fields |
-| `nts run` | 2D binaries (parallel) | `-s SOLVER`, `-i input.txt…`, `-p N` (default 4) |
+| `nts-2d-config` | Interactive 2D config JSON generator | `-o` output; zones, X/Y regions, ZMAP/QMAP, BC, solver |
+| `nts run` | 2D binaries (parallel) | `-s SOLVER`, `-i input.txt…`, `-p N` (default 4), `--dry-run` |
 | `nts run-1d` | Python 1D solver from file, JSON, or wizard | `-c` config path, `--json`, `--manual`, `-o` output path |
 | `nts list inputs\|outputs` | Rich tables of generated files | — |
-| `nts show <result.json>` | STATUS / ITER / CPU summary | — |
-| `nts plot [-r result.json]` | MFLUX heatmap of a 2D JSON result | `-o` png path, `--show` |
+| `nts show <result.json>` | STATUS / ITER / CPU and MFLUX grid shape | — |
+| `nts plot [-r result.json]` | MFLUX heatmap of a 2D JSON result | `-i input.txt` (cm axes), `-o` png path, `--show` |
 
 Shortcuts (`pyproject.toml` scripts):
 
@@ -395,6 +407,7 @@ Shortcuts (`pyproject.toml` scripts):
 |----------|-----------|
 | `nts-tui` | `nts tui` (same 1D terminal UI) |
 | `nts-tui-2d` | `nts tui --dim 2` (2D terminal UI) |
+| `nts-2d-config` | Interactive 2D config JSON generator |
 | `nts-generate` | `nts generate` in placeholder mode (`--place-holder`, `--json`, `-o`) |
 | `nts-1d-config` | Interactive 1D config JSON generator |
 | `nts-1d-run` | `nts run-1d` (`-c`, `--json`, `--manual`); scheme from the config |
@@ -410,14 +423,6 @@ Shortcuts (`pyproject.toml` scripts):
 ## TUI (1D workflow)
 
 Launch with `uv run nts tui` (same as `uv run nts-tui`).
-
-For the 2D workflow launch `uv run nts tui --dim 2` (same as `uv run nts-tui-2d`).
-The 2D Config tab draws the domain proportionally (20x10 cm is twice as wide
-as tall), edits zones, X/Y regions, `ZMAP`, `QMAP` and the four BC values in
-`[left, bottom, right, top]` order (`-1.0` reflective, `0.0` vacuum, `> 0`
-incoming), and previews `input.txt`. Run executes the selected configs with
-the chosen solver; Results lists STATUS/ITER/CPU/grid; Plots writes MFLUX
-heatmaps with cm axes. The full guide is `doc/TUI2D_EN.md` (`TUI2D.md`).
 
 - **Config**: geometry bar, editable region table (`cells`, `length`, `zone`,
   `Q`), zone table (`name`, `Sigma_t`, `Sigma_s0`), fission table (`nu*Sigma_f`,
@@ -442,6 +447,114 @@ heatmaps with cm axes. The full guide is `doc/TUI2D_EN.md` (`TUI2D.md`).
 - After every finished run all tabs refresh themselves (`refresh_all`);
   internal errors go to `outputs/logs/tui.log`.
 - Optional inline preview: `uv sync --extra images`.
+
+## 2D workflow (CLI)
+
+Canonical loop for a 2D problem:
+
+```bash
+uv run nts-2d-config -o caso.json      # interactive wizard
+uv run nts validate caso.json
+uv run nts generate caso.json -p       # 11-line input.txt
+uv run nts run -s NTS_DD --dry-run     # command + input preview
+uv run nts run -s NTS_DD -i outputs/inputs/input_001.txt
+uv run nts show outputs/results/output_001.json
+uv run nts plot -r outputs/results/output_001.json \
+  -i outputs/inputs/input_001.txt
+```
+
+- `BC = [left, bottom, right, top]`: `-1.0` reflective, `0.0` vacuum, `> 0`
+  incoming flux. `1.0` is incoming flux, not reflective.
+- `N` is even in 2..18, `nodes >= 3`, `ZMAP/QMAP` are `NR_Y x NR_X`
+  (`ZMAP` 1..NZ, `QMAP >= 0`).
+- `nts run` writes `output_NNN.json`; `--dry-run` prints the commands and the
+  input without executing.
+- `nts plot -i` uses the input geometry for axes in cm; without it the plot
+  falls back to cell indices.
+- Contract and output fields: `doc/2D_SOLVERS_CONTRACT.md`.
+
+## TUI (2D workflow)
+
+Launch:
+
+```bash
+uv run nts tui --dim 2
+uv run nts-tui-2d
+```
+
+`nts tui` without `--dim` still opens the 1D UI.
+
+### Tabs
+
+| Tab | What it does |
+|---|---|
+| Dashboard | version, config/result counts, latest result |
+| Config | proportional domain map, BC, zones, X/Y regions, ZMAP/QMAP, solver settings, `input.txt` preview |
+| Run | config selection, solver, workers, output path, preview, live log, cancel |
+| Results | STATUS, ITER, CPU, grid, mean flux |
+| Plots | MFLUX heatmap with axes in cm |
+
+### Config
+
+- The domain map is proportional: 20x10 cm is drawn twice as wide as tall;
+  the drawing compensates the terminal character aspect ratio.
+- Each region is filled with the `ZMAP` zone colour, black lines mark region
+  borders, and the legend shows axes, cells, zones and
+  `BC: L=... B=... R=... T=...`.
+- Boundary-condition table (under the map): one row per side in the order
+  `left, bottom, right, top`; `Reflective` = `-1.0`, `Vacuum` = `0.0`,
+  `Incoming flux` = typed positive value.
+- Material zones: optional name (saved as `ZONE_NAMES`), `Sigma_t`, `Sigma_s`
+  (must satisfy `Sigma_s < Sigma_t`).
+- X/Y regions: `Length [cm]` and `Cells >= 3` per row; the row count is
+  `NR_X` / `NR_Y`.
+- ZMAP/QMAP resize with the region tables: rows are Y (bottom to top),
+  columns are X (left to right).
+- Solver settings: `N` even 2..18, `TOL` 1e-7..1e-2, preferred solver (saved
+  as `_solver`).
+- Buttons: Load, New, Validate (Pydantic), Save. The preview is the exact
+  11-line `input.txt` the C solver receives.
+
+### Run
+
+- The config list refreshes when the tab opens and keeps the previous
+  selection.
+- Solver and workers (1-4).
+- **Output**: full editable path, prefilled with
+  `outputs/results/output_NNN.json`:
+  - blank => automatic numbering;
+  - one config => exact path (`.json` added if missing);
+  - several configs => `<stem>_001.json`, `<stem>_002.json`, ...;
+  - existing files are never overwritten; `Last output:` shows the real path.
+- A custom output pairs with `outputs/inputs/<stem>.txt`.
+- `Results` and `Plot latest` open the target tab with that exact file.
+- The live log, the generated output path and `Cancel` are in the pane.
+
+### Results and Plots
+
+- Results: STATUS, ITER, CPU, grid and mean flux; the row detail shows the
+  path and min/max. `Use in Plots` pins that file before switching tabs.
+- Plots: results directory, selector, manual **Result path**, optional
+  geometry (`input_NNN.txt` is filled automatically), PNG output, Generate,
+  Open and optional inline preview. Without geometry it uses cell indices.
+- Both tabs refresh their file lists when opened.
+
+### Files
+
+```text
+outputs/inputs/config_2d_###.json
+outputs/inputs/input_###.txt | <stem>.txt
+outputs/results/output_###.json
+outputs/results/plots/mflux_2d.png
+outputs/logs/tui2d.log
+```
+
+### Differences from the 1D TUI
+
+- `nts tui` keeps opening the 1D UI.
+- 2D has no placeholders, Excel or `datos.json` tabs.
+- `MFLOW`, `XFLOW` and `YFLOW` stay in the JSON but are not displayed.
+- Full guide: `doc/TUI2D_EN.md` / `doc/TUI2D.md`.
 
 ## Parametric sweep recipe (1D workflow)
 
@@ -847,7 +960,25 @@ vector); total samples = Σ orders × configs × NC.
   write `output_*.json`; anything writing `.txt` is a stale path.
 - 2D solver outputs are JSON written directly by the binaries
   (`STATUS` 0 = success); `STATUS != 0` → check the 11-line input format in
-  `doc/NTS_DOCUMENTATION.md`.
+  `doc/2D_SOLVERS_CONTRACT.md`.
+- 2D `BC` order and semantics: `[left, bottom, right, top]`; `-1.0`
+  reflective, `0.0` vacuum, `> 0` incoming flux. `1.0` is **incoming**, not
+  reflective.
+- `STATUS=2` in 2D: check `N` even in 2..18, `nodes >= 3`, valid BC values,
+  `ZMAP` shape/range and non-negative `QMAP`.
+- A 2D plot with cell indices means the geometry was not found: pass
+  `-i input_###.txt` (or `<stem>.txt`) to `nts plot`; the 2D TUI fills it
+  automatically.
+- Custom TUI output names pair with `outputs/inputs/<stem>.txt`. Existing
+  outputs are never overwritten; the pane reports the `_001` suffixed path in
+  `Last output:`.
+- `nts status` reports missing 2D solvers only outside the Linux/Windows
+  wheels: compile with `make -C solvers rebuild` and set `NTS_SOLVERS_DIR`.
+- A 2D solver exiting with code 1 or a `GLIBC_2.x not found` message means a
+  stale tracked binary: rebuild natively (`make -C solvers rebuild`; CI and
+  release use `make -B`).
+- On Windows, compile from the MSYS2 UCRT64 shell or let
+  `solvers/build_windows.ps1` resolve gcc; do not hardcode `C:\msys64`.
 - Iterations blow up as kk → 1 (c = σs/σt ≈ 1): 9 iterations at c=0.1, ~215
   at c=0.95 with ε=1e-5. That is expected source-iteration behavior, not a
   bug; accelerating or loosening ε is the remedy, not a bugfix.
