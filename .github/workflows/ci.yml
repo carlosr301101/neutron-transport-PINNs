@@ -34,7 +34,7 @@ jobs:
         run: uv sync --frozen --extra images
       - name: Build 2D solvers (Linux)
         if: runner.os == 'Linux'
-        run: make -C solvers
+        run: make -B -C solvers
       - name: Setup MSYS2
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
@@ -120,7 +120,7 @@ jobs:
           enable-cache: true
       - name: Build 2D solvers (Linux)
         if: runner.os == 'Linux'
-        run: make -C solvers
+        run: make -B -C solvers
       - name: Setup MSYS2
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2

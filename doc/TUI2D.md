@@ -31,7 +31,7 @@ Solvers:
   OK NTS_STEP
 ```
 
-Si faltan, compílalos con `make -C solvers` (Linux) o
+Si faltan, compílalos con `make -C solvers rebuild` (Linux) o
 `solvers/build_windows.ps1` (Windows).
 
 Vista previa de imágenes en línea (opcional):
@@ -194,7 +194,7 @@ outputs/logs/tui2d.log               diagnóstico
 
 | Síntoma | Solución |
 |---|---|
-| `Solver binary not found` | `make -C solvers` (Linux) o `solvers/build_windows.ps1` |
+| `Solver binary not found` | `make -C solvers rebuild` (Linux) o `solvers/build_windows.ps1` |
 | `STATUS=2` en una corrida | La entrada viola el contrato; revisa `BC` y `N` |
 | El plot muestra índices de celda | Indica el `input_###.txt` correspondiente en geometría |
 | El mapa sale deformado | Alguna longitud de región es cero o negativa |

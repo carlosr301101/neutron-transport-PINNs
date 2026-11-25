@@ -102,6 +102,14 @@ def run_solver(
         
         # Check result
         success = process.returncode == 0
+        error_message = ""
+        if not success:
+            detail = [line for line in process.stderr.splitlines() if line.strip()]
+            error_message = (
+                detail[0]
+                if detail
+                else f"Solver exited with code {process.returncode}"
+            )
         
         # Log stderr if any
         if process.stderr:
@@ -116,13 +124,16 @@ def run_solver(
         if success:
             pass  # Success logged to file
         else:
-            logger.error(f"Solver failed with exit code {process.returncode}")
+            logger.error(
+                f"Solver failed with exit code {process.returncode}: {error_message}"
+            )
         
         return SolverResult(
             success=success,
             exit_code=process.returncode,
             duration=duration,
-            stderr=process.stderr
+            stderr=process.stderr,
+            error_message=error_message,
         )
     
     except subprocess.TimeoutExpired:

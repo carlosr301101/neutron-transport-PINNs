@@ -304,7 +304,7 @@ solvers/build_windows.ps1  MSYS2/MinGW-w64
 Linux:
 
 ```bash
-make -C solvers
+make -C solvers rebuild
 # equivale a:
 gcc -O2 -o solvers/runners/NTS_DD solvers/runners/NTS_DD.c -lm
 ```
@@ -330,7 +330,7 @@ pwsh -File solvers/build_windows.ps1
 
 ### CI
 
-- Linux: `make -C solvers` antes de los tests.
+- Linux: `make -B -C solvers` antes de los tests.
 - Windows: MSYS2/UCRT64 + `build_windows.ps1` antes de los tests.
 
 ### Criterio de aceptación

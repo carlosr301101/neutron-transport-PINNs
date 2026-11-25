@@ -50,7 +50,7 @@ para que la base glibc coincida con el tag:
 ```bash
 podman run --rm -v "$PWD:/src:Z" -w /src \
   quay.io/pypa/manylinux_2_28_x86_64 bash -lc '
-    make -C solvers CC=gcc
+    make -B -C solvers CC=gcc
     PY=$(ls -d /opt/python/cp314-cp314/bin/python 2>/dev/null || \
          ls -d /opt/python/cp313-cp313/bin/python | tail -1)
     $PY -m pip install --upgrade build

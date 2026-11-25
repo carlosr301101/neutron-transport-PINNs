@@ -194,7 +194,7 @@ solvers and point `NTS_SOLVERS_DIR` at the directory that contains them:
 ```bash
 git clone https://github.com/carlosr301101/neutron-transport-PINNs.git
 cd neutron-transport-PINNs
-make -C solvers                  # Linux; writes solvers/runners/NTS_*
+make -C solvers rebuild          # Linux; writes solvers/runners/NTS_*
 # pwsh -File solvers/build_windows.ps1   # Windows (MSYS2/MinGW-w64)
 export NTS_SOLVERS_DIR="$PWD/solvers/runners"
 ```

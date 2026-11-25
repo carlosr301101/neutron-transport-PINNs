@@ -26,9 +26,11 @@ endif
 
 BINS := $(addprefix $(RUNNERS)/,$(addsuffix $(EXE),$(SOLVERS)))
 
-.PHONY: all clean test
+.PHONY: all rebuild clean test
 
 all: $(BINS)
+
+rebuild: clean all
 
 $(RUNNERS)/%$(EXE): $(RUNNERS)/%.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LDLIBS)

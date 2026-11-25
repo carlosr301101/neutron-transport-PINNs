@@ -64,7 +64,12 @@ class ParallelExecutionResult:
         for i, (task, result) in enumerate(zip(self.tasks, self.results), 1):
             executable, input_file, output_file = task
             status = "✓" if result.success else "✗"
-            lines.append(f"  {i}. {status} {Path(input_file).name} -> {Path(output_file).name} ({result.duration:.2f}s)")
+            lines.append(
+                f"  {i}. {status} {Path(input_file).name} -> "
+                f"{Path(output_file).name} ({result.duration:.2f}s)"
+            )
+            if not result.success and result.error_message:
+                lines.append(f"     {result.error_message}")
         
         lines.append("=" * 60)
         return "\n".join(lines)

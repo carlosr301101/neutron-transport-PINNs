@@ -30,7 +30,7 @@ Solvers:
   OK NTS_STEP
 ```
 
-If they are missing, build them with `make -C solvers` (Linux) or
+If they are missing, build them with `make -C solvers rebuild` (Linux) or
 `solvers/build_windows.ps1` (Windows).
 
 Optional inline heatmap preview:
@@ -189,7 +189,7 @@ outputs/logs/tui2d.log               diagnostics
 
 | Symptom | Fix |
 |---|---|
-| `Solver binary not found` | `make -C solvers` (Linux) or `solvers/build_windows.ps1` |
+| `Solver binary not found` | `make -C solvers rebuild` (Linux) or `solvers/build_windows.ps1` |
 | `STATUS=2` in a run | The input violates the contract; check BC values and `N` |
 | Plot shows cell indices | Pass the matching `input_###.txt` in the geometry field |
 | Map looks distorted | Region lengths are zero or negative; fix the X/Y tables |

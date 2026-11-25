@@ -275,7 +275,7 @@ as OK. The sdist (macOS, ARM, and other platforms) ships the `.c` sources and
 the build helpers but not the binaries. For those platforms:
 
 1. Clone the repository.
-2. Compile the binaries under `solvers/runners/` with `make -C solvers`
+2. Compile the binaries under `solvers/runners/` with `make -C solvers rebuild`
    (Linux) or `solvers/build_windows.ps1` (Windows).
 3. Point to them if they are outside the repository layout:
 

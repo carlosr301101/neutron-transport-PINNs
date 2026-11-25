@@ -114,7 +114,7 @@ Construir los artefactos igual que el release:
 
 ```bash
 # Linux (dentro de manylinux_2_28) o local para un wheel linux_x86_64
-make -C solvers
+make -B -C solvers
 NTS_WHEEL_PLATFORM=manylinux_2_28_x86_64 uv build --wheel --out-dir dist
 
 # Windows

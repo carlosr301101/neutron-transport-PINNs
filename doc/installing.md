@@ -277,7 +277,7 @@ como OK. El sdist (macOS, ARM y otras plataformas) incluye las fuentes `.c` y
 los scripts de build, pero no los binarios. En esas plataformas:
 
 1. Clonar el repositorio.
-2. Compilar los binarios en `solvers/runners/` con `make -C solvers` (Linux)
+2. Compilar los binarios en `solvers/runners/` con `make -C solvers rebuild` (Linux)
    o `solvers/build_windows.ps1` (Windows).
 3. Indicar la ruta si no están en el layout del repo:
 

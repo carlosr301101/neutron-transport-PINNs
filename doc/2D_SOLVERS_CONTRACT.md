@@ -218,9 +218,13 @@ mismo formato. Todos deben ser JSON válido y usar el orden
 Los binarios de `solvers/runners/` se reconstruyen desde las fuentes con:
 
 ```bash
-make -C solvers          # Linux
+make -C solvers rebuild  # Linux: limpia y recompila los cinco
 make -C solvers clean    # borra los cinco binarios
 ```
+
+Los binarios versionados pueden haberse compilado con una glibc más nueva que
+la del sistema donde se ejecutan. `rebuild` fuerza una compilación nativa; CI y
+release usan `make -B` por el mismo motivo.
 
 Equivale a compilar cada fuente con:
 
