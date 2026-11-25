@@ -5,8 +5,8 @@
       "source": "carlosr301101/neutron-transport-PINNs",
       "sourceType": "github",
       "skillPath": "skills/nts-pinns-autopilot/SKILL.md",
-      "computedHash": "444fd951a838d8500615d956283f5b77546a2e2108c52eb3385ff080dbfa48e0",
-      "commit": "a123adb"
+      "computedHash": "0661df0a42df29062b6df4101ff02dfa37248819212c5f92924dc687590a4975",
+      "commit": "e39d606"
     }
   }
 }
