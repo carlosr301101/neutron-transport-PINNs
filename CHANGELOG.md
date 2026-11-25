@@ -2,7 +2,7 @@
 
 Registro de todos los cambios notables en el proyecto NTS Automation System.
 
-## 4.0.1 - 2026-11-24
+## 4.0.2 - 2026-11-24
 
 ### Breaking changes
 - `BC` usa el orden canónico `[left, bottom, right, top]`: `-1.0` reflectivo,
