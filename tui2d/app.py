@@ -25,6 +25,16 @@ _TABS: dict[str, type] = {
     "tab2d-plots": Plots2DPane,
 }
 
+# Refreshed every time the tab is activated: the selectors must see files
+# created by another pane, the CLI or another session.
+_TAB_REFRESH: dict[str, tuple[type, str]] = {
+    "tab2d-dashboard": (Dashboard2DPane, "refresh_status"),
+    "tab2d-config": (Config2DPane, "refresh_load_options"),
+    "tab2d-run": (Run2DPane, "refresh_files"),
+    "tab2d-results": (Results2DPane, "refresh_outputs"),
+    "tab2d-plots": (Plots2DPane, "refresh_results"),
+}
+
 
 class NTS2DApp(App):
     """Textual application for the 2D workflow."""
@@ -102,14 +112,16 @@ class NTS2DApp(App):
         self, event: TabbedContent.TabActivated
     ) -> None:
         """Refresh filesystem-backed panes when their tab is opened."""
-        tab_id = event.pane.id
+        target = _TAB_REFRESH.get(event.pane.id)
+        if target is None:
+            return
+        pane_type, method_name = target
         try:
-            if tab_id == "tab2d-results":
-                self.query_one(Results2DPane).refresh_outputs()
-            elif tab_id == "tab2d-plots":
-                self.query_one(Plots2DPane).refresh_results()
+            getattr(self.query_one(pane_type), method_name)()
         except Exception:
-            self.log.debug("tab refresh failed for %s", tab_id, exc_info=True)
+            self.log.debug(
+                "tab refresh failed for %s", event.pane.id, exc_info=True
+            )
 
     def on_unmount(self) -> None:
         try:

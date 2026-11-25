@@ -12,10 +12,18 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from textual.containers import Horizontal
-from textual.widgets import DataTable, Input, Select, Static, TabbedContent
+from textual.widgets import (
+    DataTable,
+    Input,
+    Select,
+    SelectionList,
+    Static,
+    TabbedContent,
+)
 
 from tui2d.app import NTS2DApp
 from tui2d.screens import Config2DPane, Plots2DPane, Results2DPane, Run2DPane
+from tui2d.services import config_store
 from tui2d.services import results as results_service
 from tui2d.services import plots as plots_service
 from tui2d.services.runner import RunOutcome, SolverRunner
@@ -426,13 +434,105 @@ class TestTUI2DApp(unittest.IsolatedAsyncioTestCase):
             )
             pane._finish([outcome])
             await pilot.pause()
-            shown = str(pane.query_one("#run2d-output", Static).content)
+            shown = str(pane.query_one("#run2d-last-output", Static).content)
             self.assertIn("output_010.json", shown)
             self.assertFalse(pane.query_one("#run2d-plots").disabled)
             self.assertFalse(pane.query_one("#run2d-results").disabled)
             self.assertIn(
                 "output_010.json", Run2DPane._status_text([outcome])
             )
+            field = pane.query_one("#run2d-output-path", Input).value
+            self.assertTrue(field.endswith(".json"), field)
+
+    async def test_run_output_field_is_prefilled(self):
+        app = NTS2DApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab2d-run"
+            await pilot.pause()
+            pane = app.query_one(Run2DPane)
+            value = pane.query_one("#run2d-output-path", Input).value
+            self.assertTrue(value.startswith("/"), value)
+            self.assertIn("outputs/results/output_", value)
+            self.assertTrue(value.endswith(".json"), value)
+
+    async def test_run_uses_the_custom_output_path(self):
+        class FakeRunner:
+            call = None
+
+            def __init__(self) -> None:
+                pass
+
+            def run(self, paths, solver, workers, on_event, output_path=None):
+                FakeRunner.call = (paths, solver, workers, output_path)
+                return []
+
+            def cancel(self) -> None:
+                pass
+
+        app = NTS2DApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab2d-run"
+            await pilot.pause()
+            pane = app.query_one(Run2DPane)
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                config_path = tmp / "config_2d_001.json"
+                config_path.write_text(json.dumps(small_config()), encoding="utf-8")
+                out = tmp / "custom" / "reactor.json"
+
+                with patch.object(config_store, "INPUTS_DIR", tmp):
+                    pane.refresh_files()
+                    selection = pane.query_one("#run2d-configs", SelectionList)
+                    selection.select(str(config_path))
+                    await pilot.pause()
+                    pane.query_one("#run2d-output-path", Input).value = str(out)
+                    await pilot.pause()
+                    with patch("tui2d.screens.run.SolverRunner", FakeRunner):
+                        pane._start()
+                        await app.workers.wait_for_complete()
+                        await pilot.pause()
+
+                self.assertIsNotNone(FakeRunner.call)
+                _, solver, _, output_path = FakeRunner.call
+                self.assertEqual(solver, "NTS_DD")
+                self.assertEqual(output_path, out)
+
+    async def test_run_refresh_preserves_selection(self):
+        app = NTS2DApp()
+        async with app.run_test(size=(160, 60)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab2d-run"
+            await pilot.pause()
+            pane = app.query_one(Run2DPane)
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                first = tmp / "config_2d_001.json"
+                second = tmp / "config_2d_002.json"
+                for path in (first, second):
+                    path.write_text(json.dumps(small_config()), encoding="utf-8")
+                with patch.object(config_store, "INPUTS_DIR", tmp):
+                    pane.refresh_files()
+                    await pilot.pause()
+                    selection = pane.query_one("#run2d-configs", SelectionList)
+                    self.assertEqual(selection.option_count, 2)
+                    selection.select(str(first))
+                    selection.select(str(second))
+                    await pilot.pause()
+
+                    third = tmp / "config_2d_003.json"
+                    third.write_text(json.dumps(small_config()), encoding="utf-8")
+                    app.query_one("#tabs", TabbedContent).active = "tab2d-config"
+                    await pilot.pause()
+                    app.query_one("#tabs", TabbedContent).active = "tab2d-run"
+                    await pilot.pause()
+
+                    self.assertEqual(selection.option_count, 3)
+                    self.assertEqual(
+                        {str(value) for value in selection.selected},
+                        {str(first), str(second)},
+                    )
 
     async def test_run_pane_exposes_cancel(self):
         app = NTS2DApp()
@@ -518,6 +618,104 @@ class TestServices(unittest.TestCase):
             self.assertEqual(data["STATUS"], 0)
             self.assertEqual(len(data["MFLUX"]), 5)
             self.assertTrue(any("STATUS=0" in line for line in events))
+
+    def test_runner_custom_output(self):
+        try:
+            get_solver_path("NTS_DD")
+        except FileNotFoundError:
+            self.skipTest("NTS_DD binary not found")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            config_path = tmp / "config.json"
+            config_path.write_text(json.dumps(small_config()), encoding="utf-8")
+            out = tmp / "custom" / "reactor.json"
+            runner = SolverRunner(tmp / "inputs", tmp / "results")
+            outcomes = runner.run([config_path], "NTS_DD", 1, output_path=out)
+
+            self.assertEqual(len(outcomes), 1)
+            self.assertTrue(outcomes[0].ok, outcomes[0].error)
+            self.assertEqual(outcomes[0].output, out)
+            self.assertEqual(outcomes[0].input, tmp / "inputs" / "reactor.txt")
+            self.assertTrue(out.is_file())
+            self.assertTrue(outcomes[0].input.is_file())
+
+    def test_runner_multiple_custom_outputs(self):
+        try:
+            get_solver_path("NTS_DD")
+        except FileNotFoundError:
+            self.skipTest("NTS_DD binary not found")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            first = tmp / "first.json"
+            second = tmp / "second.json"
+            for path in (first, second):
+                path.write_text(json.dumps(small_config()), encoding="utf-8")
+            out = tmp / "custom" / "reactor.json"
+            runner = SolverRunner(tmp / "inputs", tmp / "results")
+            outcomes = runner.run(
+                [first, second], "NTS_DD", 1, output_path=out
+            )
+
+            self.assertEqual(
+                [outcome.output.name for outcome in outcomes],
+                ["reactor_001.json", "reactor_002.json"],
+            )
+            for outcome in outcomes:
+                self.assertTrue(outcome.ok, outcome.error)
+                self.assertEqual(
+                    outcome.input.name, f"{outcome.output.stem}.txt"
+                )
+
+    def test_runner_never_overwrites_a_custom_output(self):
+        try:
+            get_solver_path("NTS_DD")
+        except FileNotFoundError:
+            self.skipTest("NTS_DD binary not found")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            config_path = tmp / "config.json"
+            config_path.write_text(json.dumps(small_config()), encoding="utf-8")
+            out = tmp / "custom" / "reactor.json"
+            out.parent.mkdir(parents=True)
+            out.write_text('{"KEEP": 1}', encoding="utf-8")
+
+            runner = SolverRunner(tmp / "inputs", tmp / "results")
+            outcomes = runner.run([config_path], "NTS_DD", 1, output_path=out)
+
+            self.assertTrue(outcomes[0].ok, outcomes[0].error)
+            self.assertNotEqual(outcomes[0].output, out)
+            self.assertEqual(outcomes[0].output.name, "reactor_001.json")
+            self.assertEqual(out.read_text(encoding="utf-8"), '{"KEEP": 1}')
+
+    def test_find_input_for_custom_result(self):
+        import utils.paths as paths_module
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            config_path = tmp / "config.json"
+            config_path.write_text(json.dumps(small_config()), encoding="utf-8")
+            runner = SolverRunner(tmp / "inputs", tmp / "results")
+            outcome = runner.run(
+                [config_path],
+                "NTS_DD",
+                1,
+                output_path=tmp / "custom" / "reactor.json",
+            )[0]
+            self.assertTrue(outcome.ok, outcome.error)
+
+            with patch.object(paths_module, "INPUTS_DIR", runner.inputs_dir):
+                found = results_service.find_input_for_result(outcome.output)
+            self.assertEqual(found, outcome.input)
+
+            # Fallback: a same-stem input next to the result.
+            sidecar = outcome.output.parent / f"{outcome.output.stem}.txt"
+            sidecar.write_text("4\n1\n0.5 0.3\n1\n10.0 4\n1\n10.0 4\n1\n1\n0.0 0.0 0.0 0.0\n1e-4\n")
+            with patch.object(paths_module, "INPUTS_DIR", tmp / "empty"):
+                found = results_service.find_input_for_result(outcome.output)
+            self.assertEqual(found, sidecar)
 
     def test_runner_reports_invalid_config(self):
         with tempfile.TemporaryDirectory() as tmp:

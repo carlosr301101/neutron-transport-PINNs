@@ -102,15 +102,27 @@ The map updates on every edit of the region tables, `ZMAP` or the BC table.
 | Validate | Pydantic validation; the status line shows the first errors |
 | Save | Validate and write the JSON (with `_solver`) |
 
+The `Load config...` list is reloaded every time the Config tab is opened, so
+configs saved by the CLI or another session appear without pressing anything.
+
 ## Run tab
 
-1. `Refresh` reloads `outputs/inputs/config_2d_*.json`.
+1. `Refresh` reloads `outputs/inputs/config_2d_*.json`. The list also
+   refreshes whenever you open the tab and keeps the current selection.
 2. Select one or more configurations (space toggles selection).
 3. Choose the solver and the number of workers (1–4).
-4. The preview shows the `input.txt` of the first selected configuration.
-5. `Run selected` builds `input_NNN.txt`, executes the binary and writes
-   `output_NNN.json` under `outputs/results/`.
-6. `Cancel` terminates the running processes.
+4. The **Output** field is prefilled with the next free path
+   (`outputs/results/output_NNN.json`) and can be edited: type another folder
+   and/or file name, or leave it blank for automatic numbering.
+   - One configuration: the path is used exactly as written.
+   - Several configurations: the stem becomes a prefix
+     (`case_001.json`, `case_002.json`, …).
+   - An existing file is never overwritten; a `_001` suffix is added and the
+     real path is shown in `Last output:`.
+5. The preview shows the `input.txt` of the first selected configuration.
+6. `Run selected` builds `input_NNN.txt`, executes the binary and writes the
+   chosen output file.
+7. `Cancel` terminates the running processes.
 
 The log lists each start and finish with `STATUS`, `ITER`, `CPU` and the exact
 output path, for example:
@@ -122,10 +134,13 @@ OK config_2d_001.json: STATUS=0 ITER=19 CPU=0.000584
 Output: outputs/results/output_010.json
 ```
 
-`Output: ...` stays visible under the status line. `Plot latest` opens the
-Plots tab with that file selected and `Results` opens the Results tab with it
-selected. Results also appear automatically in the Results/Plots tabs when a
-run finishes.
+`Last output: ...` stays visible under the status line, and `Plot latest`
+opens the Plots tab with that file selected. `Results` opens the Results tab
+with it selected. Results also appear automatically in the Results/Plots tabs
+when a run finishes.
+
+With a custom output name the paired input is written as
+`outputs/inputs/<stem>.txt`; the Plots tab finds it automatically.
 
 ## Results tab
 
@@ -139,7 +154,8 @@ use a different schema.
 ## Plots tab
 
 - The tab shows the results directory (`outputs/results/`) and the available
-  files. A newly created result is selected automatically.
+  files. A newly created result is selected automatically; the list refreshes
+  every time the Plots tab is opened.
 - Result selector plus a **Result path** field for files outside the results
   directory: type a path and press `Load path`.
 - Optional input geometry. The matching `input_NNN.txt` is filled

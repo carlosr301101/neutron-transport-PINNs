@@ -12,7 +12,8 @@ from pathlib import Path
 
 from core.config import SimulationConfig
 from core.input_builder import InputBuilder
-from utils.paths import INPUTS_DIR, RESULTS_DIR, get_solver_path
+from tui.services.paths import unique_path
+from utils.paths import INPUTS_DIR, RESULTS_DIR, WORK_ROOT, get_solver_path
 
 EventCallback = Callable[[str], None]
 
@@ -58,25 +59,72 @@ class SolverRunner:
 
     # -- paths ---------------------------------------------------------
     def _next_index(self) -> int:
+        """Next free numeric index for the default ``input_NNN``/``output_NNN``."""
         highest = 0
         for path in self.inputs_dir.glob("input_*.txt"):
             parts = path.stem.split("_")
-            if len(parts) == 2:
-                try:
-                    highest = max(highest, int(parts[1]))
-                except ValueError:
-                    continue
+            if len(parts) == 2 and parts[1].isdigit():
+                highest = max(highest, int(parts[1]))
+        for path in self.results_dir.glob("output_*.json"):
+            parts = path.stem.split("_")
+            if len(parts) == 2 and parts[1].isdigit():
+                highest = max(highest, int(parts[1]))
         return highest + 1
 
-    def prepare(self, config_path: Path, index: int) -> tuple[Path, Path]:
-        """Build ``input_NNN.txt`` for *config_path* and return both paths."""
+    def prepare(self, config_path: Path, input_path: Path, output_path: Path) -> None:
+        """Build the solver input for *config_path* at *input_path*."""
         config = SimulationConfig.from_json_file(str(config_path))
-        self.inputs_dir.mkdir(parents=True, exist_ok=True)
-        self.results_dir.mkdir(parents=True, exist_ok=True)
-        input_path = self.inputs_dir / f"input_{index:03d}.txt"
-        output_path = self.results_dir / f"output_{index:03d}.json"
+        input_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         InputBuilder(config).save(str(input_path))
-        return input_path, output_path
+
+    def _resolve_output_path(self, output_path: Path | str) -> Path:
+        path = Path(output_path).expanduser()
+        if not path.is_absolute():
+            path = WORK_ROOT / path
+        if path.exists() and path.is_dir():
+            raise ValueError(f"{path} is a directory; choose a file name.")
+        if path.suffix == "":
+            path = path.with_suffix(".json")
+        return path
+
+    def _allocate_targets(
+        self,
+        paths: list[Path],
+        output_path: Path | str | None,
+    ) -> list[tuple[Path, Path, Path]]:
+        """Return ``(config, input, output)`` for every selected config.
+
+        With no ``output_path`` the numbered pair is used. With a custom path
+        and one config it is used as-is; with several configs the stem becomes
+        a prefix (``case_001.json``, ``case_002.json``, ...). Existing files
+        are never overwritten.
+        """
+        if output_path is None or not str(output_path).strip():
+            start = self._next_index()
+            return [
+                (
+                    config_path,
+                    self.inputs_dir / f"input_{start + offset:03d}.txt",
+                    self.results_dir / f"output_{start + offset:03d}.json",
+                )
+                for offset, config_path in enumerate(paths)
+            ]
+
+        base = self._resolve_output_path(output_path)
+        folder = base.parent
+        suffix = base.suffix
+        stem = base.stem
+        targets: list[tuple[Path, Path, Path]] = []
+        for offset, config_path in enumerate(paths):
+            if len(paths) == 1:
+                output = unique_path(base)
+            else:
+                output = unique_path(folder / f"{stem}_{offset + 1:03d}{suffix}")
+            targets.append(
+                (config_path, self.inputs_dir / f"{output.stem}.txt", output)
+            )
+        return targets
 
     # -- execution -----------------------------------------------------
     def run(
@@ -85,6 +133,7 @@ class SolverRunner:
         solver: str,
         workers: int = 1,
         on_event: EventCallback | None = None,
+        output_path: Path | str | None = None,
     ) -> list[RunOutcome]:
         """Run every configuration, up to *workers* in parallel."""
         paths = [Path(path) for path in config_paths]
@@ -100,20 +149,19 @@ class SolverRunner:
 
         jobs: list[tuple[int, Path, Path, Path]] = []
         failures: dict[int, RunOutcome] = {}
-        next_index = self._next_index()
+        targets = self._allocate_targets(paths, output_path)
         emit(f"Running {len(paths)} configuration(s) with {solver}")
 
-        for offset, config_path in enumerate(paths):
-            index = next_index + offset
+        for index, (config_path, input_path, output_target) in enumerate(targets):
             try:
-                input_path, output_path = self.prepare(config_path, index)
+                self.prepare(config_path, input_path, output_target)
             except Exception as exc:  # noqa: BLE001 - report and continue
                 failures[index] = RunOutcome(
                     config=config_path, error=f"{config_path.name}: {exc}"
                 )
                 emit(f"ERROR {config_path.name}: {exc}")
                 continue
-            jobs.append((index, config_path, input_path, output_path))
+            jobs.append((index, config_path, input_path, output_target))
 
         outcomes: dict[int, RunOutcome] = dict(failures)
         if jobs:

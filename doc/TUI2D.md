@@ -106,15 +106,27 @@ tabla de fronteras.
 | Validate | Validación Pydantic; la barra de estado muestra los primeros errores |
 | Save | Valida y escribe el JSON (con `_solver`) |
 
+La lista `Load config...` se recarga cada vez que se abre la pestaña Config,
+así que los JSON guardados desde la CLI u otra sesión aparecen solos.
+
 ## Pestaña Run
 
-1. `Refresh` recarga `outputs/inputs/config_2d_*.json`.
+1. `Refresh` recarga `outputs/inputs/config_2d_*.json`. La lista también se
+   refresca al abrir la pestaña y conserva la selección actual.
 2. Selecciona una o varias configuraciones (espacio alterna la selección).
 3. Elige solver y número de workers (1–4).
-4. El preview muestra el `input.txt` de la primera configuración.
-5. `Run selected` genera `input_NNN.txt`, ejecuta el binario y escribe
-   `output_NNN.json` en `outputs/results/`.
-6. `Cancel` termina los procesos en curso.
+4. El campo **Output** viene relleno con la siguiente ruta libre
+   (`outputs/results/output_NNN.json`) y es editable: otra carpeta y/o nombre,
+   o vacío para numeración automática.
+   - Una configuración: se usa la ruta tal cual.
+   - Varias configuraciones: el nombre actúa de prefijo
+     (`caso_001.json`, `caso_002.json`, …).
+   - Un archivo existente nunca se sobrescribe; se añade `_001` y la ruta real
+     aparece en `Last output:`.
+5. El preview muestra el `input.txt` de la primera configuración.
+6. `Run selected` genera `input_NNN.txt`, ejecuta el binario y escribe el
+   archivo de salida elegido.
+7. `Cancel` termina los procesos en curso.
 
 El log muestra cada inicio y fin con `STATUS`, `ITER`, `CPU` y la ruta exacta
 de salida, por ejemplo:
@@ -126,10 +138,13 @@ OK config_2d_001.json: STATUS=0 ITER=19 CPU=0.000584
 Output: outputs/results/output_010.json
 ```
 
-`Output: ...` queda visible bajo la barra de estado. `Plot latest` abre la
-pestaña Plots con ese archivo seleccionado y `Results` abre Results con él
+`Last output: ...` queda visible bajo la barra de estado y `Plot latest` abre
+Plots con ese archivo seleccionado. `Results` abre Results con él
 seleccionado. Los resultados también aparecen solos en Results/Plots al
 terminar la corrida.
+
+Con un nombre personalizado, el input asociado se escribe como
+`outputs/inputs/<stem>.txt`; la pestaña Plots lo encuentra automáticamente.
 
 ## Pestaña Results
 
@@ -144,7 +159,8 @@ esquema.
 ## Pestaña Plots
 
 - La pestaña muestra el directorio de resultados (`outputs/results/`) y los
-  archivos disponibles. Un resultado recién creado se selecciona solo.
+  archivos disponibles. Un resultado recién creado se selecciona solo; la
+  lista se refresca cada vez que se abre la pestaña Plots.
 - Selector de resultado y campo **Result path** para archivos fuera del
   directorio de resultados: escribe la ruta y pulsa `Load path`.
 - Geometría opcional. El `input_NNN.txt` que corresponde se rellena solo; de
