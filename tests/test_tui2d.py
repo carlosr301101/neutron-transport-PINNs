@@ -452,9 +452,11 @@ class TestTUI2DApp(unittest.IsolatedAsyncioTestCase):
             await pilot.pause()
             pane = app.query_one(Run2DPane)
             value = pane.query_one("#run2d-output-path", Input).value
-            self.assertTrue(value.startswith("/"), value)
-            self.assertIn("outputs/results/output_", value)
-            self.assertTrue(value.endswith(".json"), value)
+            path = Path(value)
+            self.assertTrue(path.is_absolute(), value)
+            self.assertEqual(path.parent, results_service.RESULTS_DIR)
+            self.assertTrue(path.name.startswith("output_"), path.name)
+            self.assertEqual(path.suffix, ".json")
 
     async def test_run_uses_the_custom_output_path(self):
         class FakeRunner:
