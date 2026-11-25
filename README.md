@@ -5,7 +5,7 @@
 CLI/TUI automation system for **SN neutron transport simulations**:
 
 - A **2D workflow** that drives a family of C solvers (`NTS_DD`, `NTS_LD`, `NTS_STEP`, `NTS_RM_CN`, `NTS_RM_LLN`) from JSON configurations.
-- A **1D workflow** with a pure-Python Diamond Difference solver (`NTS_DD_1D`) used to generate training datasets for PINN models.
+- A **1D workflow** with a pure-Python solvers used to generate training datasets for PINN models.
 - Parametric sweeps via **placeholders**, parallel execution, and post-processing (data extraction + plotting).
 
 ## Table of Contents
