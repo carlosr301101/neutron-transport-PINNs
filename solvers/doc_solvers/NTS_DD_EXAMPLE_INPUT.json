@@ -185,7 +185,7 @@
       "2 1",
       "1.0 1.0",
       "1.0 1.0",
-      "1.0 0.5 0.5 2.0",
+      "0.5 1.0 2.0 0.5",
       "1e-5"
     ],
     "json_format": {
@@ -213,7 +213,7 @@
       "20.0 10",
       "1",
       "0.5",
-      "-1.0 0.0 -1.0 0.0",
+      "-1.0 -1.0 0.0 0.0",
       "1e-5"
     ],
     "json_format": {
@@ -307,7 +307,7 @@
     },
 
     "BC_boundary_conditions": {
-      "order": "[BOTTOM, TOP, LEFT, RIGHT]",
+      "order": "[LEFT, BOTTOM, RIGHT, TOP]",
       "coordinate_mapping": {
         "BOTTOM": "y = 0",
         "TOP": "y = maximum",

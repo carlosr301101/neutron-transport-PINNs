@@ -3,7 +3,7 @@
 Interfaz de terminal para el flujo 1D completo: configuración, corridas,
 resultados, gráficas, placeholders y exportación.
 
-> Alcance: solo 1D. Los solvers 2D en C siguen siendo exclusivos de la CLI.
+> Alcance: solo 1D. El flujo 2D tiene su propia interfaz: [TUI2D.md](TUI2D.md).
 >
 > Versión en inglés: [TUI_EN.md](TUI_EN.md).
 

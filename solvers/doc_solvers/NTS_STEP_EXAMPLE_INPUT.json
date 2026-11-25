@@ -280,8 +280,8 @@
     },
     "BC": {
       "name": "Boundary Conditions",
-      "format": "BOTTOM TOP LEFT RIGHT",
-      "valid": [-1.0 (symmetry), 0.0 (vacuum), >0 (specified)]
+      "format": "LEFT BOTTOM RIGHT TOP",
+      "valid": ["-1.0 (reflective)", "0.0 (vacuum)", ">0 (incoming flux)"]
     },
     "TOL": {
       "name": "Convergence Tolerance",

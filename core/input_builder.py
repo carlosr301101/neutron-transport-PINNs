@@ -1,7 +1,29 @@
-"""Input file builder for NTS solvers."""
+"""Input file builder for NTS solvers.
+
+The generated file follows ``doc/2D_SOLVERS_CONTRACT.md``: boundary
+conditions are written as ``left bottom right top`` and every value is passed
+through unchanged (``1.0`` is an incoming flux, not a reflective boundary).
+"""
 
 from pathlib import Path
+
 from core.config import SimulationConfig
+
+
+def _format_number(value) -> str:
+    """Format an int/float the way the C ``fscanf`` readers expect.
+
+    Integers stay integers (``nodes``), while floats always keep a decimal
+    point or an exponent so that ``-1.0`` remains a reflective boundary.
+    """
+    if isinstance(value, bool):
+        return str(int(value))
+    if isinstance(value, int):
+        return str(value)
+    number = float(value)
+    if number.is_integer():
+        return f"{number:.1f}"
+    return repr(number)
 
 
 class InputBuilder:
@@ -33,21 +55,27 @@ class InputBuilder:
         
         # Lines 3 to NZ+2: zone data (sigma_t sigma_s)
         for zone in self.config.zones:
-            lines.append(f"{zone.sigma_t} {zone.sigma_s}")
-        
+            lines.append(
+                f"{_format_number(zone.sigma_t)} {_format_number(zone.sigma_s)}"
+            )
+
         # Line NZ+3: NR_X (number of X regions)
         lines.append(str(self.config.NR_X))
-        
+
         # Lines NZ+4 to NZ+3+NR_X: XDOM (length nodes)
         for region in self.config.XDOM:
-            lines.append(f"{region.length} {region.nodes}")
-        
+            lines.append(
+                f"{_format_number(region.length)} {_format_number(region.nodes)}"
+            )
+
         # Line NZ+4+NR_X: NR_Y (number of Y regions)
         lines.append(str(self.config.NR_Y))
-        
+
         # Lines NZ+5+NR_X to NZ+4+NR_X+NR_Y: YDOM (length nodes)
         for region in self.config.YDOM:
-            lines.append(f"{region.length} {region.nodes}")
+            lines.append(
+                f"{_format_number(region.length)} {_format_number(region.nodes)}"
+            )
         
         # Lines NZ+5+NR_X+NR_Y to NZ+4+NR_X+2*NR_Y: ZMAP (zone map)
         for row in self.config.ZMAP:
@@ -57,12 +85,13 @@ class InputBuilder:
         for row in self.config.QMAP:
             lines.append(" ".join(map(str, row)))
         
-        # Line: BC (boundary conditions: left right bottom top)
-        lines.append(" ".join(map(str, self.config.BC)))
-        
+        # Line: BC (boundary conditions: left bottom right top)
+        # -1.0 = reflective, 0.0 = vacuum, > 0 = incoming flux
+        lines.append(" ".join(_format_number(value) for value in self.config.BC))
+
         # Last line: TOL (tolerance)
-        lines.append(str(self.config.TOL))
-        
+        lines.append(_format_number(self.config.TOL))
+
         return "\n".join(lines)
     
     def save(self, path: str):
@@ -81,10 +110,13 @@ class InputBuilder:
         filepath.parent.mkdir(parents=True, exist_ok=True)
         
         try:
-            with open(filepath, 'w') as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(self.build())
+                f.write("\n")
         except Exception as e:
-            raise IOError(f"Failed to write input file to {path}: {str(e)}")
+            raise OSError(
+                f"Failed to write input file to {path}: {e!s}"
+            ) from e
     
     def preview(self, max_lines: int = 20) -> str:
         """

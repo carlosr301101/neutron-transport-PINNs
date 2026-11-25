@@ -39,7 +39,7 @@ El programa acepta **11 parámetros de entrada** (idénticos a NTS_DD y NTS_LD):
 | 7 | YDOM | L[cm] M[nodos] | Longitud y nodos por región Y | Malla no uniforme permitida |
 | 8 | ZMAP | Matriz (NR_Y × NR_X) | Índice de zona [1..NZ] en cada región | Indexación 1-based |
 | 9 | QMAP | Matriz (NR_Y × NR_X) | Valor de fuente por región [0,∞) | Sin restricción superior |
-| 10 | BC | 4 valores BOTTOM TOP LEFT RIGHT | Condiciones de frontera | Simetría=-1.0, Vacío=0.0, Especificada>0.0 |
+| 10 | BC | 4 valores LEFT BOTTOM RIGHT TOP | Condiciones de frontera | Simetría=-1.0, Vacío=0.0, Especificada>0.0 |
 | 11 | TOLERANCE | 0 < ε < 1 | Tolerancia de convergencia relativa | **1e-6 recomendado** (RM_CN puede ser más estricto) |
 
 ### Restricciones Críticas

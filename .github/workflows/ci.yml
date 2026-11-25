@@ -26,6 +26,20 @@ jobs:
           enable-cache: true
       - name: Install dependencies
         run: uv sync --frozen --extra images
+      - name: Build 2D solvers (Linux)
+        if: runner.os == 'Linux'
+        run: make -C solvers
+      - name: Setup MSYS2
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: mingw-w64-ucrt-x86_64-gcc
+      - name: Build 2D solvers (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./solvers/build_windows.ps1 -Gcc "C:\msys64\ucrt64\bin\gcc.exe"
       - name: Run tests
         run: uv run python -m cli.run_tests
       - name: Lint

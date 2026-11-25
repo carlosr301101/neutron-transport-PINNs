@@ -1,14 +1,16 @@
 """Validation module for NTS simulation configurations."""
 
-from typing import Dict, Any
-from core.config import SimulationConfig
+from typing import Any
+
 from pydantic import ValidationError
+
+from core.config import BC_LABELS, SimulationConfig, describe_bc
 
 
 class ValidationResult:
     """Result of configuration validation."""
     
-    def __init__(self, is_valid: bool, errors: list = None):
+    def __init__(self, is_valid: bool, errors: list | None = None):
         self.is_valid = is_valid
         self.errors = errors or []
     
@@ -23,7 +25,7 @@ class ValidationResult:
                    "\n".join(f"  - {err}" for err in self.errors)
 
 
-def validate(config: Dict[str, Any]) -> ValidationResult:
+def validate(config: dict[str, Any]) -> ValidationResult:
     """
     Validate a configuration dictionary.
     
@@ -51,7 +53,7 @@ def validate(config: Dict[str, Any]) -> ValidationResult:
     
     except Exception as e:
         # Catch any other unexpected errors
-        return ValidationResult(is_valid=False, errors=[f"Unexpected error: {str(e)}"])
+        return ValidationResult(is_valid=False, errors=[f"Unexpected error: {e!s}"])
 
 
 def validate_config_object(config: SimulationConfig) -> ValidationResult:
@@ -109,7 +111,7 @@ def validate_file(filepath: str) -> ValidationResult:
         return ValidationResult(is_valid=False, errors=[f"File not found: {filepath}"])
     
     except Exception as e:
-        return ValidationResult(is_valid=False, errors=[f"Error reading file: {str(e)}"])
+        return ValidationResult(is_valid=False, errors=[f"Error reading file: {e!s}"])
 
 
 def get_validation_summary(config: SimulationConfig) -> str:
@@ -126,18 +128,25 @@ def get_validation_summary(config: SimulationConfig) -> str:
     summary.append("Configuration Summary:")
     summary.append(f"  • Discrete ordinates (N): {config.N}")
     summary.append(f"  • Material zones (NZ): {config.NZ}")
-    summary.append(f"  • X regions: {config.NR_X} (total nodes: {sum(r.nodes for r in config.XDOM)})")
-    summary.append(f"  • Y regions: {config.NR_Y} (total nodes: {sum(r.nodes for r in config.YDOM)})")
+    summary.append(
+        f"  • X regions: {config.NR_X} "
+        f"(total cells: {config.total_nodes_x}, length: {config.total_length_x:g} cm)"
+    )
+    summary.append(
+        f"  • Y regions: {config.NR_Y} "
+        f"(total cells: {config.total_nodes_y}, length: {config.total_length_y:g} cm)"
+    )
     summary.append(f"  • Tolerance: {config.TOL:.2e}")
     
     # Source strength
     total_source = sum(sum(row) for row in config.QMAP)
     summary.append(f"  • Total source strength: {total_source:.4f}")
     
-    # Boundary conditions
-    bc_labels = ["Left", "Right", "Bottom", "Top"]
-    bc_types = ["Vacuum" if bc == 0.0 else "Reflective" for bc in config.BC]
-    bc_str = ", ".join(f"{label}={type_}" for label, type_ in zip(bc_labels, bc_types))
+    # Boundary conditions (canonical order: left, bottom, right, top)
+    bc_str = ", ".join(
+        f"{label}={describe_bc(value)}"
+        for label, value in zip(BC_LABELS, config.BC, strict=True)
+    )
     summary.append(f"  • Boundary conditions: {bc_str}")
     
     return "\n".join(summary)

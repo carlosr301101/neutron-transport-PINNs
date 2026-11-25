@@ -1,0 +1,204 @@
+    Screen {
+        layout: vertical;
+    }
+
+    #tabs {
+        height: 1fr;
+    }
+
+    TabPane {
+        height: 1fr;
+        padding: 1 2;
+    }
+
+    .pane {
+        height: 1fr;
+    }
+
+    .title {
+        text-style: bold;
+        color: $accent;
+        margin-bottom: 1;
+    }
+
+    .section-title {
+        text-style: bold;
+        color: $secondary;
+        margin-top: 1;
+        margin-bottom: 0;
+    }
+
+    .field-label {
+        width: 26;
+        padding-top: 1;
+    }
+
+    .field-row {
+        height: auto;
+        margin-bottom: 0;
+    }
+
+    .button-row {
+        height: auto;
+        margin: 1 0;
+    }
+
+    .button-row Button {
+        margin-right: 1;
+    }
+
+    .status {
+        margin: 1 0;
+        text-style: italic;
+    }
+
+    .detail {
+        border: round $primary;
+        padding: 1;
+        margin-top: 1;
+    }
+
+    .preview {
+        height: 24;
+        border: round $secondary;
+        margin-top: 1;
+    }
+
+    .preview-text {
+        height: auto;
+        max-height: 18;
+        overflow-y: auto;
+        border: round $secondary;
+        padding: 0 1;
+        margin-bottom: 1;
+    }
+
+    .muted {
+        color: $text-muted;
+    }
+
+    .domain-map {
+        height: auto;
+        border: round $secondary;
+        padding: 0 1;
+        margin-bottom: 1;
+    }
+
+    #zone-table,
+    #xregion-table,
+    #yregion-table,
+    #cfg2d-zmap,
+    #cfg2d-qmap,
+    #cfg2d-bc {
+        height: auto;
+    }
+
+    #zone-rows,
+    #xregion-rows,
+    #yregion-rows {
+        height: auto;
+    }
+
+    /* The inner grid must shrink to its rows: a Vertical defaults to 1fr and
+       otherwise leaves a large empty gap before the next section. */
+    #zmap-grid,
+    #qmap-grid {
+        height: auto;
+    }
+
+    .table-title {
+        text-style: bold;
+        color: $secondary;
+        margin-top: 1;
+    }
+
+    .table-header {
+        height: auto;
+        text-style: bold;
+        margin-top: 1;
+    }
+
+    .table-row {
+        height: auto;
+    }
+
+    .cell-id {
+        width: 5;
+        padding-top: 1;
+    }
+
+    .cell-head {
+        width: 15;
+        padding-top: 1;
+    }
+
+    .cell-input {
+        width: 13;
+    }
+
+    .cell-del {
+        width: 5;
+    }
+
+    .matrix-label {
+        width: 10;
+        padding-top: 1;
+    }
+
+    .matrix-row {
+        height: auto;
+    }
+
+    .matrix-cell {
+        width: 8;
+        margin-right: 1;
+    }
+
+    .bc-label {
+        width: 10;
+        padding-top: 1;
+    }
+
+    #bc-left-type,
+    #bc-bottom-type,
+    #bc-right-type,
+    #bc-top-type {
+        width: 30;
+    }
+
+    #bc-left-value,
+    #bc-bottom-value,
+    #bc-right-value,
+    #bc-top-value {
+        width: 14;
+    }
+
+    #run2d-configs {
+        height: 8;
+        border: round $primary;
+    }
+
+    #run2d-log {
+        height: 12;
+        border: round $primary;
+    }
+
+    #res2d-table {
+        height: 12;
+    }
+
+    .config-header {
+        height: auto;
+        align-vertical: middle;
+    }
+
+    #cfg2d-title {
+        width: 40;
+        margin-bottom: 0;
+    }
+
+    .config-status {
+        width: 1fr;
+        content-align: right middle;
+        text-style: italic;
+    }

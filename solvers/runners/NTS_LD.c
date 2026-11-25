@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include <unistd.h>
+#ifdef _WIN32
 #define printf __mingw_printf
+#endif
 #define eps 1e-18
 
 //////////////////////////////////////////////////////////////////////////////////// PROTOTYPES
@@ -617,7 +618,6 @@ int ld (int N,               // Quadrature order
 
   // ITERATIVE PROCESS
   start = clock(); *ITER = -1;
-  sleep(1);
   while (ERR > tol && *ITER < 10000){
     ERR = 0.0; *ITER = *ITER + 1;
 
@@ -869,7 +869,7 @@ int ld (int N,               // Quadrature order
 
   }
   end = clock();
-  *cpu_time = (long double)(end - start) / CLOCKS_PER_SEC - 1.0;
+  *cpu_time = (long double)(end - start) / CLOCKS_PER_SEC;
 
   if (S != NULL) free(S); if (SX != NULL) free(SX); if (SY != NULL) free(SY);
   if (MFLOW_X != NULL) free(MFLOW_X); if (MFLOW_Y != NULL) free(MFLOW_Y);

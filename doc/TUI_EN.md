@@ -3,7 +3,7 @@
 Terminal UI for the complete 1D workflow: configuration, runs, results,
 plots, placeholders and exports.
 
-> Scope: 1D only. The 2D C solvers remain CLI-only.
+> Scope: 1D only. The 2D workflow has its own UI: [TUI2D_EN.md](TUI2D_EN.md).
 >
 > Spanish version: [TUI.md](TUI.md).
 

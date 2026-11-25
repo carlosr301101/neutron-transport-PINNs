@@ -38,6 +38,18 @@ TEMPLATES_DIR = WORK_ROOT / "templates"
 AVAILABLE_SOLVERS = ["NTS_DD", "NTS_LD", "NTS_RM_CN", "NTS_RM_LLN", "NTS_STEP"]
 
 
+def _solver_candidates(solver_name: str) -> list[Path]:
+    """Return the possible binary paths for a solver on this platform.
+
+    Windows wheels ship ``NTS_DD.exe`` while Linux wheels ship ``NTS_DD``.
+    On Windows the extensionless Linux binary must not be considered: it
+    exists in a source checkout but cannot be executed.
+    """
+    if os.name == "nt":
+        return [SOLVERS_DIR / f"{solver_name}.exe"]
+    return [SOLVERS_DIR / solver_name]
+
+
 def get_solver_path(solver_name: str) -> Path:
     """
     Get the full path to a solver binary.
@@ -57,15 +69,12 @@ def get_solver_path(solver_name: str) -> Path:
             f"Unknown solver '{solver_name}'. Available: {AVAILABLE_SOLVERS}"
         )
 
-    solver_path = SOLVERS_DIR / solver_name
+    for solver_path in _solver_candidates(solver_name):
+        if solver_path.is_file():
+            return solver_path
 
-    if not solver_path.exists():
-        raise FileNotFoundError(f"Solver binary not found: {solver_path}")
-
-    if not solver_path.is_file():
-        raise FileNotFoundError(f"Solver path is not a file: {solver_path}")
-
-    return solver_path
+    searched = ", ".join(str(path) for path in _solver_candidates(solver_name))
+    raise FileNotFoundError(f"Solver binary not found: {searched}")
 
 
 def get_input_path(index: int) -> Path:
@@ -182,8 +191,12 @@ def verify_solver_binaries() -> dict[str, bool]:
     status = {}
 
     for solver in AVAILABLE_SOLVERS:
-        solver_path = SOLVERS_DIR / solver
-        status[solver] = solver_path.exists() and solver_path.is_file()
+        try:
+            get_solver_path(solver)
+        except (ValueError, FileNotFoundError):
+            status[solver] = False
+        else:
+            status[solver] = True
 
     return status
 

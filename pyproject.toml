@@ -44,7 +44,9 @@ nts-1d-run-dd = "cli.run_1d:cli_dd"
 nts-1d-run-step = "cli.run_1d:cli_step"
 nts-1d-run-sc = "cli.run_1d:cli_sc"
 nts-1d-config = "utils.generate_1d_config:main"
+nts-2d-config = "utils.generate_2d_config:main"
 nts-tui = "tui.app:main"
+nts-tui-2d = "tui2d.app:main"
 nts-generate = "cli.generate_placeholder:cli"
 
 [project.optional-dependencies]
@@ -67,12 +69,13 @@ build-backend = "setuptools.build_meta"
 version = { attr = "tui._version.__version__" }
 
 [tool.setuptools.packages.find]
-include = ["cli", "core", "execution", "utils", "tui*", "solvers*"]
+include = ["cli", "core", "execution", "utils", "tui*", "tui2d*", "solvers*"]
 
 [tool.setuptools]
 
 [tool.setuptools.package-data]
 tui = ["*.tcss"]
+tui2d = ["*.tcss"]
 
 [tool.ruff]
 line-length = 88

@@ -262,7 +262,7 @@ Nota: Índice (0,0) = zona 1, (0,1) = zona 2, etc.
 
 **¿Qué es?** 4 valores que especifican condiciones en los 4 bordes del dominio.
 
-**Formato**: `BOTTOM TOP LEFT RIGHT`
+**Formato**: `LEFT BOTTOM RIGHT TOP`
 
 **Coordenadas**:
 - **BOTTOM**: Frontera en y = 0 (borde inferior)

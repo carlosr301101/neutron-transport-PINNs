@@ -97,7 +97,7 @@ class PlotStudioPane(VerticalScroll):
         self.call_after_refresh(self._after_compose)
 
     def _after_compose(self) -> None:
-        """Carga los resultados y aplica un origen pedido antes de componer."""
+        """Load results and apply a source requested before composition."""
         self.ensure_loaded()
         if self._pending_source is not None:
             target, self._pending_source = self._pending_source, None
@@ -143,13 +143,13 @@ class PlotStudioPane(VerticalScroll):
                 run_select.value = options[0][1]
 
     def set_source(self, path: Path | str) -> None:
-        """Selecciona *path*, esperando a la composición si hace falta."""
+        """Select *path*, waiting for composition when necessary."""
         self._loaded = True
         self._pending_source = str(Path(path))
         try:
             self.query_one("#plot-result", Select)
         except NoMatches:
-            return  # `_after_compose` lo aplicará
+            return  # `_after_compose` will apply it
         target, self._pending_source = self._pending_source, None
         self._apply_source(target)
 

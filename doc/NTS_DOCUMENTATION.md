@@ -50,16 +50,16 @@ Each program has **2 documentation files**:
 ```bash
 cd /path/to/nts
 
-# Fix mingw pragma if present
-for prog in DD LD RM_CN RM_LLN; do
-  sed -i 's/#define printf __mingw_printf/\/\/ #define printf __mingw_printf/' solvers/runners/NTS_${prog}.c
-done
+# Compile the five 2D solvers (Linux)
+make -C solvers
 
-# Compile all
-for prog in DD LD RM_CN RM_LLN; do
-  gcc -O2 -o solvers/runners/NTS_${prog} solvers/runners/NTS_${prog}.c -lm
-done
+# Equivalent single command for one solver
+gcc -O2 -o solvers/runners/NTS_DD solvers/runners/NTS_DD.c -lm
 ```
+
+The sources define `printf` as `__mingw_printf` only under `#ifdef _WIN32`,
+so no source edits are needed before compiling on Linux. On Windows use
+`solvers/build_windows.ps1` (MSYS2/MinGW-w64), which links with `-static`.
 
 ### Run Example
 
@@ -169,7 +169,7 @@ NR_Y          - Number of Y regions
 YDOM          - Y region lengths and nodes: L[cm] M [...] for each region
 ZMAP          - Zone map matrix (NR_Y × NR_X) with indices 1 to NZ
 QMAP          - Source map matrix (NR_Y × NR_X)
-BC            - Boundary conditions: LEFT RIGHT BOTTOM TOP
+BC            - Boundary conditions: LEFT BOTTOM RIGHT TOP
 TOL           - Convergence tolerance (1e-2 to 1e-7 recommended)
 ```
 
