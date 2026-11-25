@@ -21,40 +21,34 @@ jobs:
     name: Build manylinux wheel
     needs: ci
     runs-on: ubuntu-latest
-    container: quay.io/pypa/manylinux_2_28_x86_64
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Compile the 2D solvers
-        run: make -C solvers CC=gcc
-      - name: Build manylinux wheel
+      - name: Build wheel and smoke-test in manylinux
         shell: bash
         env:
           NTS_WHEEL_PLATFORM: manylinux_2_28_x86_64
         run: |
           set -euo pipefail
-          PY="$(ls -d /opt/python/cp314-cp314/bin/python 2>/dev/null || true)"
-          if [ -z "$PY" ]; then
-            PY="$(ls -d /opt/python/cp313-cp313/bin/python | tail -1)"
-          fi
-          "$PY" -m pip install --upgrade build
-          "$PY" -m build --wheel --outdir dist
-      - name: Smoke-test the wheel
-        shell: bash
-        run: |
-          set -euo pipefail
-          PY="$(ls -d /opt/python/cp314-cp314/bin/python 2>/dev/null || true)"
-          if [ -z "$PY" ]; then
-            PY="$(ls -d /opt/python/cp313-cp313/bin/python | tail -1)"
-          fi
-          "$PY" -m venv /tmp/nts-smoke
-          /tmp/nts-smoke/bin/pip install dist/*.whl
-          export NTS_HOME=/tmp/nts-home
-          mkdir -p "$NTS_HOME"
-          /tmp/nts-smoke/bin/nts status
-          printf '4\n1\n0.5 0.3\n1\n10.0 4\n1\n10.0 4\n1\n1.0\n0.0 0.0 0.0 0.0\n1e-4\n' > "$NTS_HOME/input.txt"
-          /tmp/nts-smoke/bin/nts run -s NTS_DD -i "$NTS_HOME/input.txt" | tee run.txt
-          grep -q "Successful: 1" run.txt
+          docker run --rm -e NTS_WHEEL_PLATFORM -v "$PWD:/src" -w /src \
+            quay.io/pypa/manylinux_2_28_x86_64 bash -lc '
+              set -euo pipefail
+              make -C solvers CC=gcc
+              PY="$(ls -d /opt/python/cp314-cp314/bin/python 2>/dev/null || true)"
+              if [ -z "$PY" ]; then
+                PY="$(ls -d /opt/python/cp313-cp313/bin/python | tail -1)"
+              fi
+              "$PY" -m pip install --upgrade build
+              "$PY" -m build --wheel --outdir dist
+              "$PY" -m venv /tmp/nts-smoke
+              /tmp/nts-smoke/bin/pip install dist/*.whl
+              export NTS_HOME=/tmp/nts-home
+              mkdir -p "$NTS_HOME"
+              /tmp/nts-smoke/bin/nts status
+              printf "4\n1\n0.5 0.3\n1\n10.0 4\n1\n10.0 4\n1\n1.0\n0.0 0.0 0.0 0.0\n1e-4\n" > "$NTS_HOME/input.txt"
+              /tmp/nts-smoke/bin/nts run -s NTS_DD -i "$NTS_HOME/input.txt" | tee run.txt
+              grep -q "Successful: 1" run.txt
+            '
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-linux
