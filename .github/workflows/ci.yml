@@ -42,7 +42,7 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           gcc --version
-          GCC_WIN="$(cygpath -w "$(command -v gcc)")"
+          GCC_WIN="$(cygpath -w "$(command -v gcc.exe)")"
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File solvers/build_windows.ps1 -Gcc "$GCC_WIN"
       - name: Run tests
         run: uv run python -m cli.run_tests
@@ -127,7 +127,7 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           gcc --version
-          GCC_WIN="$(cygpath -w "$(command -v gcc)")"
+          GCC_WIN="$(cygpath -w "$(command -v gcc.exe)")"
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File solvers/build_windows.ps1 -Gcc "$GCC_WIN"
       - name: Build platform wheel
         shell: bash

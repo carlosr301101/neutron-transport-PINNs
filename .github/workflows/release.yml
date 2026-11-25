@@ -76,7 +76,7 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           gcc --version
-          GCC_WIN="$(cygpath -w "$(command -v gcc)")"
+          GCC_WIN="$(cygpath -w "$(command -v gcc.exe)")"
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File solvers/build_windows.ps1 -Gcc "$GCC_WIN"
       - name: Build win_amd64 wheel
         shell: pwsh

@@ -25,6 +25,10 @@ function Resolve-Gcc([string]$Candidate) {
         if (Test-Path -LiteralPath $Candidate -PathType Leaf) {
             return (Resolve-Path -LiteralPath $Candidate).Path
         }
+        $withExtension = "$Candidate.exe"
+        if (Test-Path -LiteralPath $withExtension -PathType Leaf) {
+            return (Resolve-Path -LiteralPath $withExtension).Path
+        }
         $command = Get-Command $Candidate -ErrorAction SilentlyContinue
         if ($command) {
             return $command.Source
