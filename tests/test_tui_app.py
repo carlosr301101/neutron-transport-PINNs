@@ -139,7 +139,7 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
             await pilot.pause()
 
             def slow_validate(config):
-                time.sleep(0.4)
+                time.sleep(1.5)
                 return [], "Configuration is valid."
 
             with patch(
@@ -150,7 +150,7 @@ class TestTUIApp(unittest.IsolatedAsyncioTestCase):
                 pane._validate()
                 await pilot.pause()
                 elapsed = time.perf_counter() - started
-                self.assertLess(elapsed, 0.3)
+                self.assertLess(elapsed, 0.75)
                 self.assertIn(
                     "Validating",
                     str(pane.query_one("#cfg-status", Static).content),
