@@ -165,20 +165,26 @@ Windows: repeat with a venv and `nts.exe`.
 
 `.github/workflows/ci.yml`:
 
+- Runs on branch pushes and pull requests, **not** on tags.
 - Ubuntu and Windows compile the 2D solvers and run the test suite.
 - A `build` matrix builds the platform wheel for each OS, installs it in a
   clean venv, runs `nts status` and executes a 2D case.
 - Linux also builds the sdist and runs `twine check`.
+- When Release calls it (`workflow_call` with `run_build: false`), the `build`
+  job is skipped, so there are no duplicate smoke wheels or artifacts.
 
 `.github/workflows/release.yml`, on `v*` tags:
 
-1. Runs `ci.yml`.
-2. Builds the manylinux wheel in `quay.io/pypa/manylinux_2_28_x86_64`.
-3. Builds the `win_amd64` wheel with MSYS2/UCRT64 and `-static`.
+1. Runs the CI tests once (no separate push CI).
+2. Builds the manylinux wheel in `quay.io/pypa/manylinux_2_28_x86_64` and
+   rejects the build if the tag is not `manylinux_2_28_x86_64`.
+3. Builds the `win_amd64` wheel with MSYS2/UCRT64 and `-static`, and rejects the
+   build if the tag is not `win_amd64`.
 4. Smoke-tests both wheels (`nts status` + `nts run`).
 5. Builds the sdist.
-6. Checks the tag against `tui/_version.py`, runs `twine check` and publishes
-   with trusted publishing.
+6. Downloads only `wheel-linux`, `wheel-windows` and `sdist`, verifies that
+   there are exactly three files, checks the tag against `tui/_version.py`,
+   runs `twine check` and publishes with trusted publishing.
 
 Configure the pending publisher in PyPI before the first tag:
 

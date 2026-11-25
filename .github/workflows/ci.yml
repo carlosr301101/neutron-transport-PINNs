@@ -2,9 +2,15 @@ name: CI
 
 on:
   push:
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      run_build:
+        description: Build and smoke-test the platform wheels
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -99,6 +105,7 @@ jobs:
 
   build:
     name: Build wheel ${{ matrix.os }}
+    if: github.event_name != 'workflow_call' || inputs.run_build
     strategy:
       fail-fast: false
       matrix:

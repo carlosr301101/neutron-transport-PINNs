@@ -165,20 +165,26 @@ En Windows, repetir con una venv y `nts.exe`.
 
 `.github/workflows/ci.yml`:
 
+- Se ejecuta con pushes de ramas y pull requests, **no** con tags.
 - Ubuntu y Windows compilan los solvers 2D y ejecutan los tests.
 - Una matriz `build` construye el wheel de cada plataforma, lo instala en una
   venv limpia, ejecuta `nts status` y corre un caso 2D.
 - Linux construye además el sdist y ejecuta `twine check`.
+- Cuando lo llama Release (`workflow_call` con `run_build: false`), el job
+  `build` se omite: no hay wheels de humo ni artefactos duplicados.
 
 `.github/workflows/release.yml`, con tags `v*`:
 
-1. Ejecuta `ci.yml`.
-2. Construye el wheel manylinux en `quay.io/pypa/manylinux_2_28_x86_64`.
-3. Construye el wheel `win_amd64` con MSYS2/UCRT64 y `-static`.
+1. Ejecuta los tests una sola vez (no hay CI suelto en el tag).
+2. Construye el wheel manylinux en `quay.io/pypa/manylinux_2_28_x86_64` y falla
+   si el tag no es `manylinux_2_28_x86_64`.
+3. Construye el wheel `win_amd64` con MSYS2/UCRT64 y `-static`, y falla si el
+   tag no es `win_amd64`.
 4. Prueba ambos wheels (`nts status` + `nts run`).
 5. Construye el sdist.
-6. Comprueba el tag contra `tui/_version.py`, ejecuta `twine check` y publica
-   con trusted publishing.
+6. Descarga solo `wheel-linux`, `wheel-windows` y `sdist`, verifica que haya
+   exactamente tres archivos, comprueba el tag contra `tui/_version.py`,
+   ejecuta `twine check` y publica con trusted publishing.
 
 Configurar el pending publisher en PyPI antes del primer tag:
 

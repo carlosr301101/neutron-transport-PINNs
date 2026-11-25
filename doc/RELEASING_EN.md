@@ -198,17 +198,21 @@ Pushing only the new tag is safer.
 
 ## 9. What `release.yml` does
 
-On `v4.0.0`:
+On `v4.0.0` (the tag does **not** run the standalone CI):
 
-1. Runs CI on Ubuntu and Windows (`ci.yml`), including the solver compilation,
-   the `cp1252` console test and the platform-wheel smoke tests.
+1. Calls the reusable `ci.yml` with `run_build: false`, so the Linux and
+   Windows tests run once and the smoke-wheel build job is skipped.
 2. If everything passes, checks `v4.0.0 == tui/_version.py`.
-3. Builds the manylinux wheel in `quay.io/pypa/manylinux_2_28_x86_64`.
-4. Builds the `win_amd64` wheel with MSYS2/UCRT64 and `-static`.
+3. Builds the manylinux wheel in `quay.io/pypa/manylinux_2_28_x86_64` and
+   fails if the tag is not `manylinux_2_28_x86_64`.
+4. Builds the `win_amd64` wheel with MSYS2/UCRT64 and `-static`, and fails if
+   the tag is not `win_amd64`.
 5. Smoke-tests both wheels (`nts status` and a 2D run).
 6. Builds the sdist (C sources, no binaries).
-7. Runs `uvx twine check dist/*`.
-8. Publishes all three files with:
+7. Downloads only `wheel-linux`, `wheel-windows` and `sdist`, then verifies
+   that exactly three files are present.
+8. Runs `uvx twine check dist/*`.
+9. Publishes those three files with:
 
 ```bash
 uv publish --trusted-publishing automatic

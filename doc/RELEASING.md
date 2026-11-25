@@ -198,17 +198,21 @@ Pero es más seguro subir solo el tag nuevo.
 
 ## 9. Qué hace `release.yml`
 
-Al subir `v4.0.0`:
+Al subir `v4.0.0` (el tag **no** ejecuta el CI suelto):
 
-1. Ejecuta CI en Ubuntu y Windows (`ci.yml`), incluida la compilación de
-   solvers, la prueba de consola `cp1252` y los smoke tests de wheel.
+1. Llama al `ci.yml` reutilizable con `run_build: false`: los tests de Linux y
+   Windows corren una vez y el job de wheels de humo se omite.
 2. Si todo pasa, verifica `v4.0.0 == tui/_version.py`.
-3. Construye el wheel manylinux en `quay.io/pypa/manylinux_2_28_x86_64`.
-4. Construye el wheel `win_amd64` con MSYS2/UCRT64 y `-static`.
+3. Construye el wheel manylinux en `quay.io/pypa/manylinux_2_28_x86_64` y falla
+   si el tag no es `manylinux_2_28_x86_64`.
+4. Construye el wheel `win_amd64` con MSYS2/UCRT64 y `-static`, y falla si el
+   tag no es `win_amd64`.
 5. Prueba ambos wheels (`nts status` y una corrida 2D).
 6. Construye el sdist (fuentes C, sin binarios).
-7. Ejecuta `uvx twine check dist/*`.
-8. Publica los tres archivos con:
+7. Descarga solo `wheel-linux`, `wheel-windows` y `sdist`, y verifica que haya
+   exactamente tres archivos.
+8. Ejecuta `uvx twine check dist/*`.
+9. Publica esos tres archivos con:
 
 ```bash
 uv publish --trusted-publishing automatic

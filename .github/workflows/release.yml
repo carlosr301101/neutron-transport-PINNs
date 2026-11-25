@@ -14,8 +14,10 @@ concurrency:
 
 jobs:
   ci:
-    name: CI
+    name: CI tests
     uses: ./.github/workflows/ci.yml
+    with:
+      run_build: false
 
   build-linux-wheel:
     name: Build manylinux wheel
@@ -49,6 +51,10 @@ jobs:
               /tmp/nts-smoke/bin/nts run -s NTS_DD -i "$NTS_HOME/input.txt" | tee run.txt
               grep -q "Successful: 1" run.txt
             '
+      - name: Check the manylinux tag
+        run: |
+          ls -l dist
+          test -n "$(ls dist/*manylinux_2_28_x86_64.whl)"
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-linux
@@ -83,6 +89,11 @@ jobs:
         env:
           NTS_WHEEL_PLATFORM: win_amd64
         run: uv build --wheel --out-dir dist
+      - name: Check the win_amd64 tag
+        shell: pwsh
+        run: |
+          $wheel = Get-ChildItem dist\*win_amd64.whl -ErrorAction SilentlyContinue
+          if (-not $wheel) { throw "win_amd64 wheel was not built" }
       - name: Smoke-test the wheel
         shell: pwsh
         run: |
@@ -150,12 +161,29 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
+          name: wheel-linux
           path: dist
-          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-windows
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+
+      - name: Verify the three release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -l dist
+          test "$(ls dist/*.whl dist/*.tar.gz | wc -l)" -eq 3
+          test -n "$(ls dist/*manylinux_2_28_x86_64.whl)"
+          test -n "$(ls dist/*win_amd64.whl)"
+          test -n "$(ls dist/*.tar.gz)"
 
       - name: Check metadata
         run: |
-          ls -l dist
           uvx twine check dist/*
 
       - name: Publish with trusted publishing
