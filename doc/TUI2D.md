@@ -76,6 +76,11 @@ tabla de fronteras.
 
 ### Tablas y campos
 
+- **Fronteras** (justo debajo del mapa): una fila por lado en el orden
+  canónico `left, bottom, right, top`:
+  - `Reflective` → `-1.0`
+  - `Vacuum` → `0.0`
+  - `Incoming flux` → el valor positivo escrito
 - **Zonas**: `Name` opcional, `Sigma_t`, `Sigma_s`. `Sigma_s` debe ser menor
   que `Sigma_t`. Los nombres se guardan como `ZONE_NAMES`; hay que llenarlos
   todos o dejar todos en blanco.
@@ -86,11 +91,6 @@ tabla de fronteras.
   columnas son X (izquierda → derecha), valores `1..NZ`. La matriz se redimensiona
   automáticamente al cambiar las regiones.
 - **QMAP**: un valor de fuente por región, `>= 0`.
-- **Fronteras**: una fila por lado en el orden canónico
-  `left, bottom, right, top`:
-  - `Reflective` → `-1.0`
-  - `Vacuum` → `0.0`
-  - `Incoming flux` → el valor positivo escrito
 - **Ajustes del solver**: `N` (par, 2–18), `TOL` (rango Python `1e-7 … 1e-2`)
   y el solver preferido (`NTS_DD` por defecto). El solver se guarda como
   `_solver`, la misma pista que escribe `nts-2d-config`; no cambia la física

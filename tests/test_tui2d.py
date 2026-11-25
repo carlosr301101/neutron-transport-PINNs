@@ -11,6 +11,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from textual.containers import Horizontal
 from textual.widgets import DataTable, Input, Select, Static, TabbedContent
 
 from tui2d.app import NTS2DApp
@@ -164,6 +165,33 @@ class TestTUI2DApp(unittest.IsolatedAsyncioTestCase):
             self.assertLess(qmap.size.height, 12)
             gap = qmap.region.y - (zmap.region.y + zmap.size.height)
             self.assertLess(gap, 10)
+
+    async def test_bc_section_is_visible(self):
+        app = NTS2DApp()
+        async with app.run_test(size=(120, 45)) as pilot:
+            await pilot.pause()
+            app.query_one("#tabs", TabbedContent).active = "tab2d-config"
+            await pilot.pause()
+            pane = app.query_one(Config2DPane)
+            bc = pane.query_one("#cfg2d-bc", BCTable)
+            # A Vertical defaults to 1fr: without height:auto the four rows
+            # were clipped and could not be edited.
+            self.assertGreaterEqual(bc.size.height, 12)
+            rows = [
+                child for child in bc.children if isinstance(child, Horizontal)
+            ]
+            self.assertEqual(len(rows), 4)
+            last = rows[-1]
+            self.assertLessEqual(
+                last.region.y + last.size.height,
+                bc.region.y + bc.size.height,
+            )
+            for side in ("left", "bottom", "right", "top"):
+                select = pane.query_one(f"#bc-{side}-type", Select)
+                self.assertFalse(select.disabled)
+                self.assertEqual(select.region.width, 30)
+            # The BC editor lives under the domain map, before the zone table.
+            self.assertLess(bc.region.y, pane.query_one(ZoneTable).region.y)
 
     async def test_bc_table_round_trip(self):
         app = NTS2DApp()

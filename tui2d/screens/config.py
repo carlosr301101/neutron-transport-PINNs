@@ -64,6 +64,10 @@ class Config2DPane(VerticalScroll):
         yield DomainMap(id="cfg2d-domain", classes="domain-map")
         yield Static("", id="cfg2d-counts", classes="muted")
 
+        # Boundary conditions sit next to the map: they drive the BC legend and
+        # are usually the first thing to adjust.
+        yield BCTable(id="cfg2d-bc")
+
         yield Static("Material zones", classes="section-title")
         yield ZoneTable()
 
@@ -127,8 +131,6 @@ class Config2DPane(VerticalScroll):
             ),
             classes="field-row",
         )
-
-        yield BCTable(id="cfg2d-bc")
 
         yield Static("input.txt preview", classes="section-title")
         yield Static(

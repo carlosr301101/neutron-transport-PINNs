@@ -72,6 +72,11 @@ The map updates on every edit of the region tables, `ZMAP` or the BC table.
 
 ### Tables and fields
 
+- **Boundary conditions** (directly under the domain map): one row per side
+  in the canonical order `left, bottom, right, top`:
+  - `Reflective` → `-1.0`
+  - `Vacuum` → `0.0`
+  - `Incoming flux` → the typed positive value
 - **Material zones**: optional `Name`, `Sigma_t`, `Sigma_s`. `Sigma_s` must be
   lower than `Sigma_t`. Names are saved as `ZONE_NAMES`; fill all of them or
   leave all blank.
@@ -82,11 +87,6 @@ The map updates on every edit of the region tables, `ZMAP` or the BC table.
   X (left to right), values `1..NZ`. The grid resizes automatically when the
   region tables change.
 - **QMAP**: one source value per region, `>= 0`.
-- **Boundary conditions**: one row per side in the canonical order
-  `left, bottom, right, top`:
-  - `Reflective` → `-1.0`
-  - `Vacuum` → `0.0`
-  - `Incoming flux` → the typed positive value
 - **Solver settings**: `N` (even, 2–18), `TOL` (Python range `1e-7 … 1e-2`)
   and the preferred solver (`NTS_DD` by default). The solver is stored as
   `_solver`, a hint that `nts-2d-config` also writes; the solver never changes

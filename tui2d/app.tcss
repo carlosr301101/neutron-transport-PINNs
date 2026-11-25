@@ -88,7 +88,8 @@
     #xregion-table,
     #yregion-table,
     #cfg2d-zmap,
-    #cfg2d-qmap {
+    #cfg2d-qmap,
+    #cfg2d-bc {
         height: auto;
     }
 
