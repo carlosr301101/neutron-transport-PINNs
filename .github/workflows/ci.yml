@@ -38,8 +38,12 @@ jobs:
           install: mingw-w64-ucrt-x86_64-gcc
       - name: Build 2D solvers (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./solvers/build_windows.ps1 -Gcc "C:\msys64\ucrt64\bin\gcc.exe"
+        shell: msys2 {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          gcc --version
+          GCC_WIN="$(cygpath -w "$(command -v gcc)")"
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File solvers/build_windows.ps1 -Gcc "$GCC_WIN"
       - name: Run tests
         run: uv run python -m cli.run_tests
       - name: Lint
@@ -119,8 +123,12 @@ jobs:
           install: mingw-w64-ucrt-x86_64-gcc
       - name: Build 2D solvers (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./solvers/build_windows.ps1 -Gcc "C:\msys64\ucrt64\bin\gcc.exe"
+        shell: msys2 {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          gcc --version
+          GCC_WIN="$(cygpath -w "$(command -v gcc)")"
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File solvers/build_windows.ps1 -Gcc "$GCC_WIN"
       - name: Build platform wheel
         shell: bash
         env:

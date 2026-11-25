@@ -234,9 +234,14 @@ así que en Linux no hace falta editar nada. En Windows/MinGW-w64 se usa
 `libgcc_s_*.dll` ni `libwinpthread-1.dll`:
 
 ```powershell
+# Desde el shell "MSYS2 UCRT64" (gcc ya en PATH)
 pwsh -File solvers/build_windows.ps1
-pwsh -File solvers/build_windows.ps1 -Gcc "C:\msys64\ucrt64\bin\gcc.exe"
+# O indicando el compilador
+pwsh -File solvers/build_windows.ps1 -Gcc (cygpath -w (which gcc))
 ```
+
+El script acepta también una ruta Windows (`-Gcc "C:\msys64\ucrt64\bin\gcc.exe"`)
+y, si se omite, busca gcc en `PATH`, `MSYS2_LOCATION` y `C:\msys64`.
 
 Los binarios y las fuentes deben mantenerse sincronizados: un binario viejo
 puede rechazar un `input.txt` que la fuente actual acepta. El test

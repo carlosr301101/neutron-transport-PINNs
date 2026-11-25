@@ -61,13 +61,21 @@ podman run --rm -v "$PWD:/src:Z" -w /src \
 
 ## 3. Construir el wheel de Windows
 
+Desde un shell **MSYS2 UCRT64** (`gcc` en el `PATH`):
+
 ```powershell
-.\solvers\build_windows.ps1 -Gcc "C:\msys64\ucrt64\bin\gcc.exe"
+pwsh -File solvers/build_windows.ps1
+# o indicar el compilador explícitamente
+pwsh -File solvers/build_windows.ps1 -Gcc (cygpath -w (which gcc))
+
 $env:NTS_WHEEL_PLATFORM = "win_amd64"
 uv build --wheel --out-dir dist
 ```
 
-Los `.exe` se enlazan con `-static`, sin DLLs de MinGW.
+`build_windows.ps1` también acepta una ruta Windows como
+`-Gcc "C:\msys64\ucrt64\bin\gcc.exe"` y, si se omite `-Gcc`, busca en
+`MSYS2_LOCATION` o en la instalación estándar `C:\msys64`. Los `.exe` se
+enlazan con `-static`, sin DLLs de MinGW.
 
 ## 4. Construir el sdist
 

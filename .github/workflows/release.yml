@@ -72,8 +72,12 @@ jobs:
           update: false
           install: mingw-w64-ucrt-x86_64-gcc
       - name: Compile the 2D solvers
-        shell: pwsh
-        run: ./solvers/build_windows.ps1 -Gcc "C:\msys64\ucrt64\bin\gcc.exe"
+        shell: msys2 {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          gcc --version
+          GCC_WIN="$(cygpath -w "$(command -v gcc)")"
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File solvers/build_windows.ps1 -Gcc "$GCC_WIN"
       - name: Build win_amd64 wheel
         shell: pwsh
         env:
