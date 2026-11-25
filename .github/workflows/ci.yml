@@ -94,21 +94,74 @@ jobs:
           }
 
   build:
-    name: Build distributions
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    name: Build wheel ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.14"
           enable-cache: true
-      - name: Build wheel and sdist
-        run: uv build --clear
-      - name: Check metadata
-        run: uvx twine check dist/*
+      - name: Build 2D solvers (Linux)
+        if: runner.os == 'Linux'
+        run: make -C solvers
+      - name: Setup MSYS2
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: mingw-w64-ucrt-x86_64-gcc
+      - name: Build 2D solvers (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./solvers/build_windows.ps1 -Gcc "C:\msys64\ucrt64\bin\gcc.exe"
+      - name: Build platform wheel
+        shell: bash
+        env:
+          NTS_WHEEL_PLATFORM: ${{ runner.os == 'Windows' && 'win_amd64' || 'linux_x86_64' }}
+        run: uv build --wheel --out-dir dist
+      - name: Install wheel and run a 2D case (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv venv .smoke --python 3.14
+          uv pip install --python .smoke/bin/python dist/*.whl
+          export NTS_HOME="$RUNNER_TEMP/nts-smoke"
+          mkdir -p "$NTS_HOME"
+          .smoke/bin/nts status
+          printf '4\n1\n0.5 0.3\n1\n10.0 4\n1\n10.0 4\n1\n1.0\n0.0 0.0 0.0 0.0\n1e-4\n' > "$NTS_HOME/input.txt"
+          .smoke/bin/nts run -s NTS_DD -i "$NTS_HOME/input.txt" | tee run.txt
+          grep -q "Successful: 1" run.txt
+      - name: Install wheel and run a 2D case (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          uv venv .smoke --python 3.14
+          uv pip install --python .smoke\Scripts\python.exe (Get-ChildItem dist\*.whl).FullName
+          $env:NTS_HOME = Join-Path $env:RUNNER_TEMP 'nts-smoke'
+          New-Item -ItemType Directory -Force -Path $env:NTS_HOME | Out-Null
+          .\.smoke\Scripts\nts.exe status
+          $input = Join-Path $env:NTS_HOME 'input.txt'
+          @('4','1','0.5 0.3','1','10.0 4','1','10.0 4','1','1.0','0.0 0.0 0.0 0.0','1e-4') |
+            Set-Content -Path $input -Encoding ascii
+          $run = .\.smoke\Scripts\nts.exe run -s NTS_DD -i $input 2>&1 | Out-String
+          Write-Host $run
+          if ($run -notmatch 'Successful: 1') { throw 'installed wheel could not run NTS_DD' }
+      - name: Build sdist and check metadata
+        if: runner.os == 'Linux'
+        run: |
+          uv build --sdist --out-dir dist
+          uvx twine check dist/*
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: dist-${{ runner.os }}
           path: dist/

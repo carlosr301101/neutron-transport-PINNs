@@ -13,6 +13,14 @@ cambio de versión -> tests -> build -> commit -> push main -> tag vX.Y.Z
 El workflow se dispara únicamente con tags `v*`. Antes de publicar ejecuta
 `ci.yml` completo: si los tests de Ubuntu o Windows fallan, `publish` no corre.
 
+Cada release genera tres archivos en PyPI:
+
+```text
+neutron_transport_pinns-<version>-py3-none-manylinux_2_28_x86_64.whl
+neutron_transport_pinns-<version>-py3-none-win_amd64.whl
+neutron_transport_pinns-<version>.tar.gz
+```
+
 ## 0. Antes de empezar
 
 Verificar una sola vez:
@@ -40,9 +48,9 @@ No debe haber cambios sin commitear.
 Usar SemVer:
 
 ```text
-3.10.0 -> 3.10.1   fix
-3.10.0 -> 3.11.0  feature
-3.10.0 -> 4.0.0   cambio incompatible
+4.0.0 -> 4.0.1   fix
+4.0.0 -> 4.1.0   feature
+4.0.0 -> 5.0.0   cambio incompatible
 ```
 
 No reutilizar una versión ya publicada en PyPI.
@@ -58,7 +66,7 @@ tui/_version.py
 Editar:
 
 ```python
-__version__ = "3.10.1"
+__version__ = "4.0.0"
 ```
 
 No editar `version` en `pyproject.toml`; es dinámico:
@@ -81,7 +89,7 @@ Añadir la sección al inicio de:
 Ejemplo:
 
 ```markdown
-## [3.10.1] - 2026-11-18 - Título breve
+## [4.0.0] - 2026-11-24 - Flujo 2D y wheels por plataforma
 
 ### Fixed
 - Descripción del cambio.
@@ -100,43 +108,65 @@ Revisar y actualizar si aparecen:
 ```bash
 uv run python -m cli.run_tests
 uvx ruff check --select F,E9 .
-uv build --clear
+```
+
+Construir los artefactos igual que el release:
+
+```bash
+# Linux (dentro de manylinux_2_28) o local para un wheel linux_x86_64
+make -C solvers
+NTS_WHEEL_PLATFORM=manylinux_2_28_x86_64 uv build --wheel --out-dir dist
+
+# Windows
+# .\solvers\build_windows.ps1
+# $env:NTS_WHEEL_PLATFORM = "win_amd64"; uv build --wheel --out-dir dist
+
+uv build --sdist --out-dir dist
 uvx twine check dist/*
 ```
 
-Comprobar el wheel:
+Comprobar los artefactos:
 
 ```bash
 uv run python - <<'PY'
-import glob, zipfile
+import glob, stat, tarfile, zipfile
 
-wheel = glob.glob("dist/*.whl")[0]
+wheel = glob.glob("dist/*manylinux*.whl")[0]
 with zipfile.ZipFile(wheel) as archive:
-    names = archive.namelist()
+    infos = {info.filename: info for info in archive.infolist()}
 
 print(wheel)
-print("tcss:", [n for n in names if n.endswith(".tcss")])
-print("tests:", [n for n in names if n.startswith("tests/")])
-print("C:", [n for n in names if n.endswith((".c", ".h"))])
+for name in ("NTS_DD", "NTS_LD", "NTS_STEP", "NTS_RM_CN", "NTS_RM_LLN"):
+    mode = infos[f"solvers/runners/{name}"].external_attr >> 16
+    assert mode & stat.S_IXUSR, name
+assert "tui/app.tcss" in infos and "tui2d/app.tcss" in infos
+assert "templates/base_input.json" in infos
+assert not any(name.endswith(".c") for name in infos)
+
+sdist = glob.glob("dist/*.tar.gz")[0]
+with tarfile.open(sdist) as archive:
+    names = archive.getnames()
+assert any(name.endswith("NTS_DD.c") for name in names)
+assert any(name.endswith("solvers/Makefile") for name in names)
+assert not any(name.endswith("/solvers/runners/NTS_DD") for name in names)
+print("wheel y sdist OK")
 PY
 ```
-
-Debe incluir `tui/app.tcss` y no incluir tests ni C.
 
 Smoke test opcional:
 
 ```bash
-uv venv /tmp/nts-release
-uv pip install --python /tmp/nts-release/bin/python dist/*.whl
-/tmp/nts-release/bin/nts --help
-/tmp/nts-release/bin/nts-tui
+uv venv /tmp/nts-release --python 3.14
+uv pip install --python /tmp/nts-release/bin/python dist/*manylinux*.whl
+/tmp/nts-release/bin/nts status        # cinco OK
+/tmp/nts-release/bin/python -c "import tui2d.app; print('TUI 2D OK')"
 ```
 
 ## 6. Commit
 
 ```bash
 git add tui/_version.py CHANGELOG.md Changelog_EN.md README.md
-git commit -m "chore(release): v3.10.1"
+git commit -m "chore(release): 4.0.0"
 ```
 
 Añadir otros archivos si el release incluye cambios de código o docs.
@@ -154,8 +184,8 @@ Esperar a que CI pase en GitHub Actions.
 El tag debe coincidir exactamente con `tui/_version.py`.
 
 ```bash
-git tag -a v3.10.1 -m "neutron-transport-pinns 3.10.1"
-git push origin v3.10.1
+git tag -s v4.0.0 -m "neutron-transport-pinns 4.0.0"
+git push origin v4.0.0
 ```
 
 También vale:
@@ -168,14 +198,17 @@ Pero es más seguro subir solo el tag nuevo.
 
 ## 9. Qué hace `release.yml`
 
-Al subir `v3.10.1`:
+Al subir `v4.0.0`:
 
-1. Ejecuta CI en Ubuntu y Windows (`ci.yml`), incluida la prueba de consola
-   `cp1252`.
-2. Si ambos pasan, verifica `v3.10.1 == tui/_version.py`.
-3. Ejecuta `uv build --clear`.
-4. Ejecuta `uvx twine check dist/*`.
-5. Publica con:
+1. Ejecuta CI en Ubuntu y Windows (`ci.yml`), incluida la compilación de
+   solvers, la prueba de consola `cp1252` y los smoke tests de wheel.
+2. Si todo pasa, verifica `v4.0.0 == tui/_version.py`.
+3. Construye el wheel manylinux en `quay.io/pypa/manylinux_2_28_x86_64`.
+4. Construye el wheel `win_amd64` con MSYS2/UCRT64 y `-static`.
+5. Prueba ambos wheels (`nts status` y una corrida 2D).
+6. Construye el sdist (fuentes C, sin binarios).
+7. Ejecuta `uvx twine check dist/*`.
+8. Publica los tres archivos con:
 
 ```bash
 uv publish --trusted-publishing automatic
@@ -202,8 +235,8 @@ Después de que el tag exista:
 GitHub → Releases → Draft a new release
 ```
 
-- Tag: `v3.10.1`
-- Título: `neutron-transport-pinns 3.10.1`
+- Tag: `v4.0.0`
+- Título: `neutron-transport-pinns 4.0.0`
 - Descripción: copiar la sección del changelog.
 - Publish release.
 
@@ -213,7 +246,7 @@ El Release de GitHub es informativo; la publicación en PyPI ya la hace
 ## 11. Verificar PyPI
 
 ```text
-https://pypi.org/project/neutron-transport-pinns/3.10.1/
+https://pypi.org/project/neutron-transport-pinns/4.0.0/
 ```
 
 Instalación limpia:
@@ -221,10 +254,12 @@ Instalación limpia:
 ```bash
 uv venv /tmp/nts-pypi
 uv pip install --python /tmp/nts-pypi/bin/python \
-  neutron-transport-pinns==3.10.1
+  neutron-transport-pinns==4.0.0
 
 /tmp/nts-pypi/bin/python -c "import tui; print(tui.__version__)"
 /tmp/nts-pypi/bin/nts --help
+/tmp/nts-pypi/bin/nts status    # cinco solvers OK en Linux/Windows x86_64
+/tmp/nts-pypi/bin/python -c "import tui2d.app; print('TUI 2D OK')"
 ```
 
 ## Troubleshooting

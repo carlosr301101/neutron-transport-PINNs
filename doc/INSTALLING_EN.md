@@ -262,19 +262,21 @@ published wheel.
 
 ## 2D solvers
 
-The PyPI wheel does not contain:
+The **Linux x86_64** and **Windows amd64** wheels include:
 
 - `NTS_DD`
 - `NTS_LD`
 - `NTS_STEP`
 - `NTS_RM_CN`
 - `NTS_RM_LLN`
-- the `.c` / `.h` sources
 
-For the 2D workflow:
+No compilation is needed on those platforms; `nts status` must list all five
+as OK. The sdist (macOS, ARM, and other platforms) ships the `.c` sources and
+the build helpers but not the binaries. For those platforms:
 
 1. Clone the repository.
-2. Compile the binaries under `solvers/runners/`.
+2. Compile the binaries under `solvers/runners/` with `make -C solvers`
+   (Linux) or `solvers/build_windows.ps1` (Windows).
 3. Point to them if they are outside the repository layout:
 
 ```bash
@@ -292,6 +294,6 @@ set NTS_SOLVERS_DIR=%USERPROFILE%\nts-solvers  # Windows cmd
 | `nts: command not found` | Run `uv tool install` or `pip install`, then check `PATH` |
 | `nts-tui` does not open | Use a terminal supported by Textual |
 | Inline preview is missing | Install `[images]` and use Kitty/WezTerm/iTerm2/sixel |
-| `nts run` says solver missing | Compile 2D binaries and set `NTS_SOLVERS_DIR` |
+| `nts run` says solver missing | On Linux x86_64/Windows amd64 reinstall the wheel; otherwise compile the 2D binaries and set `NTS_SOLVERS_DIR` |
 | `nts-test` does not exist | It is development-only; use `uv run python -m cli.run_tests` |
 | `outputs/` appears elsewhere | Set `NTS_HOME` or run from the desired work directory |

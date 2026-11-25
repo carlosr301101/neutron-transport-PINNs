@@ -69,13 +69,16 @@ build-backend = "setuptools.build_meta"
 version = { attr = "tui._version.__version__" }
 
 [tool.setuptools.packages.find]
-include = ["cli", "core", "execution", "utils", "tui*", "tui2d*", "solvers*"]
-
-[tool.setuptools]
-
-[tool.setuptools.package-data]
-tui = ["*.tcss"]
-tui2d = ["*.tcss"]
+include = [
+    "cli",
+    "core",
+    "execution",
+    "utils",
+    "tui*",
+    "tui2d*",
+    "solvers*",
+    "templates",
+]
 
 [tool.ruff]
 line-length = 88

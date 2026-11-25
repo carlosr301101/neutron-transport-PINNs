@@ -1,22 +1,26 @@
 include LICENSE
 include README.md
 
-# TUI stylesheet (also declared as package data).
+# TUI stylesheets (also declared as package data in setup.py).
 recursive-include tui *.tcss
+recursive-include tui2d *.tcss
+recursive-include templates *.json
 
-# Python-only distribution: keep C sources and 2D binaries out.
-prune tests
-prune extras
-prune outputs
-prune doc
-prune skills
-prune .github
+# The sdist ships the C sources and the build helpers, never the binaries.
+include solvers/Makefile
+include solvers/build_windows.ps1
+recursive-include solvers/runners *.c
 
 exclude solvers/runners/NTS_DD
 exclude solvers/runners/NTS_LD
 exclude solvers/runners/NTS_STEP
 exclude solvers/runners/NTS_RM_CN
 exclude solvers/runners/NTS_RM_LLN
+recursive-exclude solvers/runners *.exe
 
-global-exclude *.c
-global-exclude *.h
+prune tests
+prune extras
+prune outputs
+prune doc
+prune skills
+prune .github

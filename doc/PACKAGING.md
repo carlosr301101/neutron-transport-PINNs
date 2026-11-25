@@ -1,16 +1,16 @@
 # Empaquetado y publicación
 
-Checklist para construir wheel/sdist con `uv` y publicar el paquete en
-TestPyPI o PyPI.
+Checklist para construir los wheels por plataforma y el sdist con `uv`, y
+publicar el paquete en TestPyPI o PyPI.
 
-> Alcance: el paquete de PyPI incluye la CLI, la TUI y el solver 1D en Python.
-> Los binarios 2D en C de `solvers/runners/` **no** se incluyen en un wheel de
-> Python puro. Quien necesite el flujo 2D debe clonar el repositorio y compilar
-> esos binarios.
+> Alcance: los wheels de **Linux x86_64** y **Windows amd64** incluyen la CLI,
+> las dos TUI, el solver 1D en Python y los cinco binarios 2D. El sdist incluye
+> las fuentes C y los scripts de build, pero no los binarios. macOS, ARM y otras
+> plataformas instalan el sdist y compilan los solvers.
 
 ## 1. Antes del primer release
 
-Revisar `pyproject.toml`:
+Revisar `pyproject.toml` y `setup.py`:
 
 - `name`, `version`, `description`, `readme` y `requires-python`.
 - `license` y un archivo `LICENSE`.
@@ -18,18 +18,21 @@ Revisar `pyproject.toml`:
 - `[project.urls]` (repositorio, issues, documentación).
 - `classifiers` y `keywords`.
 - `[project.scripts]`: cada comando instalado debe funcionar desde el wheel.
-- `[tool.setuptools.packages.find]`: incluir solo paquetes importables.
-- `[tool.setuptools.package-data]`: assets que no son Python, como
-  `tui/app.tcss`.
+- `[tool.setuptools.packages.find]`: `cli`, `core`, `execution`, `utils`,
+  `tui*`, `tui2d*`, `solvers*`, `templates`.
+- `setup.py`: binarios por plataforma, `package_data` y el tag del wheel.
 
 Decisiones aplicadas:
 
 1. Licencia: MIT (`LICENSE`).
-2. El wheel es Python puro: CLI + TUI + solver 1D. Sin `.c`, `.h` ni binarios
-   2D.
-3. `tests/` no se empaqueta. `nts-test` y `tests` ya no son console scripts;
-   en desarrollo se usa `uv run python -m cli.run_tests`.
-4. La versión sale de `tui/_version.py`:
+2. El wheel es **específico de plataforma** porque lleva ejecutables nativos.
+3. Wheel Linux: `py3-none-manylinux_2_28_x86_64`.
+4. Wheel Windows: `py3-none-win_amd64`.
+5. `NTS_WHEEL_PLATFORM` permite forzar el tag durante el build.
+6. Los builds editables (`uv sync`, `pip install -e`) siguen siendo
+   `py3-none-any` para evitar el conflicto de variantes de uv.
+7. `tests/` no se empaqueta. `nts-test` es solo de desarrollo.
+8. La versión sale de `tui/_version.py`:
 
    ```toml
    [project]
@@ -39,137 +42,135 @@ Decisiones aplicadas:
    version = { attr = "tui._version.__version__" }
    ```
 
-4. Confirmar que el nombre sigue libre en PyPI:
+## 2. Construir el wheel de Linux
 
-   ```bash
-   uv run python - <<'PY'
-   import urllib.request
-   url = "https://pypi.org/pypi/neutron-transport-pinns/json"
-   try:
-       with urllib.request.urlopen(url, timeout=10) as response:
-           print("ya existe:", response.status)
-   except Exception as exc:
-       print("disponible:", getattr(exc, "code", type(exc).__name__))
-   PY
-   ```
-
-## 2. Versión y changelog
-
-1. Actualizar la versión en `pyproject.toml` y `tui/__init__.py` (o en la
-   fuente dinámica).
-2. Actualizar `CHANGELOG.md` y `Changelog_EN.md`.
-3. Correr la suite:
-
-   ```bash
-   uv run python -m cli.run_tests
-   ```
-
-4. Commit y tag solo cuando el build de release pase.
-
-## 3. Build
+Compilar los binarios y construir dentro de un contenedor `manylinux_2_28`
+para que la base glibc coincida con el tag:
 
 ```bash
-uv build --clear
+podman run --rm -v "$PWD:/src:Z" -w /src \
+  quay.io/pypa/manylinux_2_28_x86_64 bash -lc '
+    make -C solvers CC=gcc
+    PY=$(ls -d /opt/python/cp314-cp314/bin/python 2>/dev/null || \
+         ls -d /opt/python/cp313-cp313/bin/python | tail -1)
+    $PY -m pip install --upgrade build
+    NTS_WHEEL_PLATFORM=manylinux_2_28_x86_64 \
+      $PY -m build --wheel --outdir dist
+  '
 ```
 
-Los artefactos quedan en `dist/`:
+## 3. Construir el wheel de Windows
+
+```powershell
+.\solvers\build_windows.ps1 -Gcc "C:\msys64\ucrt64\bin\gcc.exe"
+$env:NTS_WHEEL_PLATFORM = "win_amd64"
+uv build --wheel --out-dir dist
+```
+
+Los `.exe` se enlazan con `-static`, sin DLLs de MinGW.
+
+## 4. Construir el sdist
+
+```bash
+uv build --sdist --out-dir dist
+```
+
+Artefactos:
 
 ```text
+dist/neutron_transport_pinns-<version>-py3-none-manylinux_2_28_x86_64.whl
+dist/neutron_transport_pinns-<version>-py3-none-win_amd64.whl
 dist/neutron_transport_pinns-<version>.tar.gz
-dist/neutron_transport_pinns-<version>-py3-none-any.whl
 ```
 
 `dist/` ya está en `.gitignore`.
 
-Validar metadata:
+Validar metadatos:
 
 ```bash
 uvx twine check dist/*
 ```
 
-Inspeccionar el wheel:
+## 5. Inspeccionar los artefactos
+
+Wheel: binarios con permiso de ejecución, ambos estilos y sin fuentes C:
 
 ```bash
 uv run python - <<'PY'
-import glob
-import zipfile
+import glob, stat, zipfile
 
-wheel = glob.glob("dist/*.whl")[0]
+wheel = glob.glob("dist/*manylinux*.whl")[0]
 with zipfile.ZipFile(wheel) as archive:
-    names = archive.namelist()
+    infos = {info.filename: info for info in archive.infolist()}
 
 print(wheel)
-print(len(names), "archivos")
-assert any(name.endswith("tui/app.tcss") for name in names), names
-print("tui/app.tcss está empaquetado")
+for name in ("NTS_DD", "NTS_LD", "NTS_STEP", "NTS_RM_CN", "NTS_RM_LLN"):
+    info = infos[f"solvers/runners/{name}"]
+    mode = info.external_attr >> 16
+    assert mode & stat.S_IXUSR, name
+    print(name, oct(mode))
+assert "tui/app.tcss" in infos
+assert "tui2d/app.tcss" in infos
+assert "templates/base_input.json" in infos
+assert not any(name.endswith(".c") for name in infos)
 PY
 ```
 
-## 4. Smoke test en entorno limpio
+Para el wheel de Windows, comprobar `solvers/runners/NTS_*.exe`.
+
+Sdist: fuentes y scripts incluidos, binarios fuera:
 
 ```bash
-uv venv /tmp/nts-wheel
-uv pip install --python /tmp/nts-wheel/bin/python dist/*.whl
-
-/tmp/nts-wheel/bin/nts --help
-/tmp/nts-wheel/bin/nts-1d-run --help
-/tmp/nts-wheel/bin/nts-tui     # abrir y salir con q
+tar tzf dist/*.tar.gz | grep -E "NTS_.*\.c|Makefile|build_windows|base_input"
+tar tzf dist/*.tar.gz | grep -E "NTS_(DD|LD|STEP|RM_CN|RM_LLN)$" && exit 1 || true
 ```
 
-Comprobar el CSS empaquetado:
+## 6. Prueba en venv limpia
+
+Linux:
+
+```bash
+uv venv /tmp/nts-wheel --python 3.14
+uv pip install --python /tmp/nts-wheel/bin/python dist/*manylinux*.whl
+export NTS_HOME=/tmp/nts-home
+mkdir -p "$NTS_HOME"
+/tmp/nts-wheel/bin/nts status        # cinco OK
+printf '4\n1\n0.5 0.3\n1\n10.0 4\n1\n10.0 4\n1\n1.0\n0.0 0.0 0.0 0.0\n1e-4\n' > "$NTS_HOME/input.txt"
+/tmp/nts-wheel/bin/nts run -s NTS_DD -i "$NTS_HOME/input.txt"
+/tmp/nts-wheel/bin/python -c "import tui2d.app; print('TUI 2D OK')"
+```
+
+Comprobar los assets empaquetados:
 
 ```bash
 /tmp/nts-wheel/bin/python - <<'PY'
 from importlib.resources import files
-path = files("tui").joinpath("app.tcss")
-print(path, path.is_file())
+print(files("tui").joinpath("app.tcss").is_file())
+print(files("tui2d").joinpath("app.tcss").is_file())
+print(files("templates").joinpath("base_input.json").is_file())
 PY
 ```
 
-Probar las formas de instalación de usuario:
+En Windows, repetir con una venv y `nts.exe`.
 
-```bash
-uv tool install neutron-transport-pinns
-uvx --from neutron-transport-pinns nts --help
-```
+## 7. CI y workflows de release
 
-## 5. TestPyPI
+`.github/workflows/ci.yml`:
 
-Usar un token de TestPyPI:
+- Ubuntu y Windows compilan los solvers 2D y ejecutan los tests.
+- Una matriz `build` construye el wheel de cada plataforma, lo instala en una
+  venv limpia, ejecuta `nts status` y corre un caso 2D.
+- Linux construye además el sdist y ejecuta `twine check`.
 
-```bash
-UV_PUBLISH_TOKEN=pypi-... \
-uv publish \
-  --publish-url https://test.pypi.org/legacy/ \
-  dist/*
-```
+`.github/workflows/release.yml`, con tags `v*`:
 
-Instalar la versión publicada en un entorno limpio:
-
-```bash
-uv venv /tmp/nts-testpypi
-uv pip install --python /tmp/nts-testpypi/bin/python \
-  --index-url https://test.pypi.org/simple/ \
-  --extra-index-url https://pypi.org/simple/ \
-  neutron-transport-pinns==<version>
-
-/tmp/nts-testpypi/bin/nts --help
-```
-
-## 6. Workflows de CI y release
-
-`.github/workflows/ci.yml` corre en Ubuntu y Windows:
-
-- `uv sync --frozen --extra images`
-- `uv run python -m cli.run_tests`
-- `uvx ruff check --select F,E9 .` (solo Linux)
-- una prueba de consola `cp1252` en Windows
-- un job separado en Ubuntu ejecuta `uv build` y `twine check`
-
-`.github/workflows/release.yml` corre con tags `v*`, ejecuta `ci.yml` y solo
-publica si los tests de Ubuntu y Windows pasan. También verifica que el tag
-coincida con `tui/_version.py` y usa trusted publishing de PyPI
-(`id-token: write`, environment `pypi`).
+1. Ejecuta `ci.yml`.
+2. Construye el wheel manylinux en `quay.io/pypa/manylinux_2_28_x86_64`.
+3. Construye el wheel `win_amd64` con MSYS2/UCRT64 y `-static`.
+4. Prueba ambos wheels (`nts status` + `nts run`).
+5. Construye el sdist.
+6. Comprueba el tag contra `tui/_version.py`, ejecuta `twine check` y publica
+   con trusted publishing.
 
 Configurar el pending publisher en PyPI antes del primer tag:
 
@@ -181,62 +182,38 @@ Workflow:     release.yml
 Environment:  pypi
 ```
 
-Crear el environment `pypi` en GitHub Actions y subir un tag:
+## 8. TestPyPI
 
 ```bash
-git tag -a v3.10.0 -m "neutron-transport-pinns 3.10.0"
-git push origin main --tags
+UV_PUBLISH_TOKEN=pypi-... \
+uv publish --publish-url https://test.pypi.org/legacy/ dist/*
 ```
 
-No se necesita el secreto `PYPI_TOKEN` para este camino.
-
-## 7. PyPI
-
-Primero un dry run:
+Instalar la versión publicada en un entorno limpio:
 
 ```bash
-uv publish --dry-run
+uv venv /tmp/nts-testpypi --python 3.14
+uv pip install --python /tmp/nts-testpypi/bin/python \
+  --index-url https://test.pypi.org/simple/ \
+  --extra-index-url https://pypi.org/simple/ \
+  neutron-transport-pinns==<version>
+/tmp/nts-testpypi/bin/nts status
 ```
 
-Camino recomendado: dejar que `release.yml` publique desde un tag `v*` con
-trusted publishing. Solo como fallback manual:
-
-```bash
-UV_PUBLISH_TOKEN=pypi-... uv publish
-```
-
-Con GitHub Actions, conceder `id-token: write` y usar un environment protegido
-por un trusted publisher de PyPI. El token es un fallback, no el camino
-recomendado.
-
-Evitar subidas duplicadas:
-
-```bash
-uv publish \
-  --check-url https://pypi.org/simple/neutron-transport-pinns/ \
-  dist/*
-```
-
-## 8. Release
-
-Guía paso a paso de versión, tag y workflow: [RELEASING.md](RELEASING.md).
-
-
-```bash
-git tag -a v<version> -m "neutron-transport-pinns <version>"
-git push origin main --tags
-```
-
-Crear las notas de release desde `CHANGELOG.md`.
-
-## 9. Troubleshooting
+## 9. Problemas frecuentes
 
 | Síntoma | Solución |
 |---|---|
-| `twine check` se queja de metadata | Agregar `license`, `authors`, `urls` y classifiers |
-| Falta `tui/app.tcss` en el wheel | Revisar `[tool.setuptools.package-data]` |
-| `nts-test` falla desde el wheel | Fue eliminado; usar `uv run python -m cli.run_tests` en el repo |
-| `nts run` dice solver missing | Los binarios 2D no van en el wheel; compilarlos desde el repo |
-| TestPyPI no encuentra dependencias | Agregar `--extra-index-url https://pypi.org/simple/` |
-| La versión ya existe | Subir la versión; PyPI no permite reemplazar archivos |
-| `uv publish` no autentica | Configurar `UV_PUBLISH_TOKEN` o trusted publishing |
+| `twine check` se queja de metadatos | Revisar `license`, `authors`, `urls` y classifiers |
+| Falta `tui/app.tcss` o `tui2d/app.tcss` | Revisar `package_data` en `setup.py` |
+| Faltan binarios en el wheel | Compilarlos antes del build; revisar el sufijo `.exe` en Windows |
+| El wheel sale con ABI (`cp314-cp314-...`) | No se aplicó `bdist_wheel.get_tag()` |
+| `uv sync` falla con `variant.json` | Los builds editables deben quedar en `py3-none-any` |
+| `nts run` dice solver missing | En Linux/Windows x86_64 reinstalar el wheel; en otras plataformas compilar y usar `NTS_SOLVERS_DIR` |
+| Binario sin permiso de ejecución | Comprobar con `stat`; reinstalar con pip/uv reciente |
+| `File already exists` en PyPI | Subir otra versión; PyPI no permite reemplazar archivos |
+
+## 10. Release
+
+Guía paso a paso de versión, tag y workflow:
+[RELEASING.md](RELEASING.md).

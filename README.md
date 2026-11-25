@@ -45,8 +45,9 @@ CLI/TUI automation system for **SN neutron transport simulations**:
 
 - Python **3.14+**
 - [uv](https://docs.astral.sh/uv/) (recommended) or `pip`
-- Linux, macOS or Windows
-- 2D C binaries only for the 2D workflow; the 1D solver and TUI are pure Python
+- Linux x86_64, Windows amd64, macOS or other architectures
+- The Linux/Windows wheels bundle the five 2D C solvers; other platforms compile
+  them from the sdist (the 1D solver and both TUIs are pure Python)
 
 ## 🔧 Installation
 
@@ -82,8 +83,20 @@ nts status
 nts-tui
 ```
 
-`nts status` is expected to report missing 2D binaries when only the PyPI wheel
-is installed. The 1D/TUI workflow does not need them.
+`nts status` must show the five 2D solvers as OK on Linux x86_64 and Windows
+amd64, because those wheels include them:
+
+```text
+Solvers:
+  ✓ NTS_DD
+  ✓ NTS_LD
+  ✓ NTS_RM_CN
+  ✓ NTS_RM_LLN
+  ✓ NTS_STEP
+```
+
+On macOS, ARM, or another platform pip installs the sdist: compile the solvers
+and point `NTS_SOLVERS_DIR` at them (see the 2D workflow below).
 
 ### First 1D run
 
@@ -166,8 +179,17 @@ python -m tui.app
 
 ### 2D workflow
 
-The PyPI wheel does **not** include the 2D C binaries or sources. To use
-`NTS_DD`, `NTS_LD`, `NTS_STEP`, `NTS_RM_CN` or `NTS_RM_LLN`:
+On **Linux x86_64** and **Windows amd64**, `pip install neutron-transport-pinns`
+installs the five 2D C solvers inside the wheel; no extra step is needed:
+
+```bash
+nts status                # NTS_DD, NTS_LD, NTS_STEP, NTS_RM_CN, NTS_RM_LLN
+nts tui --dim 2
+nts run -s NTS_DD -p 4
+```
+
+On macOS, ARM, or any other platform, pip installs the sdist: compile the
+solvers and point `NTS_SOLVERS_DIR` at the directory that contains them:
 
 ```bash
 git clone https://github.com/carlosr301101/neutron-transport-PINNs.git
@@ -175,12 +197,6 @@ cd neutron-transport-PINNs
 make -C solvers                  # Linux; writes solvers/runners/NTS_*
 # pwsh -File solvers/build_windows.ps1   # Windows (MSYS2/MinGW-w64)
 export NTS_SOLVERS_DIR="$PWD/solvers/runners"
-```
-
-Then:
-
-```bash
-nts run -s NTS_DD -p 4
 ```
 
 See `doc/NTS_DOCUMENTATION.md` for input format and compilation details.

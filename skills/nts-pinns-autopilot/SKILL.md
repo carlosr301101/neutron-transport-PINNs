@@ -1,7 +1,7 @@
 ---
 name: nts-pinns-autopilot
 description: >-
-  Operates the NTS Automation System (neutron-transport-PINNs, v3.10.0), a CLI/TUI for
+  Operates the NTS Automation System (neutron-transport-PINNs, v4.0.0), a CLI/TUI for
   SN neutron transport simulations: generating/validating inputs, running the 2D
   C solvers (NTS_DD/LD/STEP/RM_CN/RM_LLN) and the Python 1D Diamond-Difference
   solver, launching parametric sweeps (placeholders to configs to runs to
@@ -71,8 +71,10 @@ nts status
 nts-tui
 ```
 
-`nts status` may report missing 2D binaries. That is expected for the PyPI
-wheel; the 1D solver and TUI are included.
+`nts status` must show the five 2D solvers as OK on **Linux x86_64** and
+**Windows amd64**: those wheels include the binaries. On macOS, ARM or another
+platform pip installs the sdist; compile the solvers and set
+`NTS_SOLVERS_DIR`.
 
 ### Repository / agent install
 
@@ -134,8 +136,11 @@ In the TUI: **Config → Save → Run → Results → Plots**. Quit with `q`.
   - Linux/macOS: `export NTS_HOME="$HOME/nts-work"`
   - Windows cmd: `set NTS_HOME=%USERPROFILE%\nts-work`
 - `NTS_SOLVERS_DIR` points to compiled 2D binaries.
-- The wheel does not include the 2D C binaries or sources. Clone the repo,
-  compile them under `solvers/runners/`, or set `NTS_SOLVERS_DIR`.
+- The Linux x86_64 and Windows amd64 wheels include the five 2D binaries
+  (`.exe` on Windows). No compilation is needed there.
+- macOS, ARM and other platforms receive the sdist (C sources, no binaries):
+  clone the repo, compile with `make -C solvers` or
+  `solvers/build_windows.ps1`, or set `NTS_SOLVERS_DIR`.
 
 ## Guided setup of a new 1D problem
 

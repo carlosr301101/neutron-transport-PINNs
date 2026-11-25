@@ -216,13 +216,19 @@ def get_template_path(template_name: str = "base_input.json") -> Path:
     """
     Get path to a configuration template.
 
+    Prefers the user's ``templates/`` directory in the work root and falls back
+    to the template bundled with the package (wheels do not ship a work root).
+
     Args:
         template_name: Name of the template file
 
     Returns:
         Path to template file
     """
-    return TEMPLATES_DIR / template_name
+    user_path = TEMPLATES_DIR / template_name
+    if user_path.exists():
+        return user_path
+    return PACKAGE_ROOT / "templates" / template_name
 
 
 def get_config_path(config_name: str) -> Path:

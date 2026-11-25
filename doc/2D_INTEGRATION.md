@@ -1,6 +1,7 @@
 # Integración de los solvers 2D en CLI y TUI
 
-Estado: **en implementación**. Fases 0–4 completadas; fases 5–7 pendientes.
+Estado: **completado**. Fases 0–7 implementadas y en `main`; solo queda el
+commit de versión y el tag del mantenedor.
 El contrato de entrada/salida vive en `doc/2D_SOLVERS_CONTRACT.md`.
 
 Este documento describe la implementación de los
@@ -726,15 +727,22 @@ PR 6  Fase 7       docs, skill, changelog
 [x] Fase 2  wizard nts-2d-config + CLI 2D
 [x] Fase 3  C portables (Linux/Windows), CPU >= 0, Makefile, CI de compilación
 [x] Fase 4  tui2d (config con mapa 2D proporcional, run, results, plots)
-[ ] Fase 5  wheel platform-specific
-[~] Fase 6  tests de solvers y TUI hechos; CI/wheel pendientes
-[ ] Fase 7  documentación y skill
+[x] Fase 5  wheel platform-specific (manylinux_2_28 + win_amd64) y sdist
+[x] Fase 6  tests 2D, CI de compilación y smoke test de wheels
+[x] Fase 7  documentación, skill, changelog y empaquetado
 ```
 
 ## Continuación
 
+Todo el trabajo de la rama está integrado en `main`. Falta únicamente el
+commit de bump de versión y el tag del mantenedor:
+
 ```bash
-git switch feat/2d-integration
+# editar tui/_version.py -> 4.0.0
+git commit -am "chore(release): 4.0.0"
+git tag -s v4.0.0 -m "neutron-transport-pinns 4.0.0"
+git push origin main v4.0.0
 ```
 
-Después, Fase 5 (wheels específicos de plataforma).
+El tag `v4.0.0` dispara `release.yml`, que construye el wheel manylinux, el wheel
+de Windows y el sdist, los prueba y publica los tres en PyPI.

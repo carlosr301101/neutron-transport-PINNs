@@ -190,8 +190,9 @@ python -m tui.app
 
 ### Salida esperada
 
-- `nts status` puede avisar que faltan los binarios 2D. Es normal en el wheel
-  de PyPI; el solver 1D y la TUI funcionan completos.
+- `nts status` debe mostrar los cinco solvers 2D como OK en Linux x86_64 y
+  Windows amd64, porque esos wheels los incluyen. En macOS, ARM u otra
+  plataforma hay que compilarlos y usar `NTS_SOLVERS_DIR`.
 - `nts-1d-run` escribe `outputs/results/quickstart.json`.
 - `nts-1d-plot` escribe `outputs/results/plots/k_history.png`.
 - La TUI escribe configs en `outputs/inputs/` y resultados en
@@ -263,19 +264,21 @@ wheel publicado.
 
 ## Solvers 2D
 
-El wheel de PyPI no contiene:
+Los wheels de **Linux x86_64** y **Windows amd64** incluyen:
 
 - `NTS_DD`
 - `NTS_LD`
 - `NTS_STEP`
 - `NTS_RM_CN`
 - `NTS_RM_LLN`
-- las fuentes `.c` y `.h`
 
-Para el flujo 2D:
+No hace falta compilar en esas plataformas; `nts status` debe listar los cinco
+como OK. El sdist (macOS, ARM y otras plataformas) incluye las fuentes `.c` y
+los scripts de build, pero no los binarios. En esas plataformas:
 
 1. Clonar el repositorio.
-2. Compilar los binarios en `solvers/runners/`.
+2. Compilar los binarios en `solvers/runners/` con `make -C solvers` (Linux)
+   o `solvers/build_windows.ps1` (Windows).
 3. Indicar la ruta si no están en el layout del repo:
 
 ```bash
@@ -293,6 +296,6 @@ set NTS_SOLVERS_DIR=%USERPROFILE%\nts-solvers  # Windows cmd
 | `nts: command not found` | Ejecutar `uv tool install` o `pip install` y revisar el `PATH` |
 | `nts-tui` no abre | Verificar que la terminal soporte Textual; usar una terminal moderna |
 | No se ve el preview inline | Instalar `[images]` y usar Kitty/WezTerm/iTerm2/sixel |
-| `nts run` dice solver missing | Compilar los binarios 2D y configurar `NTS_SOLVERS_DIR` |
+| `nts run` dice solver missing | En Linux x86_64/Windows amd64 reinstalar el wheel; en otras plataformas compilar los binarios 2D y configurar `NTS_SOLVERS_DIR` |
 | `nts-test` no existe | Es un comando de desarrollo; usar `uv run python -m cli.run_tests` |
 | `outputs/` aparece en una ruta inesperada | Definir `NTS_HOME` o ejecutar desde el directorio de trabajo deseado |

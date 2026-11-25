@@ -2,6 +2,41 @@
 
 Record of all notable changes in the NTS Automation System project.
 
+## [Unreleased] - 4.0.0
+
+### Breaking changes
+- `BC` uses the canonical order `[left, bottom, right, top]`: `-1.0` reflective,
+  `0.0` vacuum and `> 0` incoming flux. `1.0` no longer means reflective.
+- `nodes` must be `>= 3` and `N` must be even in 2..18.
+- The wheel is no longer `py3-none-any`: it is platform-specific because it
+  bundles the 2D binaries.
+
+### Added
+- Portable 2D C solvers: no `unistd.h`, no `sleep(1)`, real `CPU` time.
+- `solvers/Makefile` and `solvers/build_windows.ps1` (MSYS2, `-static`).
+- `nts-2d-config`, `core/input_reader`, `nts run --dry-run`, `nts plot -i` and a
+  mesh summary in `nts show`.
+- 2D TUI (`tui2d`): `nts tui --dim 2` and `nts-tui-2d`, with a proportional 2D
+  domain map, `ZMAP`/`QMAP` editors, BC table, selectable output path, results
+  and heatmaps.
+- Linux `manylinux_2_28_x86_64` and Windows `win_amd64` wheels with the five
+  binaries; sdist with the C sources and build script; bundled template.
+- 2D tests for config, input, CLI, solvers, TUI and language.
+- CI compiles the solvers and installs each wheel in a clean venv for a 2D run.
+
+### Changed
+- `nts tui` still opens the 1D TUI; both TUIs are in English.
+- Config/Run/Results/Plots selectors refresh when their tab is opened.
+- The 2D TUI `Output` field lets the user choose folder and name without
+  overwriting existing files.
+
+### Fixed
+- Stale `NTS_LD`, `NTS_RM_CN` and `NTS_RM_LLN` binaries that rejected the
+  canonical input.
+- Negative `CPU` values and the artificial one-second delay per run.
+- Layout gaps in `ZMAP`/`QMAP` and the clipped boundary-condition section in the
+  2D TUI.
+
 ## [3.10.0] - 2026-11-20 - Named zones and region plots
 
 ### Added
